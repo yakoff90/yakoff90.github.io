@@ -1,0 +1,3 @@
+"appReplace": {
+      "checkPremium\\(\\) \\{": "checkPremium() { return 1;"
+},
