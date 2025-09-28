@@ -1,0 +1,43 @@
+#!/bin/bash
+# Чекаємо 2 хвилини, щоб update.sh гарантовано завершився
+#sleep 120
+
+# Шляхи для welcome.jpg
+SOURCE_WELCOME="/home/img/welcome.jpg"  # Ваше welcome.jpg
+DEST_WELCOME="/home/lampac/wwwroot/lampa-main/img/welcome.jpg"  # Шлях у Lampac welcome.jpg
+
+# Шляхи для logo-icon.svg
+SOURCE_LOGO="/home/img/logo-icon.svg"  # Ваше logo-icon.svg
+DEST_LOGO="/home/lampac/wwwroot/lampa-main/img/logo-icon.svg"  # Шлях у Lampac logo-icon.svg
+
+# Шляхи для server.svg
+SOURCE_SERVER="/home/img/server.svg"  # Ваше server.svg
+DEST_SERVER="/home/lampac/wwwroot/lampa-main/img/icons/settings/server.svg"  # Шлях у Lampac server.svg
+
+# Шляхи для more.svg
+SOURCE_MORE="/home/img/more.svg"  # Ваше more.svg
+DEST_MORE="/home/lampac/wwwroot/lampa-main/img/icons/settings/more.svg"  # Шлях у Lampac more.svg
+
+# Шляхи для player.svg
+SOURCE_PLAYER="/home/img/player.svg"  # Ваше player.svg
+DEST_PLAYER="/home/lampac/wwwroot/lampa-main/img/icons/settings/player.svg"  # Шлях у Lampac player.svg
+
+# Шляхи для parser.svg
+SOURCE_PARSER="/home/img/parser.svg"  # Ваше parser.svg
+DEST_PARSER="/home/lampac/wwwroot/lampa-main/img/icons/settings/parser.svg"  # Шлях у Lampac parser.svg
+
+# Шляхи для parser.svg
+SOURCE_PANEL="/home/img/panel.svg"  # Ваше panel.svg
+DEST_PANEL="/home/lampac/wwwroot/lampa-main/img/icons/settings/panel.svg"  # Шлях у Lampac panel.svg
+
+# Змінюємо на наші зображення
+cp -f "$SOURCE_WELCOME" "$DEST_WELCOME"
+cp -f "$SOURCE_LOGO" "$DEST_LOGO"
+cp -f "$SOURCE_SERVER" "$DEST_SERVER"
+cp -f "$SOURCE_MORE" "$DEST_MORE"
+cp -f "$SOURCE_PLAYER" "$DEST_PLAYER"
+cp -f "$SOURCE_PARSER" "$DEST_PARSER"
+cp -f "$SOURCE_PANEL" "$DEST_PANEL"
+
+# Перезапускаємо Lampac для оновлення кешу
+systemctl restart lampac
