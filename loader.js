@@ -1,6 +1,6 @@
 (function() {
     'use strict';
-
+    
     Lampa.Lang.add({
         maxsm_themes: {
             ru: "Темы",
@@ -94,6 +94,7 @@
     var prevtheme = '';
     var onetime = false;
 
+    // Ось тут замінюємо блок завантажувача на новий
     var loaderColors = {
         "default": '#fff',
         violet_blue: '#6a11cb',
@@ -104,6 +105,7 @@
         velvet_sakura: '#f6a5b0'
     };
 
+    // Функція для застосування тем
     function applyTheme(theme) {
         $('#maxsm_themes_theme').remove();
 
@@ -126,10 +128,12 @@
 
         var color = loaderColors[theme] || loaderColors["default"];
 
+        // GIF для завантажувача
         var gifUrl = "https://raw.githubusercontent.com/ko3ik/LMP/main/wwwroot/logo.gif";
         
         var style = $('<style id="maxsm_themes_theme"></style>');
         
+        // Оновлені стилі для завантажувача
         var loaderStyles = `
 .screensaver__preload {
     background: url("${gifUrl}") no-repeat 50% 50% !important;
@@ -148,6 +152,7 @@
 }
 `;
 
+        // Стилі для тем
         var themes = {
             mint_dark: loaderStyles + ` ... ваші інші стилі для mint_dark ... `,
             crystal_cyan: loaderStyles + ` ... інші стилі для crystal_cyan ... `,
