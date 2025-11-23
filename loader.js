@@ -270,12 +270,10 @@ html, body, .extensions { background: linear-gradient(135deg, #0a1b2a, #1a4036);
         if (!localStorage.getItem('maxsm_themes_bigbuttons')) {
             localStorage.setItem('maxsm_themes_bigbuttons', 'false');
         }
-        Lampa.SettingsApi.addComponent({
-            component: "maxsm_themes",
-            name: Lampa.Lang.translate('maxsm_themes'),
-            icon: themes_svg
-        });
         
+        // Видалити дублюючі пункти
+        Lampa.SettingsApi.removeComponent('maxsm_themes');
+
         Lampa.SettingsApi.addParam({
             component: 'maxsm_themes',
             param: {
@@ -299,22 +297,6 @@ html, body, .extensions { background: linear-gradient(135deg, #0a1b2a, #1a4036);
                 maxsm_themes.settings.theme = value;
                 Lampa.Settings.update();
                 applyTheme(value);
-            }
-        });
-        
-        Lampa.SettingsApi.addParam({
-            component: 'maxsm_themes',
-            param: {
-                name: 'maxsm_themes_animations',
-                type: "trigger",
-                default: true
-            },
-            field: {
-                name: Lampa.Lang.translate('maxsm_themes_animations'),
-                description: ''
-            },
-            onChange: function(value) {
-                animations();
             }
         });
 
