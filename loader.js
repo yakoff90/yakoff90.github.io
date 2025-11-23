@@ -3,19 +3,52 @@
     
     Lampa.Lang.add({
         maxsm_themes: {
-            ru: "Темы оформления",
-            en: "Interface themes",
-            uk: "Теми оформлення",
-            be: "Тэмы афармлення",
+            ru: "Темы",
+            en: "Themes",
+            uk: "Теми",
+            be: "Тэмы",
             zh: "主题",
             pt: "Temas",
             bg: "Теми",
             he: "ערכות נושא",
             cs: "Témata"
         },
+        maxsm_themes_theme: {
+            ru: "Тема оформления",
+            en: "Interface theme",
+            uk: "Тема оформлення",
+            be: "Тэма афармлення",
+            zh: "界面主题",
+            pt: "Tema de interface",
+            bg: "Тема на интерфейса",
+            he: "ערכת נושא לממשק",
+            cs: "Téma rozhraní"
+        },
+        maxsm_themes_animations: {
+            ru: "Анимации",
+            en: "Animations",
+            uk: "Анімації",
+            be: "Анімацыі",
+            zh: "动画",
+            pt: "Animações",
+            bg: "Анимации",
+            he: "אנימציות",
+            cs: "Animace"
+        },
+        maxsm_themes_translate_tv: {
+            ru: "Переводить TV",
+            en: "Translate TV",
+            uk: "Перекладати TV",
+            be: "Перакладаць TV",
+            zh: "翻译 TV",
+            pt: "Traduzir TV",
+            bg: "Превеждане на TV",
+            he: "לתרגם TV",
+            cs: "Přeložit TV"
+        },
         maxsm_themes_tvcaption: {
-            ru: "ТВ",       
-            en: "TV SERIES",   
+            ru: "СЕРИАЛ",       
+            en: "SERIES",   
             uk: "СЕРІАЛ",    
             be: "СЕРЫЯЛ",     
             zh: "剧集",       
@@ -23,43 +56,58 @@
             bg: "СЕРИАЛ",      
             he: "סִדְרָה",  
             cs: "SERIÁL" 
+        },
+        maxsm_themes_incardtemplate: {
+            ru: "Макет содержимого карточки",
+            en: "Card content layout",
+            uk: "Макет вмісту картки",
+            be: "Макет змесціва карткі",
+            zh: "卡片内容布局",
+            pt: "Layout do conteúdo do cartão",
+            bg: "Оформление на съдържанието в картата",
+            he: "פריסת תוכן בכרטיס",
+            cs: "Rozvržení obsahu karty"
+        },
+        maxsm_themes_bigbuttons: {
+            ru: "Большие кнопки в карточке",
+            en: "Large buttons in card",
+            uk: "Великі кнопки в картці",
+            be: "Вялікія кнопкі ў картцы",
+            zh: "卡片中的大按钮",
+            pt: "Botões grandes no cartão",
+            bg: "Големи бутони в картата",
+            he: "כפתורים גדולים בכרטיס",
+            cs: "Velká tlačítka v kartě"
         }
     });
+    
+    var themes_svg = '<!-- icon666.com - MILLIONS OF FREE VECTOR ICONS --><svg viewBox="0 0 512.00026 512" xmlns="http://www.w3.org/2000/svg"><path d="m491.238281 20.761719c-14.375-14.375-34.265625-21.890625-54.550781-20.625-20.289062 1.269531-39.078125 11.207031-51.550781 27.261719l-98.660157 127.007812-41.109374-41.109375c-12.015626-12.019531-27.996094-18.636719-44.988282-18.636719-16.996094 0-32.972656 6.617188-44.992187 18.636719l-142.363281 142.363281c-17.363282 17.363282-17.363282 45.617188 0 62.980469l180.335937 180.335937c8.679687 8.683594 20.085937 13.023438 31.488281 13.023438 11.40625 0 22.808594-4.339844 31.492188-13.023438l142.363281-142.363281c12.019531-12.019531 18.636719-27.996093 18.636719-44.992187 0-16.992188-6.617188-32.972656-18.636719-44.988282l-41.109375-41.109374 127.007812-98.660157c16.054688-12.472656 25.992188-31.261719 27.261719-51.550781 1.269531-20.292969-6.25-40.175781-20.625-54.550781zm-276.386719 456.722656-15.898437-15.898437 22.957031-22.957032c5.933594-5.9375 5.933594-15.558594 0-21.496094-5.933594-5.933593-15.558594-5.933593-21.492187 0l-22.957031 22.957032-10.152344-10.148438 44.210937-44.210937c5.9375-5.933594 5.9375-15.558594 0-21.492188-5.933593-5.9375-15.558593-5.9375-21.492187 0l-44.210938 44.210938-42.265625-42.265625 22.957031-22.957032c5.9375-5.9375 5.9375-15.558593 0-21.496093-5.933593-5.933594-15.558593-5.933594-21.492187 0l-22.957031 22.957031-10.152344-10.148438 44.210938-44.210937c5.9375-5.933594 5.9375-15.558594 0-21.492187-5.933594-5.9375-15.558594-5.9375-21.492188 0l-44.210938 44.210937-15.898437-15.898437c-5.511719-5.511719-5.511719-14.484376 0-19.996094l77.199219-77.195313 200.328125 200.328125-77.199219 77.199219c-5.511719 5.511719-14.480469 5.511719-19.992188 0zm118.6875-98.695313-200.328124-200.328124 18.175781-18.175782 200.328125 200.328125zm53.40625-67.167968c0 8.875-3.457031 17.222656-9.734374 23.496094l-4 4.003906-191.484376-191.480469-8.847656-8.847656 4.003906-4.003907c6.273438-6.277343 14.621094-9.730468 23.496094-9.730468s17.21875 3.453125 23.492188 9.730468l153.339844 153.335938c6.277343 6.277344 9.734374 14.621094 9.734374 23.496094zm94.578126-238.210938c-.726563 11.589844-6.398438 22.324219-15.570313 29.449219l-130.019531 101-27.796875-27.792969 101.003906-130.019531c7.125-9.171875 17.855469-14.847656 29.449219-15.570313 11.578125-.71875 22.945312 3.566407 31.15625 11.777344 8.210937 8.210938 12.503906 19.570313 11.777344 31.15625zm0 0" fill="#000000" style="fill: rgb(255, 255, 255);"></path><path d="m439.84375 56.953125c-7.949219 0-15.566406 6.992187-15.195312 15.199219.367187 8.234375 6.675781 15.199218 15.195312 15.199218 7.953125 0 15.566406-6.988281 15.199219-15.199218-.367188-8.234375-6.675781-15.199219-15.199219-15.199219zm0 0" fill="#000000" style="fill: rgb(255, 255, 255);"></path></svg>';
 
-    // Основной объект плагина
     var maxsm_themes = {
-        // Название плагина
         name: 'maxsm_themes',
-        // Версия плагина
-        version: '2.5.0',
-        // Настройки по умолчанию
+        version: '2.6.1',
         settings: {
             theme: 'mint_dark'
         }
     };
 
-    // Была ли предыдущая тема стоковая
     var prevtheme = '';
-    // Запускаем только один раз
     var onetime = false;
 
-    // Цвета loader'а для каждой темы
+    // Замінюємо старий loader на новий з GIF
     var loaderColors = {
         "default": '#fff',
         violet_blue: '#6a11cb',
         mint_dark: '#3da18d',
-        lime_energy: '#9eff3a',
         deep_aurora: '#7e7ed9',
         crystal_cyan: '#7ed0f9',
-        neon_pulse: '#29ccb4',
         amber_noir: '#f4a261',
         velvet_sakura: '#f6a5b0'
     };
 
-    // Функция для применения тем
+    // Функція для застосування тем
     function applyTheme(theme) {
-        // Удаляем предыдущие стили темы
-        $('#maxsm_interface_mod_theme').remove();
+        $('#maxsm_themes_theme').remove();
 
         if (
             prevtheme !== '' &&
@@ -73,653 +121,25 @@
 
         prevtheme = theme;
 
-        // Если выбрано "Нет", просто удаляем стили
-        if (theme === 'default') return;
+        if (theme === 'default') {
+            removeAdditionalSettings();
+            return;
+        }
 
         var color = loaderColors[theme] || loaderColors["default"];
 
-        // ⚡⚡⚡ ТВОЙ GITHUB URL ДЛЯ SVG ⚡⚡⚡
-        //var svgUrl = "https://raw.githubusercontent.com/ko3ik/LMP/main/wwwroot/logo.svg";
-        var svgUrl = "https://raw.githubusercontent.com/ko3ik/LMP/main/wwwroot/logo.gif";
-        
-        
-        // Создаем новый стиль
-        var style = $('<style id="maxsm_interface_mod_theme"></style>');
+        var svgCode = encodeURIComponent("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"135\" height=\"140\" fill=\"".concat(color, "\"><rect width=\"10\" height=\"40\" y=\"100\" rx=\"6\"><animate attributeName=\"height\" begin=\"0s\" calcMode=\"linear\" dur=\"1s\" repeatCount=\"indefinite\" values=\"40;100;40\" keyTimes=\"0;0.5;1\"/></rect><rect width=\"10\" height=\"40\" x=\"20\" y=\"100\" rx=\"6\"><animate attributeName=\"height\" begin=\"0.2s\" calcMode=\"linear\" dur=\"1s\" repeatCount=\"indefinite\" values=\"40;100;40\" keyTimes=\"0;0.5;1\"/></rect><rect width=\"10\" height=\"40\" x=\"40\" y=\"100\" rx=\"6\"><animate attributeName=\"height\" begin=\"0.4s\" calcMode=\"linear\" dur=\"1s\" repeatCount=\"indefinite\" values=\"40;100;40\" keyTimes=\"0;0.5;1\"/></rect><rect width=\"10\" height=\"40\" x=\"60\" y=\"100\" rx=\"6\"><animate attributeName=\"height\" begin=\"0.6s\" calcMode=\"linear\" dur=\"1s\" repeatCount=\"indefinite\" values=\"40;100;40\" keyTimes=\"0;0.5;1\"/></rect><rect width=\"10\" height=\"40\" x=\"80\" y=\"100\" rx=\"6\"><animate attributeName=\"height\" begin=\"0.8s\" calcMode=\"linear\" dur=\"1s\" repeatCount=\"indefinite\" values=\"40;100;40\" keyTimes=\"0;0.5;1\"/></rect><rect width=\"10\" height=\"40\" x=\"100\" y=\"100\" rx=\"6\"><animate attributeName=\"height\" begin=\"1s\" calcMode=\"linear\" dur=\"1s\" repeatCount=\"indefinite\" values=\"40;100;40\" keyTimes=\"0;0.5;1\"/></rect><rect width=\"10\" height=\"40\" x=\"120\" y=\"100\" rx=\"6\"><animate attributeName=\"height\" begin=\"1.2s\" calcMode=\"linear\" dur=\"1s\" repeatCount=\"indefinite\" values=\"40;100;40\" keyTimes=\"0;0.5;1\"/></rect></svg>"));
 
-        // Базовые стили лоадера
-        var loaderStyles = `
-.screensaver__preload {
-    background: url("${svgUrl}") no-repeat 50% 50% !important;
-    background-size: 120px 120px !important;
-    pointer-events: none !important;
-}
-.activity__loader {
-    background: url("${svgUrl}") no-repeat 50% 50% !important;
-    background-size: 80px 80px !important;
-    display: none !important;
-    pointer-events: none !important;
-}
-.activity--load .activity__loader,
-.activity--preload .activity__loader {
-    display: block !important;
-}
-`;
-
-        // Определяем стили для разных тем
+        var style = $('<style id="maxsm_themes_theme"></style>');
+        
+        // Додаємо стилі для тем
         var themes = {
-            mint_dark: loaderStyles + `
-.navigation-bar__body
-{background: rgba(18, 32, 36, 0.96);
-}
-.card__quality,
- .card__type::after  {
-background: linear-gradient(to right, #1e6262, #3da18d);
-}
-html, body, .extensions
- {
-background: linear-gradient(135deg, #0a1b2a, #1a4036);
-color: #ffffff;
-}
-.company-start.icon--broken .company-start__icon,
-.explorer-card__head-img > img,
-.bookmarks-folder__layer,
-.card-more__box,
-.card__img
-,.extensions__block-add
-,.extensions__item
- {
-background-color: #1e2c2f;
-}
-.search-source.focus,
-.simple-button.focus,
-.menu__item.focus,
-.menu__item.traverse,
-.menu__item.hover,
-.full-start__button.focus,
-.full-descr__tag.focus,
-.player-panel .button.focus,
-.full-person.selector.focus,
-.tag-count.selector.focus,
-.full-review.focus {
-background: linear-gradient(to right, #1e6262, #3da18d);
-color: #fff;
-box-shadow: 0 0.0em 0.4em rgba(61, 161, 141, 0.0);
-}
-.selectbox-item.focus,
-.settings-folder.focus,
-.settings-param.focus {
-background: linear-gradient(to right, #1e6262, #3da18d);
-color: #fff;
-box-shadow: 0 0.0em 0.4em rgba(61, 161, 141, 0.0);
-border-radius: 0.5em 0 0 0.5em;
-}
-.full-episode.focus::after,
-.card-episode.focus .full-episode::after,
-.items-cards .selector.focus::after,  
-.card-more.focus .card-more__box::after,
-.card-episode.focus .full-episode::after,
-.card-episode.hover .full-episode::after,
-.card.focus .card__view::after,
-.card.hover .card__view::after,
-.torrent-item.focus::after,
-.online-prestige.selector.focus::after,
-.online-prestige--full.selector.focus::after,
-.explorer-card__head-img.selector.focus::after,
-.extensions__item.focus::after,
-.extensions__block-add.focus::after,
-.full-review-add.focus::after {
-border: 0.2em solid #3da18d;
-box-shadow: 0 0 0.8em rgba(61, 161, 141, 0.0);
-}
-.head__action.focus,
-.head__action.hover {
-background: linear-gradient(45deg, #3da18d, #1e6262);
-}
-.modal__content {
-background: rgba(18, 32, 36, 0.96);
-border: 0em solid rgba(18, 32, 36, 0.96);
-}
-.settings__content,
-.settings-input__content,
-.selectbox__content,
-.settings-input {
-background: rgba(18, 32, 36, 0.96);
-}
-.torrent-serial {
-background: rgba(0, 0, 0, 0.22);
-border: 0.2em solid rgba(0, 0, 0, 0.22);
-}
-.torrent-serial.focus {
-background-color: #1a3b36cc;
-border: 0.2em solid #3da18d;
-}
-`,
+            mint_dark: "\n.navigation-bar__body\n{background: rgba(18, 32, 36, 0.96);\n}\n.card__quality,\n .card__type::after  {\nbackground: linear-gradient(to right, #1e6262dd, #3da18ddd);\n}\n.screensaver__preload {\nbackground:url(\"data:image/svg+xml,".concat(svgCode, "\") no-repeat 50% 50%\n}\n.activity__loader {\nposition:absolute;\ntop:0;\nleft:0;\nwidth:100%;\nheight:100%;\ndisplay:none;\nbackground:url(\"data:image/svg+xml,").concat(svgCode, "\") no-repeat 50% 50%\n \n}\nhtml, body, .extensions\n {\nbackground: linear-gradient(135deg, #0a1b2a, #1a4036);\ncolor: #ffffff;\n}\n.company-start.icon--broken .company-start__icon,\n.explorer-card__head-img > img,\n.bookmarks-folder__layer,\n.card-more__box,\n.card__img\n,.extensions__block-add\n,.extensions__item\n {\nbackground-color: #1e2c2f;\n}\n.search-source.focus,\n.simple-button.focus,\n.menu__item.focus,\n.menu__item.traverse,\n.menu__item.hover,\n.full-start__button.focus,\n.full-descr__tag.focus,\n.player-panel .button.focus,\n.full-person.selector.focus,\n.tag-count.selector.focus,\n.full-review.focus {\nbackground: linear-gradient(to right, #1e6262, #3da18d);\ncolor: #fff;\nbox-shadow: 0 0.0em 0.4em rgba(61, 161, 141, 0.0);\n}\n.selectbox-item.focus,\n.settings-folder.focus,\n.settings-param.focus {\nbackground: linear-gradient(to right, #1e6262, #3da18d);\ncolor: #fff;\nbox-shadow: 0 0.0em 0.4em rgba(61, 161, 141, 0.0);\nborder-radius: 0.5em 0 0 0.5em;\n}\n.full-episode.focus::after,\n.card-episode.focus .full-episode::after,\n.items-cards .selector.focus::after,  \n.card-more.focus .card-more__box::after,\n.card-episode.focus .full-episode::after,\n.card-episode.hover .full-episode::after,\n.card.focus .card__view::after,\n.card.hover .card__view::after,\n.torrent-item.focus::after,\n.online-prestige.selector.focus::after,\n.online-prestige--full.selector.focus::after,\n.explorer-card__head-img.selector.focus::after,\n.extensions__item.focus::after,\n.extensions__block-add.focus::after,\n.full-review-add.focus::after {\nborder: 0.2em solid #3da18d;\nbox-shadow: 0 0 0.8em rgba(61, 161, 141, 0.0);\n}\n.head__action.focus,\n.head__action.hover {\nbackground: linear-gradient(45deg, #3da18d, #1e6262);\n}\n.modal__content {\nbackground: rgba(18, 32, 36, 0.96);\nborder: 0em solid rgba(18, 32, 36, 0.96);\n}\n.settings__content,\n.settings-input__content,\n.selectbox__content,\n.settings-input {\nbackground: rgba(18, 32, 36, 0.96);\n}\n.torrent-serial {\nbackground: rgba(0, 0, 0, 0.22);\nborder: 0.2em solid rgba(0, 0, 0, 0.22);\n}\n.torrent-serial.focus {\nbackground-color: #1a3b36cc;\nborder: 0.2em solid #3da18d;\n}\n"),
 
-            crystal_cyan: loaderStyles + `
-.navigation-bar__body
-{background: rgba(10, 25, 40, 0.96);
-}
-.card__quality,
- .card__type::after  {
-background: linear-gradient(to right, #00d2ff, #3a8ee6);
-}
-html, body, .extensions
- {
-background: linear-gradient(135deg, #081822, #104059);
-color: #ffffff;
-}
-.company-start.icon--broken .company-start__icon,
-.explorer-card__head-img > img,
-.bookmarks-folder__layer,
-.card-more__box,
-.card__img
-,.extensions__block-add
-,.extensions__item
- {
-background-color: #112b3a;
-}
-.search-source.focus,
-.simple-button.focus,
-.menu__item.focus,
-.menu__item.traverse,
-.menu__item.hover,
-.full-start__button.focus,
-.full-descr__tag.focus,
-.player-panel .button.focus,
-.full-person.selector.focus,
-.tag-count.selector.focus,
-.full-review.focus {
-background: linear-gradient(to right, #00d2ff, #3a8ee6);
-color: #fff;
-box-shadow: 0 0.0em 0.4em rgba(72, 216, 255, 0.0);
-}
-.selectbox-item.focus,
-.settings-folder.focus,
-.settings-param.focus {
-background: linear-gradient(to right, #00d2ff, #3a8ee6);
-color: #fff;
-box-shadow: 0 0.0em 0.4em rgba(72, 216, 255, 0.0);
-border-radius: 0.5em 0 0 0.5em;
-}
-.full-episode.focus::after,
-.card-episode.focus .full-episode::after,
-.items-cards .selector.focus::after,  
-.card-more.focus .card-more__box::after,
-.card-episode.focus .full-episode::after,
-.card-episode.hover .full-episode::after,
-.card.focus .card__view::after,
-.card.hover .card__view::after,
-.torrent-item.focus::after,
-.online-prestige.selector.focus::after,
-.online-prestige--full.selector.focus::after,
-.explorer-card__head-img.selector.focus::after,
-.extensions__item.focus::after,
-.extensions__block-add.focus::after,
-.full-review-add.focus::after {
-border: 0.2em solid #00d2ff;
-box-shadow: 0 0 0.8em rgba(72, 216, 255, 0.0);
-}
-.head__action.focus,
-.head__action.hover {
-background: linear-gradient(45deg, #00d2ff, #3a8ee6);
-}
-.modal__content {
-background: rgba(10, 25, 40, 0.96);
-border: 0em solid rgba(10, 25, 40, 0.96);
-}
-.settings__content,
-.settings-input__content,
-.selectbox__content,
-.settings-input {
-background: rgba(10, 25, 40, 0.96);
-}
-.torrent-serial {
-background: rgba(0, 0, 0, 0.22);
-border: 0.2em solid rgba(0, 0, 0, 0.22);
-}
-.torrent-serial.focus {
-background-color: #0c2e45cc;
-border: 0.2em solid #00d2ff;
-}
-`,
-
-            neon_pulse: loaderStyles + `
-.navigation-bar__body
-{background: rgba(10, 25, 40, 0.96);
-}
-.card__quality,
- .card__type::after  {
-background: linear-gradient(to right, #00d2ff, #3a8ee6);
-}
-html, body, .extensions
- {
-background: linear-gradient(135deg, #081822, #112380);
-color: #ffffff;
-}
-.company-start.icon--broken .company-start__icon,
-.explorer-card__head-img > img,
-.bookmarks-folder__layer,
-.card-more__box,
-.card__img
-,.extensions__block-add
-,.extensions__item
- {
-background-color: #112380;
-}
-.search-source.focus,
-.simple-button.focus,
-.menu__item.focus,
-.menu__item.traverse,
-.menu__item.hover,
-.full-start__button.focus,
-.full-descr__tag.focus,
-.player-panel .button.focus,
-.full-person.selector.focus,
-.tag-count.selector.focus,
-.full-review.focus {
-background: linear-gradient(to right, #00d2ff, #3a8ee6);
-color: #fff;
-box-shadow: 0 0.0em 0.4em rgba(72, 216, 255, 0.0);
-}
-.selectbox-item.focus,
-.settings-folder.focus,
-.settings-param.focus {
-background: linear-gradient(to right, #00d2ff, #3a8ee6);
-color: #fff;
-box-shadow: 0 0.0em 0.4em rgba(72, 216, 255, 0.0);
-border-radius: 0.5em 0 0 0.5em;
-}
-.full-episode.focus::after,
-.card-episode.focus .full-episode::after,
-.items-cards .selector.focus::after,  
-.card-more.focus .card-more__box::after,
-.card-episode.focus .full-episode::after,
-.card-episode.hover .full-episode::after,
-.card.focus .card__view::after,
-.card.hover .card__view::after,
-.torrent-item.focus::after,
-.online-prestige.selector.focus::after,
-.online-prestige--full.selector.focus::after,
-.explorer-card__head-img.selector.focus::after,
-.extensions__item.focus::after,
-.extensions__block-add.focus::after,
-.full-review-add.focus::after {
-border: 0.2em solid #00d2ff;
-box-shadow: 0 0 0.8em rgba(72, 216, 255, 0.0);
-}
-.head__action.focus,
-.head__action.hover {
-background: linear-gradient(45deg, #00d2ff, #3a8ee6);
-}
-.modal__content {
-background: rgba(10, 25, 40, 0.96);
-border: 0em solid rgba(10, 25, 40, 0.96);
-}
-.settings__content,
-.settings-input__content,
-.selectbox__content,
-.settings-input {
-background: rgba(10, 25, 40, 0.96);
-}
-.torrent-serial {
-background: rgba(0, 0, 0, 0.22);
-border: 0.2em solid rgba(0, 0, 0, 0.22);
-}
-.torrent-serial.focus {
-background-color: #a31d9fcc;
-border: 0.2em solid #00d2ff;
-}
-`,
-         
-            lime_energy: loaderStyles + `
-.navigation-bar__body {
-  background: rgba(20, 30, 10, 0.96);
-}
-.card__quality,
-.card__type::after {
-  background: linear-gradient(to right, #a8ff60, #64ff3d);
-}
-html, body, .extensions {
-  background: linear-gradient(135deg, #142d0b, #1b5e20);
-  color: #ffffff;
-}
-.company-start.icon--broken .company-start__icon,
-.explorer-card__head-img > img,
-.bookmarks-folder__layer,
-.card-more__box,
-.card__img,
-.extensions__block-add,
-.extensions__item {
-  background-color: #193a16;
-}
-.search-source.focus,
-.simple-button.focus,
-.menu__item.focus,
-.menu__item.traverse,
-.menu__item.hover,
-.full-start__button.focus,
-.full-descr__tag.focus,
-.player-panel .button.focus,
-.full-person.selector.focus,
-.tag-count.selector.focus,
-.full-review.focus {
-  background: linear-gradient(to right, #a8ff60, #64ff3d);
-  color: #000;
-  box-shadow: 0 0.0em 0.4em rgba(160, 255, 80, 0.3);
-}
-.selectbox-item.focus,
-.settings-folder.focus,
-.settings-param.focus {
-  background: linear-gradient(to right, #a8ff60, #64ff3d);
-  color: #000;
-  box-shadow: 0 0.0em 0.4em rgba(160, 255, 80, 0.3);
-  border-radius: 0.5em 0 0 0.5em;
-}
-.full-episode.focus::after,
-.card-episode.focus .full-episode::after,
-.items-cards .selector.focus::after,
-.card-more.focus .card-more__box::after,
-.card.focus .card__view::after,
-.card.hover .card__view::after,
-.torrent-item.focus::after,
-.extensions__item.focus::after,
-.extensions__block-add.focus::after {
-  border: 0.2em solid #9eff3a;
-  box-shadow: 0 0 0.8em rgba(160, 255, 80, 0.5);
-}
-.head__action.focus,
-.head__action.hover {
-  background: linear-gradient(45deg, #9eff3a, #64ff3d);
-}
-.modal__content {
-  background: rgba(20, 30, 10, 0.96);
-  border: 0em solid rgba(20, 30, 10, 0.96);
-}
-.settings__content,
-.settings-input__content,
-.selectbox__content,
-.settings-input {
-  background: rgba(20, 30, 10, 0.96);
-}
-.torrent-serial {
-  background: rgba(0, 0, 0, 0.22);
-  border: 0.2em solid rgba(0, 0, 0, 0.22);
-}
-.torrent-serial.focus {
-  background-color: #214a16cc;
-  border: 0.2em solid #9eff3a;
-}
-`,
-         
-            deep_aurora: loaderStyles + `
-.navigation-bar__body
-{background: rgba(18, 34, 59, 0.96);
-}
-.card__quality,
- .card__type::after  {
-background: linear-gradient(to right, #2c6fc1, #7e7ed9);
-}
-html, body, .extensions
- {
-background: linear-gradient(135deg, #1a102b, #0a1c3f);
-color: #ffffff;
-}
-.company-start.icon--broken .company-start__icon,
-.explorer-card__head-img > img,
-.bookmarks-folder__layer,
-.card-more__box,
-.card__img
-,.extensions__block-add
-,.extensions__item
- {
-background-color: #171f3a;
-}
-.search-source.focus,
-.simple-button.focus,
-.menu__item.focus,
-.menu__item.traverse,
-.menu__item.hover,
-.full-start__button.focus,
-.full-descr__tag.focus,
-.player-panel .button.focus,
-.full-person.selector.focus,
-.tag-count.selector.focus,
-.full-review.focus {
-background: linear-gradient(to right, #2c6fc1, #7e7ed9);
-color: #fff;
-box-shadow: 0 0.0em 0.4em rgba(124, 194, 255, 0.0);
-}
-.selectbox-item.focus,
-.settings-folder.focus,
-.settings-param.focus {
-background: linear-gradient(to right, #2c6fc1, #7e7ed9);
-color: #fff;
-box-shadow: 0 0.0em 0.4em rgba(124, 194, 255, 0.0);
-border-radius: 0.5em 0 0 0.5em;
-}
-.full-episode.focus::after,
-.card-episode.focus .full-episode::after,
-.items-cards .selector.focus::after,  
-.card-more.focus .card-more__box::after,
-.card-episode.focus .full-episode::after,
-.card-episode.hover .full-episode::after,
-.card.focus .card__view::after,
-.card.hover .card__view::after,
-.torrent-item.focus::after,
-.online-prestige.selector.focus::after,
-.online-prestige--full.selector.focus::after,
-.explorer-card__head-img.selector.focus::after,
-.extensions__item.focus::after,
-.extensions__block-add.focus::after,
-.full-review-add.focus::after {
-border: 0.2em solid #7e7ed9;
-box-shadow: 0 0 0.8em rgba(124, 194, 255, 0.0);
-}
-.head__action.focus,
-.head__action.hover {
-background: linear-gradient(45deg, #7e7ed9, #2c6fc1);
-}
-.modal__content {
-background: rgba(18, 34, 59, 0.96);
-border: 0em solid rgba(18, 34, 59, 0.96);
-}
-.settings__content,
-.settings-input__content,
-.selectbox__content,
-.settings-input {
-background: rgba(18, 34, 59, 0.96);
-}
-.torrent-serial {
-background: rgba(0, 0, 0, 0.22);
-border: 0.2em solid rgba(0, 0, 0, 0.22);
-}
-.torrent-serial.focus {
-background-color: #1a102bcc;
-border: 0.2em solid #7e7ed9;
-}
-`,
-
-            amber_noir: loaderStyles + `
-.navigation-bar__body
-{background: rgba(28, 18, 10, 0.96);
-}
-.card__quality,
- .card__type::after {
-background: linear-gradient(to right, #f4a261, #e76f51);
-}
-html, body, .extensions
- {
-background: linear-gradient(135deg, #1f0e04, #3b2a1e);
-color: #ffffff;
-}
-.company-start.icon--broken .company-start__icon,
-.explorer-card__head-img > img,
-.bookmarks-folder__layer,
-.card-more__box,
-.card__img
-,.extensions__block-add
-,.extensions__item
- {
-background-color: #2a1c11;
-}
-.search-source.focus,
-.simple-button.focus,
-.menu__item.focus,
-.menu__item.traverse,
-.menu__item.hover,
-.full-start__button.focus,
-.full-descr__tag.focus,
-.player-panel .button.focus,
-.full-person.selector.focus,
-.tag-count.selector.focus,
-.full-review.focus {
-background: linear-gradient(to right, #f4a261, #e76f51);
-color: #fff;
-box-shadow: 0 0.0em 0.4em rgba(255, 160, 90, 0.0);
-}
-.selectbox-item.focus,
-.settings-folder.focus,
-.settings-param.focus {
-background: linear-gradient(to right, #f4a261, #e76f51);
-color: #fff;
-box-shadow: 0 0.0em 0.4em rgba(255, 160, 90, 0.0);
-border-radius: 0.5em 0 0 0.5em;
-}
-.full-episode.focus::after,
-.card-episode.focus .full-episode::after,
-.items-cards .selector.focus::after,  
-.card-more.focus .card-more__box::after,
-.card-episode.focus .full-episode::after,
-.card-episode.hover .full-episode::after,
-.card.focus .card__view::after,
-.card.hover .card__view::after,
-.torrent-item.focus::after,
-.online-prestige.selector.focus::after,
-.online-prestige--full.selector.focus::after,
-.explorer-card__head-img.selector.focus::after,
-.extensions__item.focus::after,
-.extensions__block-add.focus::after,
-.full-review-add.focus::after {
-border: 0.2em solid #f4a261;
-box-shadow: 0 0 0.8em rgba(255, 160, 90, 0.0);
-}
-.head__action.focus,
-.head__action.hover {
-background: linear-gradient(45deg, #f4a261, #e76f51);
-}
-.modal__content {
-background: rgba(28, 18, 10, 0.96);
-border: 0em solid rgba(28, 18, 10, 0.96);
-}
-.settings__content,
-.settings-input__content,
-.selectbox__content,
-.settings-input {
-background: rgba(28, 18, 10, 0.96);
-}
-.torrent-serial {
-background: rgba(0, 0, 0, 0.22);
-border: 0.2em solid rgba(0, 0, 0, 0.22);
-}
-.torrent-serial.focus {
-background-color: #3b2412cc;
-border: 0.2em solid #f4a261;
-}
-`,
-
-            velvet_sakura: loaderStyles + `
-.navigation-bar__body
-{background: rgba(56, 32, 45, 0.96);
-}
-.card__quality,
- .card__type::after  {
-background: linear-gradient(to right, #f6a5b0, #f9b8d3);
-}
-html, body, .extensions
- {
-background: linear-gradient(135deg, #4b0e2b, #7c2a57);
-color: #ffffff;
-}
-.company-start.icon--broken .company-start__icon,
-.explorer-card__head-img > img,
-.bookmarks-folder__layer,
-.card-more__box,
-.card__img
-,.extensions__block-add
-,.extensions__item
- {
-background-color: #5c0f3f;
-}
-.search-source.focus,
-.simple-button.focus,
-.menu__item.focus,
-.menu__item.traverse,
-.menu__item.hover,
-.full-start__button.focus,
-.full-descr__tag.focus,
-.player-panel .button.focus,
-.full-person.selector.focus,
-.tag-count.selector.focus,
-.full-review.focus {
-background: linear-gradient(to right, #f6a5b0, #f9b8d3);
-color: #fff;
-box-shadow: 0 0.0em 0.4em rgba(246, 165, 176, 0.0);
-}
-.selectbox-item.focus,
-.settings-folder.focus,
-.settings-param.focus {
-background: linear-gradient(to right, #f6a5b0, #f9b8d3);
-color: #fff;
-box-shadow: 0 0.0em 0.4em rgba(246, 165, 176, 0.0);
-border-radius: 0.5em 0 0 0.5em;
-}
-.full-episode.focus::after,
-.card-episode.focus .full-episode::after,
-.items-cards .selector.focus::after,  
-.card-more.focus .card-more__box::after,
-.card-episode.focus .full-episode::after,
-.card-episode.hover .full-episode::after,
-.card.focus .card__view::after,
-.card.hover .card__view::after,
-.torrent-item.focus::after,
-.online-prestige.selector.focus::after,
-.online-prestige--full.selector.focus::after,
-.explorer-card__head-img.selector.focus::after,
-.extensions__item.focus::after,
-.extensions__block-add.focus::after,
-.full-review-add.focus::after {
-border: 0.2em solid #f6a5b0;
-box-shadow: 0 0 0.8em rgba(246, 165, 176, 0.0);
-}
-.head__action.focus,
-.head__action.hover {
-background: linear-gradient(45deg, #f9b8d3, #f6a5b0);
-}
-.modal__content {
-background: rgba(56, 32, 45, 0.96);
-border: 0em solid rgba(56, 32, 45, 0.96);
-}
-.settings__content,
-.settings-input__content,
-.selectbox__content,
-.settings-input {
-background: rgba(56, 32, 45, 0.96);
-}
-.torrent-serial {
-background: rgba(0, 0, 0, 0.22);
-border: 0.2em solid rgba(0, 0, 0, 0.22);
-}
-.torrent-serial.focus {
-background-color: #7c2a57cc;
-border: 0.2em solid #f6a5b0;
-}
-`
+            crystal_cyan: "\n.navigation-bar__body\n{background: rgba(10, 25, 40, 0.96);\n}\n.card__quality,\n .card__type::after  {\nbackground: linear-gradient(to right, #00d2ffdd, #3a8ee6dd);\n}\n.screensaver__preload {\nbackground:url(\"data:image/svg+xml,".concat(svgCode, "\") no-repeat 50% 50%\n}\n.activity__loader {\nposition:absolute;\ntop:0;\nleft:0;\nwidth:100%;\nheight:100%;\ndisplay:none;\nbackground:url(\"data:image/svg+xml,").concat(svgCode, "\") no-repeat 50% 50%\n \n}\nhtml, body, .extensions\n {\nbackground: linear-gradient(135deg, #081822, #104059);\ncolor: #ffffff;\n}\n.company-start.icon--broken .company-start__icon,\n.explorer-card__head-img > img,\n.bookmarks-folder__layer,\n.card-more__box,\n.card__img\n,.extensions__block-add\n,.extensions__item\n {\nbackground-color: #112b3a;\n}\n.search-source.focus,\n.simple-button.focus,\n.menu__item.focus,\n.menu__item.traverse,\n.menu__item.hover,\n.full-start__button.focus,\n.full-descr__tag.focus,\n.player-panel .button.focus,\n.full-person.selector.focus,\n.tag-count.selector.focus,\n.full-review.focus {\nbackground: linear-gradient(to right, #00d2ff, #3a8ee6);\ncolor: #fff;\nbox-shadow: 0 0.0em 0.4em rgba(72, 216, 255, 0.0);\n}\n.selectbox-item.focus,\n.settings-folder.focus,\n.settings-param.focus {\nbackground: linear-gradient(to right, #00d2ff, #3a8ee6);\ncolor: #fff;\nbox-shadow: 0 0.0em 0.4em rgba(72, 216, 255, 0.0);\nborder-radius: 0.5em 0 0 0.5em;\n}\n.full-episode.focus::after,\n.card-episode.focus .full-episode::after,\n.items-cards .selector.focus::after,  \n.card-more.focus .card-more__box::after,\n.card-episode.focus .full-episode::after,\n.card-episode.hover .full-episode::after,\n.card.focus .card__view::after,\n.card.hover .card__view::after,\n.torrent-item.focus::after,\n.online-prestige.selector.focus::after,\n.online-prestige--full.selector.focus::after,\n.explorer-card__head-img.selector.focus::after,\n.extensions__item.focus::after,\n.extensions__block-add.focus::after,\n.full-review-add.focus::after {\nborder: 0.2em solid #00d2ff;\nbox-shadow: 0 0 0.8em rgba(72, 216, 255, 0.0);\n}\n.head__action.focus,\n.head__action.hover {\nbackground: linear-gradient(45deg, #00d2ff, #3a8ee6);\n}\n.modal__content {\nbackground: rgba(10, 25, 40, 0.96);\nborder: 0em solid rgba(10, 25, 40, 0.96);\n}\n.settings__content,\n.settings-input__content,\n.selectbox__content,\n.settings-input {\nbackground: rgba(10, 25, 40, 0.96);\n}\n.torrent-serial {\nbackground: rgba(0, 0, 0, 0.22);\nborder: 0.2em solid rgba(0, 0, 0, 0.22);\n}\n.torrent-serial.focus {\nbackground-color: #0c2e45cc;\nborder: 0.2em solid #00d2ff;\n}\n"
         };
 
-        // Устанавливаем стили для выбранной темы
         style.html(themes[theme] || '');
-
-        // Добавляем стиль в head
         $('head').append(style);
 
         if (onetime === false) {
@@ -729,7 +149,7 @@ border: 0.2em solid #f6a5b0;
             fix_lang();
         }
     }
-    
+
     function fix_lang() {
        Lampa.Lang.add({
         tv_status_returning_series: {
@@ -762,125 +182,41 @@ border: 0.2em solid #f6a5b0;
       });
     }
 
-    function removeFromSettingsMenu() {
-        // Скрываем всё, что плохо сочетается с плагином тем
+    function removeAdditionalSettings() {
         Lampa.Settings.listener.follow('open', function(e) {
-            if (e.name == 'interface') {
-                e.body.find('[data-name="light_version"]').remove();
-                e.body.find('[data-name="background"]').remove();
-                e.body.find('[data-name="background_type"]').remove();
-                e.body.find('[data-name="card_interfice_type"]').remove();
-                e.body.find('[data-name="glass_style"]').prev('.settings-param-title').remove();
-                e.body.find('[data-name="glass_style"]').remove();
-                e.body.find('[data-name="glass_opacity"]').remove();
-                e.body.find('[data-name="card_interfice_poster"]').prev('.settings-param-title').remove();
-                e.body.find('[data-name="card_interfice_poster"]').remove();
-                e.body.find('[data-name="card_interfice_cover"]').remove();
-                e.body.find('[data-name="advanced_animation"]').remove();
+            if (e.name == 'maxsm_themes') {
+                e.body.find('[data-name="maxsm_themes_animations"]').remove();
+                e.body.find('[data-name="maxsm_themes_translate_tv"]').remove();
+                e.body.find('[data-name="maxsm_themes_incardtemplate"]').remove();
+                e.body.find('[data-name="maxsm_themes_bigbuttons"]').remove();
             }
-        });
-        // Настройки интерфейса под темы
-        Lampa.Storage.set('light_version', 'false');
-        Lampa.Storage.set('background', 'false');
-        Lampa.Storage.set('card_interfice_type', 'new');
-        Lampa.Storage.set('glass_style', 'false');
-        Lampa.Storage.set('card_interfice_poster', 'false');
-        Lampa.Storage.set('card_interfice_cover', 'true');
-        Lampa.Storage.set('advanced_animation', 'false');
-
+        });        
     }
 
-    // Дополнительные Шаблоны, не меняющиеся от цветовых стилей    
-    function forall() {
-        // Шаблон карточки, где год перенесен выше названия
-        Lampa.Template.add('card', "<div class=\"card selector layer--visible layer--render\">\n    <div class=\"card__view\">\n        <img src=\"./img/img_load.svg\" class=\"card__img\" />\n\n        <div class=\"card__icons\">\n            <div class=\"card__icons-inner\">\n                \n            </div>\n        </div>\n    <div class=\"card__age\">{release_year}</div>\n    </div>\n\n    <div class=\"card__title\">{title}</div>\n    </div>");
-        // Шаблон карточки выхода эпизода, выкинем футер из card_episode, год и название на карточку
-        Lampa.Template.add('card_episode', "<div class=\"card-episode selector layer--visible layer--render\">\n    <div class=\"card-episode__body\">\n        <div class=\"full-episode\">\n            <div class=\"full-episode__img\">\n                <img />\n            </div>\n\n            <div class=\"full-episode__body\">\n     <div class=\"card__title\">{title}</div>\n            <div class=\"card__age\">{release_year}</div>\n            <div class=\"full-episode__num hide\">{num}</div>\n                <div class=\"full-episode__name\">{name}</div>\n                <div class=\"full-episode__date\">{date}</div>\n            </div>\n        </div>\n    </div>\n    <div class=\"card-episode__footer hide\">\n        <div class=\"card__imgbox\">\n            <div class=\"card__view\">\n                <img class=\"card__img\" />\n            </div>\n        </div>\n\n        <div class=\"card__left\">\n            <div class=\"card__title\">{title}</div>\n            <div class=\"card__age\">{release_year}</div>\n        </div>\n    </div>\n</div>");
-        // Стили 
-          // Подтянем перевод для плашки Сериал
-        var tv_caption = Lampa.Lang.translate('maxsm_themes_tvcaption');
-        var style = "\n        <style id=\"maxsm_interface_mod_theme_forall\">\n " +
-            // Firefox
-            // "@-moz-document url-prefix() {    .full-start__background {        opacity: 0.7 !important;        filter: none !important; /* Отключаем фильтры для Firefox */    }" +   
-            // "@-moz-document url-prefix() {    body {        background: #0a0a0a !important; /*Заменяем градиент на сплошной цвет */    }}" +
-            // По центру в мобилке
-            "@media screen and (max-width: 480px) { .full-start-new__head, .full-start-new__title, .full-start__title-original, .full-start__rate, .full-start-new__reactions, .full-start-new__rate-line, .full-start-new__buttons, .full-start-new__details, .full-start-new__tagline { -webkit-justify-content: center; justify-content: center; text-align: center; max-width: 100%; }}" +
-            "@media screen and (max-width: 480px) { .full-start-new__right { background: -webkit-gradient(linear, left top, left bottom, from(rgba(0, 0, 0, 0)), to(rgba(0, 0, 0, 0))); background: -webkit-linear-gradient(top, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 100%); background: -o-linear-gradient(top, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 100%); background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 100%);}}" +
-            // Круглые чек-боксы
-            ".selectbox-item__checkbox\n {\nborder-radius: 100%\n}\n" +
-            ".selectbox-item--checked .selectbox-item__checkbox\n {\nbackground: #ccc;\n}\n" +
-            //  Рейтинг внутри карточки
-            ".full-start-new__rate-line .full-start__pg {\n    font-size: 1em;\nbackground: #fff;\n    color: #000;\n}\n." +
-            ".full-start__rate \n{\n     border-radius: 0.25em;\n padding: 0.3em;\n background-color: rgba(0, 0, 0, 0.3);\n}\n" +
-            ".full-start__pg, .full-start__status\n {\nfont-size: 1em;\nbackground: #fff;\n    color: #000;\n}\n" +
-            // Докручиваем плашки на карточках стилями 
-            // Заголовок
-            ".card__title {\n                    height: 3.6em;\n                    text-overflow: ellipsis;\n                     -o-text-overflow: ellipsis;\n                    text-overflow: ellipsis;\n                    -webkit-line-clamp: 3;\n                    line-clamp: 3;\n                }\n " +
-            // Год
-            ".card__age {\n  position: absolute;\n  right: 0em;\n  bottom: 0em;\n  z-index: 10;\n  background: rgba(0, 0, 0, 0.6);\n  color: #ffffff;\n  font-weight: 700;\n  padding: 0.4em 0.6em;\n    -webkit-border-radius: 0.48em 0 0.48em 0;\n     -moz-border-radius: 0.48em 0 0.48em 0;\n          border-radius: 0.48em 0 0.48em 0;\nline-height: 1.0;\nfont-size: 1.0em;\n}\n " +
-            // Рейтинг
-            ".card__vote {\n  position: absolute;\n  bottom: auto; \n right: 0em;\n  top: 0em;\n  background: rgba(0, 0, 0, 0.6);\n    font-weight: 700;\n  color: #fff;\n -webkit-border-radius: 0 0.34em 0 0.34em;\n     -moz-border-radius: 0 0.34em 0 0.34em;\n          border-radius: 0 0.34em 0 0.34em;\nline-height: 1.0;\nfont-size: 1.4em;\n}\n  " +
-            // Тип (Сериал)
-            //".card__type  {\n  position: absolute;\n  bottom: auto; \n left: 0em; \nright: auto;\n  top: 0em;\n  background: rgba(0, 0, 0, 0.6);\n  color: #fff;\n  font-weight: 700;\n  padding: 0.4em 0.6em;\n  -webkit-border-radius: 0.4em 0 0.4em 0;\n     -moz-border-radius: 0.4em 0 0.4em 0;\n          border-radius: 0.4em 0 0.4em 0;\nline-height: 1.0;\nfont-size: 1.0em;\n}\n " +
-            //".card--tv .card__type {\n  color: #fff;\n}\n" +
-            ".card--tv .card__type,\n.card__type {\n  font-size: 1em;\n  background: transparent;\n color: transparent;\n left: 0;\n  top: 0;\n}\n" + 
-              // Воткнуть в нее с переводом
-            ".card__type::after {\n  background: url('https://raw.githubusercontent.com/нік на гітхаб /репозиторій/main/ім'я іконки.png') no-repeat center center / 120% !important;\n  filter: drop-shadow(0 0 5px #0ff21e);\n  content: '';\n  position: absolute;\n  left: 0.1em;\n  top: 0.1em;\n width: 1.8em;\n  height: 1.8em;\n  border-radius: 0.4em 0.4em 0.4em 0.4em;\n}" +
-            // Иконки закладок и т.д.
-            ".card__icons {\n  position: absolute;\n  top: 2em;\n  left: 0;\n  right: auto;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -moz-box;\n  display: -ms-flexbox;\n  display: flex;\n  -webkit-box-pack: center;\n  -webkit-justify-content: center;\n     -moz-box-pack: center;\n      -ms-flex-pack: center;\n          justify-content: center;\n background: rgba(0, 0, 0, 0.6);\n  color: #fff;\n    -webkit-border-radius: 0 0.5em 0.5em 0;\n     -moz-border-radius: 0 0.5em 0.5em 0;\n          border-radius: 0 0.5em 0.5em 0;\n}\n" +
-            ".card__icons-inner {\n  background: rgba(0, 0, 0, 0); \n}\n" +
-            // Статус расширенных закладок
-            ".card__marker {\n position: absolute;\n  left: 0em;\n  top: 4em;\n  bottom: auto; \n  background: rgba(0, 0, 0, 0.6);\n  -webkit-border-radius: 0 0.5em 0.5em 0;\n     -moz-border-radius: 0 0.5em 0.5em 0;\n          border-radius: 0 0.5em 0.5em 0;\n  font-weight: 700;\n font-size: 1.0em;\n   padding: 0.4em 0.6em;\n    display: -webkit-box;\n  display: -webkit-flex;\n  display: -moz-box;\n  display: -ms-flexbox;\n  display: flex;\n  -webkit-box-align: center;\n  -webkit-align-items: center;\n     -moz-box-align: center;\n      -ms-flex-align: center;\n          align-items: center;\n  line-height: 1.2;\nmax-width: min(12em, 95%);\nbox-sizing: border-box;\n}\n" +
-            // На маленьких экранах обрезаем, на больших полностью
-            ".card__marker > span {\n max-width: min(12em, 95%);\n}\n" +
-            // отметка качества background: rgba(0, 0, 0, 0.6);\n  
-            ".card__quality {\n  position: absolute;\n  left: 0em;\n right: auto;\n  bottom: 0em;\n  padding: 0.2em 0.3em;\n  color: #1c3178;\n font-weight: 700;\n  font-size: 1.0em;\n  -webkit-border-radius: 0 0.5em 0.5em 0;\n  -moz-border-radius: 0 0.5em 0.5em 0;\n  border-radius: 0 0.5em 0.5em 0;\n  text-transform: uppercase;\n}\n" +
-            // Уменьшаем расстояние между рядами только для карточках в списках
-            ".items-line.items-line--type-cards + .items-line.items-line--type-cards  {\nmargin-top: 1em;\n}\n" +
-            // Так же широкие карты фиксим, чтобы не было отскока нижнего ряда, делаем отступ снизу
-            ".card--small .card__view {\nmargin-bottom: 2em;\n}\n" +
-            // Уменьшаем высоту после удаления футера, нужно для card_episode
-            ".items-line--type-cards {\n min-height: 18em;\n}\n" +
-            // Внутри карточки информация стремится к нижней границе экрана
-            "@media screen and (min-width: 580px) {\n.full-start-new {\nmin-height: 80vh;\ndisplay: flex\n}\n}\n" +
-            // Делаем, чтобы кнопки были большими, если экран большой, и всегда маленькими на мелеом экране
-            //".full-start-new__buttons .full-start__button:not(.focus) span {\ndisplay: inline ;\n}\n@media screen and (max-width: 580px) {\n.full-start-new__buttons {\noverflow: auto;\n}\n.full-start-new__buttons .full-start__button:not(.focus) span {\ndisplay: none;\n}\n}\n" +
-            // Постер в карточке, менее затемнен чем в стоке
-            ".full-start__background.loaded {\nopacity: 0.8;\n}\n.full-start__background.dim {\nopacity: 0.2;\n}\n" +
-            // Скругления у большого числа элементов
-            ".explorer__files .torrent-filter .simple-button {\nfont-size: 1.2em;\n-webkit-border-radius: 0.5em;\n-moz-border-radius: 0.5em;\nborder-radius: 0.5em;\n}\n" +
-            ".full-review-add,\n.full-review,\n.extensions__item,\n.extensions__block-add,\n.search-source,\n.bookmarks-folder__layer,\n.bookmarks-folder__body,\n.card__img,\n.card__promo,\n.full-episode--next .full-episode__img:after,\n.full-episode__img img,\n.full-episode__body,\n.full-person__photo,\n.card-more__box,\n.full-start__button,\n.simple-button,\n.register {\nborder-radius: 0.5em;\n}\n" +
-            ".extensions__item.focus::after,\n.extensions__block-add.focus::after,\n.full-episode.focus::after,\n.full-review-add.focus::after,\n.card-parser.focus::after,\n.card-episode.focus .full-episode::after,\n.card-episode.hover .full-episode::after,\n.card.focus .card__view::after,\n.card.hover .card__view::after,\n.card-more.focus .card-more__box::after,\n.register.focus::after {\nborder-radius: 1em;\n}\n" +
-            ".search-source.focus,\n.simple-button.focus,\n.menu__item.focus,\n.menu__item.traverse,\n.menu__item.hover,\n.full-start__button.focus,\n.full-descr__tag.focus,\n.player-panel .button.focus,\n.full-person.selector.focus,\n.tag-count.selector.focus {\nborder-radius: 0.5em;\n}\n" +
-            // Пробуем немного анимацмм
-            ".card\n{transform: scale(1);\ntransition: transform 0.3s ease;\n}\n" +
-            ".card.focus\n{transform: scale(1.03);\n}\n" +
-            ".torrent-item,\n.online-prestige\n{transform: scale(1);\ntransition: transform 0.3s ease;\n}\n" +
-            ".torrent-item.focus,\n.online-prestige.focus\n{transform: scale(1.01);\n}\n" +
-            ".extensions__item,\n.extensions__block-add,\n.full-review-add,\n.full-review,\n.tag-count,\n.full-person,\n.full-episode,\n.simple-button,\n.full-start__button,\n.items-cards .selector,\n.card-more,\n.explorer-card__head-img.selector,\n.card-episode\n{transform: scale(1);\ntransition: transform 0.3s ease;\n}\n" +
-            ".extensions__item.focus,\n.extensions__block-add.focus,\n.full-review-add.focus,\n.full-review.focus,\n.tag-count.focus,\n.full-person.focus,\n.full-episode.focus,\n.simple-button.focus,\n.full-start__button.focus,\n.items-cards .selector.focus,\n.card-more.focus,\n.explorer-card__head-img.selector.focus,\n.card-episode.focus\n{transform: scale(1.03);\n}\n" +
-            ".menu__item {\n  transition: transform 0.3s ease;\n}\n" +
-            ".menu__item.focus {\n transform: translateX(-0.2em);\n}\n" +
-            ".selectbox-item,\n.settings-folder,\n.settings-param {\n transition: transform 0.3s ease;\n}\n" +
-            ".selectbox-item.focus,\n.settings-folder.focus,\n.settings-param.focus {\n transform: translateX(0.2em);\n}\n" +
-            // Меню слева
-            ".menu__item.focus {border-radius: 0 0.5em 0.5em 0;\n}\n" +
-            ".menu__list {\npadding-left: 0em;\n}\n" +
-            // Оставим иконки белыми в левом Меню
-            ".menu__item.focus .menu__ico {\n   -webkit-filter: invert(1);\n    filter: invert(1);\n }\n " +
-            // Белые иконки в бошке
-            // ".head__action.focus, .head__action.hover {\ncolor: fff;\n}\n" +
-            "</style>\n";
-        Lampa.Template.add('card_css', style);
-        $('body').append(Lampa.Template.get('card_css', {}, true));
-    }
-
-    // Функция инициализации плагина
     function startPlugin() {
-        // Список доступных тем
-        var availableThemes = ['mint_dark', 'deep_aurora', 'crystal_cyan', 'neon_pulse', 'lime_energy', 'amber_noir', 'velvet_sakura', 'default'];
+        var availableThemes = ['mint_dark', 'deep_aurora', 'crystal_cyan', 'amber_noir', 'velvet_sakura', 'default'];
+        
+        if (!localStorage.getItem('maxsm_themes_animations')) {
+            localStorage.setItem('maxsm_themes_animations', 'true');
+        }
+        if (!localStorage.getItem('maxsm_themes_translate_tv')) {
+            localStorage.setItem('maxsm_themes_translate_tv', 'true');
+        }
+        if (!localStorage.getItem('maxsm_themes_incardtemplate')) {
+            localStorage.setItem('maxsm_themes_incardtemplate', 'false');
+        }   
+        if (!localStorage.getItem('maxsm_themes_bigbuttons')) {
+            localStorage.setItem('maxsm_themes_bigbuttons', 'false');
+        }
+
+        Lampa.SettingsApi.addComponent({
+            component: "maxsm_themes",
+            name: Lampa.Lang.translate('maxsm_themes'),
+            icon: themes_svg
+        });
+
         Lampa.SettingsApi.addParam({
-            component: 'interface',
+            component: 'maxsm_themes',
             param: {
                 name: 'maxsm_themes_selected',
                 type: 'select',
@@ -888,8 +224,6 @@ border: 0.2em solid #f6a5b0;
                     mint_dark: 'Mint Dark',
                     deep_aurora: 'Deep Aurora',
                     crystal_cyan: 'Crystal Cyan',
-                    neon_pulse: 'Neon Pulse',
-                    lime_energy: 'Lime Energy',
                     amber_noir: 'Amber Noir',
                     velvet_sakura: 'Velvet Sakura',
                     default: 'LAMPA'
@@ -897,7 +231,7 @@ border: 0.2em solid #f6a5b0;
                 "default": 'Mint Dark'
             },
             field: {
-                name: Lampa.Lang.translate('maxsm_themes'),
+                name: Lampa.Lang.translate('maxsm_themes_theme'),
                 description: ''
             },
             onChange: function onChange(value) {
@@ -906,16 +240,9 @@ border: 0.2em solid #f6a5b0;
                 applyTheme(value);
             }
         });
-        Lampa.Settings.listener.follow('open', function(e) {
-            if (e.name == 'interface') {
-                $("div[data-name=interface_size]").after($("div[data-name=maxsm_themes_selected]"));
-            }
-        });
 
-        // Применяем настройки и проверяем, существует ли выбранная тема
         var savedTheme = Lampa.Storage.get('maxsm_themes_selected', 'mint_dark');
         if (availableThemes.indexOf(savedTheme) === -1) {
-            // Если сохраненная тема не существует, ставим по умолчанию
             Lampa.Storage.set('maxsm_themes_selected', 'mint_dark');
             savedTheme = 'mint_dark';
         }
@@ -923,7 +250,6 @@ border: 0.2em solid #f6a5b0;
         applyTheme(maxsm_themes.settings.theme);
     }
 
-    // Ждем загрузки приложения и запускаем плагин
     if (window.appready) {
         startPlugin();
     } else {
@@ -933,32 +259,12 @@ border: 0.2em solid #f6a5b0;
             }
         });
     }
-    // Регистрация плагина в манифесте
+
     Lampa.Manifest.plugins = {
         name: 'maxsm_themes',
-        version: '2.5.0',
+        version: '2.6.1',
         description: 'maxsm_themes'
     };
 
-    // Экспортируем объект плагина для внешнего доступа
     window.maxsm_themes = maxsm_themes;
 })();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
