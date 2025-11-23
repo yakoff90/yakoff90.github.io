@@ -1,211 +1,42 @@
+
 /**
  * Quality+Mod - Enhanced Quality Plugin for Lampa
  * --------------------------------------------------------------------------------
- * Автоматично визначає та показує якість релізу з JacRed:
- *  - Мітки на повній і спискових картках
- *  - Спрощені (4K/FHD/HD/SD, TS/TC/CAM) або повні підписи — перемикається
- *  - Ручні оверрайди для окремих ID
- *  - Кеш 24h + тихе фонове оновлення
- *  - Черга запитів (до 12 парал.), проксі (HTTPS), поліфіли для старих WebView
- *
- * Налаштування: Інтерфейс → «Мітки якості»
+ * Розширений плагін для автоматичного визначення та відображення якості відео
+ * Інтегрується з JacRed API для пошуку найкращих доступних релізів.
+ * --------------------------------------------------------------------------------
+ * Основні можливості:
+ * - Автоматичне визначення якості відео (4K, FHD, HD, SD) з торрент-трекера JacRed
+ * - Розширена система парсингу якості з розпізнаванням роздільності та джерела
+ * - Підтримка спрощених міток якості (4K, FHD, TS, TC тощо) з можливістю налаштування
+ * - Відображення міток якості на повних картках та спискових картках з кастомними стилями
+ * - Ручні перевизначення якості для конкретних ID контенту
+ * - Розумна система кешування з фоновим оновленням (24 години валідності)
+ * - Оптимізована черга запитів з обмеженням паралельності (до 12 одночасних запитів)
+ * - Підтримка проксі для обходу CORS обмежень
+ * - Можливість відключення якості для серіалів
+ * - Детальне логування для налагодження
+ * --------------------------------------------------------------------------------
+ * Конфігурація:
+ * - Налаштування кольорів, шрифтів та розмірів міток
+ * - Включення/виключення якості для серіалів
+ * - Використання спрощених міток якості
+ * - Налаштування проксі та таймаутів
+ * - Ручні перевизначення для конкретних ID
+ * - Детальне логування різних компонентів
  */
-
-
-// --- LQE TV-BOX COMPAT LAYER ---------------------------------
-// Цей блок робить плагін життєздатним у старих WebView без fetch/Promise/localStorage/CORS
-(function () {
-    // 1. Проміси (дуже простий поліфіл, достатньо для then/catch)
-    if (typeof window.Promise !== 'function') {
-        (function () {
-            function SimplePromise(executor) {
-                var self = this;
-                self._state = 'pending';
-                self._value = undefined;
-                self._handlers = [];
-
-                function resolve(value) {
-                    if (self._state !== 'pending') return;
-                    self._state = 'fulfilled';
-                    self._value = value;
-                    run();
-                }
-
-                function reject(reason) {
-                    if (self._state !== 'pending') return;
-                    self._state = 'rejected';
-                    self._value = reason;
-                    run();
-                }
-
-                function run() {
-                    setTimeout(function () {
-                        for (var i = 0; i < self._handlers.length; i++) {
-                            handle(self._handlers[i]);
-                        }
-                        self._handlers = [];
-                    }, 0);
-                }
-
-                function handle(h) {
-                    if (self._state === 'pending') {
-                        self._handlers.push(h);
-                        return;
-                    }
-                    var cb = self._state === 'fulfilled' ? h.onFulfilled : h.onRejected;
-
-                    if (!cb) {
-                        (self._state === 'fulfilled' ? h.resolve : h.reject)(self._value);
-                        return;
-                    }
-
-                    try {
-                        var ret = cb(self._value);
-                        h.resolve(ret);
-                    } catch (e) {
-                        h.reject(e);
-                    }
-                }
-
-                self.then = function (onFulfilled, onRejected) {
-                    return new SimplePromise(function (resolve2, reject2) {
-                        handle({
-                            onFulfilled: typeof onFulfilled === 'function' ? onFulfilled : null,
-                            onRejected: typeof onRejected === 'function' ? onRejected : null,
-                            resolve: resolve2,
-                            reject: reject2
-                        });
-                    });
-                };
-
-                self.catch = function (onRejected) {
-                    return self.then(null, onRejected);
-                };
-
-                try {
-                    executor(resolve, reject);
-                } catch (e) {
-                    reject(e);
-                }
-            }
-
-            window.Promise = SimplePromise;
-        })();
-    }
-
-    // 2. requestAnimationFrame поліфіл (деякі дуже древні WebView його не мають)
-    if (typeof window.requestAnimationFrame !== 'function') {
-        window.requestAnimationFrame = function (cb) {
-            return setTimeout(cb, 16); // ~60fps
-        };
-    }
-
-    // 3. Безпечне localStorage (деякі бокси кидають SecurityError або просто забороняють сховище)
-    var safeLocalStorage = (function () {
-        try {
-            var testKey = '__lqe_test__';
-            window.localStorage.setItem(testKey, '1');
-            window.localStorage.removeItem(testKey);
-            // якщо дійшли сюди — localStorage живий
-            return window.localStorage;
-        } catch (e) {
-            // fallback у RAM (не переживає перезапуск, але не падає)
-            var memoryStore = {};
-            return {
-                getItem: function (k) { return memoryStore[k] || null; },
-                setItem: function (k, v) { memoryStore[k] = String(v); },
-                removeItem: function (k) { delete memoryStore[k]; }
-            };
-        }
-    })();
-
-    // 4. Якщо чомусь немає Lampa.Storage (деякі форки Lampa TV кастрять API),
-    // створимо просту сумісну версію поверх safeLocalStorage.
-    if (!window.Lampa) window.Lampa = {};
-    if (!Lampa.Storage) {
-        Lampa.Storage = {
-            get: function (key, def) {
-                try {
-                    var raw = safeLocalStorage.getItem(key);
-                    return raw ? JSON.parse(raw) : (def || null);
-                } catch (e) {
-                    return def || null;
-                }
-            },
-            set: function (key, val) {
-                try {
-                    safeLocalStorage.setItem(key, JSON.stringify(val));
-                } catch (e) {
-                    // ігноруємо, щоб не завалити плагін
-                }
-            }
-        };
-    }
-
-    // 5. safeFetchText: універсальна обгортка, яка:
-    //    - якщо є нормальний fetch -> використовує його
-    //    - якщо немає fetch -> XHR
-    //    - повертає Promise<String>, щоб залишити існуючу логіку з then/catch
-    function safeFetchText(url) {
-        return new Promise(function (resolve, reject) {
-            // Варіант 1: сучасний fetch
-            if (typeof fetch === 'function') {
-                try {
-                    fetch(url)
-                        .then(function (res) {
-                            if (!res.ok) throw new Error('HTTP ' + res.status);
-                            return res.text();
-                        })
-                        .then(resolve)
-                        .catch(reject);
-                    return;
-                } catch (e) {
-                    // якщо сам fetch впав синхронно — просто падати не будемо, йдемо в XHR
-                }
-            }
-
-            // Варіант 2: старий WebView -> XMLHttpRequest
-            try {
-                var xhr = new XMLHttpRequest();
-                xhr.open('GET', url, true);
-                xhr.onreadystatechange = function () {
-                    if (xhr.readyState === 4) {
-                        if (xhr.status >= 200 && xhr.status < 300) {
-                            resolve(xhr.responseText);
-                        } else {
-                            reject(new Error('XHR ' + xhr.status));
-                        }
-                    }
-                };
-                xhr.onerror = function () {
-                    reject(new Error('Network error'));
-                };
-                xhr.send(null);
-            } catch (err) {
-                reject(err);
-            }
-        });
-    }
-
-    // Експортуємо, щоб основний код плагіна зміг цим користуватись.
-    window.LQE_safeFetchText = safeFetchText;
-})();
-
-
-
-
 
 (function() {
     'use strict'; // Використання суворого режиму для запобігання помилок
-	
+
     // ===================== КОНФІГУРАЦІЯ =====================
     var LQE_CONFIG = {
-        CACHE_VERSION: 3, // Версія кешу для інвалідації старих даних
+        CACHE_VERSION: 2, // Версія кешу для інвалідації старих даних
         LOGGING_GENERAL: false, // Загальне логування для налагодження
         LOGGING_QUALITY: false, // Логування процесу визначення якості
         LOGGING_CARDLIST: false, // Логування для спискових карток
-        CACHE_VALID_TIME_MS: 48 * 60 * 60 * 1000, // Час життя кешу (48 години)
-        CACHE_REFRESH_THRESHOLD_MS: 24 * 60 * 60 * 1000, // Час для фонового оновлення кешу (12 годин)
+        CACHE_VALID_TIME_MS: 24 * 60 * 60 * 1000, // Час життя кешу (24 години)
+        CACHE_REFRESH_THRESHOLD_MS: 12 * 60 * 60 * 1000, // Час для фонового оновлення кешу (12 годин)
         CACHE_KEY: 'lampa_quality_cache', // Ключ для зберігання кешу в LocalStorage
         JACRED_PROTOCOL: 'http://', // Протокол для API JacRed
         JACRED_URL: 'jacred.xyz', // Домен API JacRed
@@ -216,11 +47,9 @@
         ],
         PROXY_TIMEOUT_MS: 4000, // Таймаут для проксі запитів (4 секунди)
         SHOW_QUALITY_FOR_TV_SERIES: true, // ✅ Показувати якість для серіалів
-        SHOW_FULL_CARD_LABEL: true,       // ✅ Показувати мітку якості у повній картці
-		
-		MAX_PARALLEL_REQUESTS: 12, // Максимальна кількість паралельних запитів
+        MAX_PARALLEL_REQUESTS: 12, // Максимальна кількість паралельних запитів
         
-        USE_SIMPLE_QUALITY_LABELS: true, // ✅ Використовувати спрощені мітки якості (4K, FHD, TS, TC тощо) "true" - так /  "false" - ні
+        USE_SIMPLE_QUALITY_LABELS: false, // ✅ Використовувати спрощені мітки якості (4K, FHD, TS, TC тощо) "true" - так /  "false" - ні
         
         // Стилі для відображення якості на повній картці
         FULL_CARD_LABEL_BORDER_COLOR: '#FFFFFF',
@@ -245,7 +74,7 @@
         		full_label: '4K WEB-DL', //✅ Повна мітка
         		simple_label: '4K'  	 //✅ Спрощена мітка
     		},
-    		'654028': { 
+			'654028': { 
         		quality_code: 2160, 
         		full_label: '4K WEB-DL', //✅ Повна мітка
         		simple_label: '4K'  	 //✅ Спрощена мітка
@@ -265,18 +94,15 @@
         		full_label: '4K WEB-DL', //✅ Повна мітка
         		simple_label: '4K'  	 //✅ Спрощена мітка
     		}
-
-			/*'Тут ID фільму': { 
+	
+    		/*'Тут ID фільму': { 
         		quality_code: 1080, 
         		full_label: '1080p WEB-DLRip',  //✅ Повна мітка
         		simple_label: 'FHD'  		    //✅ Спрощена мітка
     		},*/
 		}
     };
-    
-	
-    window.LQE_CONFIG = LQE_CONFIG;
-	var currentGlobalMovieId = null; // Змінна для відстеження поточного ID фільму
+    var currentGlobalMovieId = null; // Змінна для відстеження поточного ID фільму
 
     // ===================== МАПИ ДЛЯ ПАРСИНГУ ЯКОСТІ =====================
     
@@ -383,7 +209,7 @@
     // Основні стилі для відображення якості
     var styleLQE = "<style id=\"lampa_quality_styles\">" +
         ".full-start-new__rate-line {" + // Контейнер для лінії рейтингу повної картки
-        /* visibility: hidden;  // ← прибрано, бо ховало весь рядок назавжди */ // Приховано під час завантаження
+        "visibility: hidden;" + // Приховано під час завантаження
         "flex-wrap: wrap;" + // Дозволити перенос елементів
         "gap: 0.4em 0;" + // Відступи між елементами
         "}" +
@@ -435,8 +261,7 @@
         " white-space: nowrap;" + // Заборонити перенос тексту
         " text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3); " + // Тінь тексту
         "}" +
-        ".lqe-hide-full .full-start__status.lqe-quality { display: none !important; }" +
-		"</style>";
+        "</style>";
     // Додаємо стилі до DOM
     Lampa.Template.add('lampa_quality_css', styleLQE);
     $('body').append(Lampa.Template.get('lampa_quality_css', {}, true));
@@ -454,100 +279,122 @@
     	"}" +
 		"</style>";
 
-// === LQE: пошук якості всередині rate-line (оновлені стилі) ===
-var lqeLoaderCss = "<style id=\"lqe_search_loader_css\">" +
-"#lqe-search-loader.loading-dots-container{display:inline-flex;align-items:center;gap:.4em;color:#ccc;font-size:.85em;background:rgba(0,0,0,.3);padding:.6em 1em;border-radius:.5em;pointer-events:none;}" +
-"#lqe-search-loader .loading-dots__text{margin-right:.6em;}" +
-"#lqe-search-loader .loading-dots__dot{width:.5em;height:.5em;border-radius:50%;background:currentColor;animation:lqe-dots-bounce 1.4s infinite ease-in-out both;}" +
-"#lqe-search-loader .loading-dots__dot:nth-child(2){animation-delay:-.16s;}" +
-"#lqe-search-loader .loading-dots__dot:nth-child(3){animation-delay:-.32s;}" +
-"@keyframes lqe-dots-bounce{0%,80%,100%{transform:translateY(0);opacity:.6;}40%{transform:translateY(-.5em);opacity:1;}}" +
-".full-start-new__rate-line.lqe-is-loading>:not(#lqe-search-loader),.full-start__rate-line.lqe-is-loading>:not(#lqe-search-loader){opacity:0!important;pointer-events:none!important;transition:opacity .15s;}" +
-"@media (max-width:600px){#lqe-search-loader.loading-dots-container{font-size:.8em;padding:.4em .8em;}}" +
-"</style>";
-Lampa.Template.add('lqe_search_loader_css', lqeLoaderCss);
-$('body').append(Lampa.Template.get('lqe_search_loader_css', {}, true));
-
-
     Lampa.Template.add('lampa_quality_fade', fadeStyles);
     $('body').append(Lampa.Template.get('lampa_quality_fade', {}, true));
 
+    // Стилі для анімації завантаження (крапки)
+    var loadingStylesLQE = "<style id=\"lampa_quality_loading_animation\">" +
+        ".loading-dots-container {" + // Контейнер для анімації завантаження
+        "    position: absolute;" + // Абсолютне позиціонування
+        "    top: 50%;" + // По центру вертикалі
+        "    left: 0;" + // Лівий край
+        "    right: 0;" + // Правий край
+        "    text-align: left;" + // Вирівнювання тексту ліворуч
+        "    transform: translateY(-50%);" + // Центрування по вертикалі
+        "    z-index: 10;" + // Поверх інших елементів
+        "}" +
+        ".full-start-new__rate-line {" + // Лінія рейтингу
+        "    position: relative;" + // Відносне позиціонування для абсолютних дітей
+        "}" +
+        ".loading-dots {" + // Контейнер крапок завантаження
+        "    display: inline-flex;" + // Inline-flex для вирівнювання
+        "    align-items: center;" + // Центрування по вертикалі
+        "    gap: 0.4em;" + // Відступи між елементами
+        "    color: #ffffff;" + // Колір тексту
+        "    font-size: 0.7em;" + // Розмір шрифту
+        "    background: rgba(0, 0, 0, 0.3);" + // Напівпрозорий фон
+        "    padding: 0.6em 1em;" + // Внутрішні відступи
+        "    border-radius: 0.5em;" + // Закруглення кутів
+        "}" +
+        ".loading-dots__text {" + // Текст "Пошук..."
+        "    margin-right: 1em;" + // Відступ праворуч
+        "}" +
+        ".loading-dots__dot {" + // Окремі крапки
+        "    width: 0.5em;" + // Ширина крапки
+        "    height: 0.5em;" + // Висота крапки
+        "    border-radius: 50%;" + // Кругла форма
+        "    background-color: currentColor;" + // Колір як у тексту
+        "    opacity: 0.3;" + // Напівпрозорість
+        "    animation: loading-dots-fade 1.5s infinite both;" + // Анімація
+        "}" +
+        ".loading-dots__dot:nth-child(1) {" + // Перша крапка
+        "    animation-delay: 0s;" + // Без затримки
+        "}" +
+        ".loading-dots__dot:nth-child(2) {" + // Друга крапка
+        "    animation-delay: 0.5s;" + // Затримка 0.5с
+        "}" +
+        ".loading-dots__dot:nth-child(3) {" + // Третя крапка
+        "    animation-delay: 1s;" + // Затримка 1с
+        "}" +
+        "@keyframes loading-dots-fade {" + // Анімація миготіння крапок
+        "    0%, 90%, 100% { opacity: 0.3; }" + // Низька прозорість
+        "    35% { opacity: 1; }" + // Пік видимості
+        "}" +
+        "@media screen and (max-width: 480px) { .loading-dots-container { -webkit-justify-content: center; justify-content: center; text-align: center; max-width: 100%; }}" + // Адаптація для мобільних
+        "</style>";
 
+    Lampa.Template.add('lampa_quality_loading_animation_css', loadingStylesLQE);
+    $('body').append(Lampa.Template.get('lampa_quality_loading_animation_css', {}, true));
 
-
-// ===================== МЕРЕЖЕВІ ФУНКЦІЇ =====================
-
-/**
- * Виконує запит через проксі з обробкою помилок + fallback для старих WebView
- * @param {string} url - оригінальний URL, який хочемо викликати
- * @param {string} cardId - ID картки (тільки для логів)
- * @param {function} callback - callback(err, data)
- */
+    // ===================== МЕРЕЖЕВІ ФУНКЦІЇ =====================
+    
+    /**
+     * Виконує запит через проксі з обробкою помилок
+     * @param {string} url - URL для запиту
+     * @param {string} cardId - ID картки для логування
+     * @param {function} callback - Callback функція
+     */
     function fetchWithProxy(url, cardId, callback) {
-    var currentProxyIndex = 0;       // який проксі зараз пробуємо
-    var callbackCalled = false;      // щоб не викликати callback двічі
+        var currentProxyIndex = 0; // Поточний індекс проксі в списку
+        var callbackCalled = false; // Прапорець виклику callback
 
-    function tryNextProxy() {
-        // якщо всі проксі вже впали
-        if (currentProxyIndex >= LQE_CONFIG.PROXY_LIST.length) {
-            if (!callbackCalled) {
-                callbackCalled = true;
-                callback(new Error('All proxies failed for ' + url));
-            }
-            return;
-        }
-
-        // формуємо фінальний URL через поточний проксі
-        var proxyUrl = LQE_CONFIG.PROXY_LIST[currentProxyIndex] + encodeURIComponent(url);
-
-        if (LQE_CONFIG.LOGGING_GENERAL) {
-            console.log("LQE-LOG", "card: " + cardId + ", Fetch with proxy: " + proxyUrl);
-        }
-
-        var finished = false;
-        var timeoutId = setTimeout(function () {
-            // якщо за таймаут не дочекались — пробуємо наступний проксі
-            if (finished) return;
-            finished = true;
-            currentProxyIndex++;
-            tryNextProxy();
-        }, LQE_CONFIG.PROXY_TIMEOUT_MS);
-
-        // ВАЖЛИВО:
-        // Використовуємо LQE_safeFetchText (Promise), який вже сам вирішить:
-        // - fetch+then або
-        // - XHR у старих WebView
-        LQE_safeFetchText(proxyUrl)
-            .then(function (data) {
-                if (finished) return;
-                finished = true;
-                clearTimeout(timeoutId);
-
-                if (!callbackCalled) {
+        // Рекурсивна функція спроб через різні проксі
+        function tryNextProxy() {
+            // Перевіряємо, чи не вичерпано всі проксі
+            if (currentProxyIndex >= LQE_CONFIG.PROXY_LIST.length) {
+                if (!callbackCalled) { // Якщо callback ще не викликано
                     callbackCalled = true;
-                    callback(null, data); // успіх
+                    callback(new Error('All proxies failed for ' + url)); // Повертаємо помилку
                 }
-            })
-            .catch(function (error) {
-                if (finished) return;
-                finished = true;
-                clearTimeout(timeoutId);
-
-                console.error(
-                    "LQE-LOG",
-                    "card: " + cardId + ", Proxy fetch error for " + proxyUrl + ":",
-                    error
-                );
-
-                // переходимо до наступного проксі
-                currentProxyIndex++;
-                tryNextProxy();
-            });
+                return;
+            }
+            
+            // Формуємо URL з поточним проксі
+            var proxyUrl = LQE_CONFIG.PROXY_LIST[currentProxyIndex] + encodeURIComponent(url);
+            if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", Fetch with proxy: " + proxyUrl);
+            // Встановлюємо таймаут для запиту
+            var timeoutId = setTimeout(function() {
+                if (!callbackCalled) { // Якщо ще не отримали відповідь
+                    currentProxyIndex++; // Переходимо до наступного проксі
+                    tryNextProxy(); // Рекурсивний виклик
+                }
+            }, LQE_CONFIG.PROXY_TIMEOUT_MS);
+            // Виконуємо fetch запит
+            fetch(proxyUrl)
+                .then(function(response) {
+                    clearTimeout(timeoutId); // Очищаємо таймаут
+                    if (!response.ok) throw new Error('Proxy error: ' + response.status); // Перевіряємо статус
+                    return response.text(); // Повертаємо текст відповіді
+                })
+                .then(function(data) {
+                    if (!callbackCalled) {
+                        callbackCalled = true;
+                        clearTimeout(timeoutId);
+                        callback(null, data); // Успішний запит
+                    }
+                })
+                .catch(function(error) {
+                    console.error("LQE-LOG", "card: " + cardId + ", Proxy fetch error for " + proxyUrl + ":", error);
+                    clearTimeout(timeoutId);
+                    if (!callbackCalled) {
+                        currentProxyIndex++; // Переходимо до наступного проксі
+                        tryNextProxy(); // Рекурсивний виклик
+                    }
+                });
+        }
+        
+        tryNextProxy(); // Починаємо з першого проксі
     }
-
-    tryNextProxy();
-}
-
 
     // ===================== АНІМАЦІЯ ЗАВАНТАЖЕННЯ =====================
     
@@ -556,85 +403,42 @@ $('body').append(Lampa.Template.get('lqe_search_loader_css', {}, true));
      * @param {string} cardId - ID картки
      * @param {Element} renderElement - DOM елемент
      */
-/**
- * Додає анімацію завантаження всЕРЕДИНІ рядка рейтингів,
- * не змінюючи видимість самого рядка.
- * - НІКОЛИ не ховає .full-start-new__rate-line
- * - Не додає дублікат, якщо анімація вже є
- * - Поважає налаштування: якщо мітку вимкнено — анімацію не показуємо
- */
-// === LQE loader (порт із ratingsmod) ===
-var __lqeRateLineObs = null;
-
-function addLoadingAnimation(cardId, renderElement){
-  if (!renderElement) return;
-  if (window.LQE_CONFIG && LQE_CONFIG.SHOW_FULL_CARD_LABEL === false) return;
-
-  var render = $(renderElement);
-  if (!render.length) return;
-
-  if ($('#lqe-search-loader', render).length) return; // вже є
-
-  var loaderHtml =
-    '<div id="lqe-search-loader" class="loading-dots-container">' +
-      '<span class="loading-dots__text">Пошук…</span>' +
-      '<span class="loading-dots__dot"></span>' +
-      '<span class="loading-dots__dot"></span>' +
-      '<span class="loading-dots__dot"></span>' +
-    '</div>';
-
-  var realSel = '.full-start-new__rate-line:not([data-lqe-fake]), .full-start__rate-line:not([data-lqe-fake])';
-  var rateLine = $(realSel, render).first();
-
-  if (rateLine.length){
-    rateLine.append(loaderHtml).addClass('lqe-is-loading');
-    return;
-  }
-
-  // якщо реального рядка ще немає — ставимо тимчасовий
-  var fake = $(
-    '<div class="full-start-new__rate-line" id="lqe-loader-fake" data-lqe-fake="1" '+
-    '     style="min-height:28px; display:flex; align-items:center;"></div>'
-  );
-  var anchor = $('.full-start-new__title, .full-start__title', render).first();
-  if (anchor.length) anchor.after(fake); else render.append(fake);
-  fake.append(loaderHtml);
-
-  try { if (__lqeRateLineObs) __lqeRateLineObs.disconnect(); } catch(_){}
-  __lqeRateLineObs = new MutationObserver(function(){
-    var rl = $(realSel, render).first();
-    var loader = $('#lqe-search-loader', render);
-    if (rl.length && loader.length){
-      rl.append(loader).addClass('lqe-is-loading');
-      $('#lqe-loader-fake', render).remove();
-      try { __lqeRateLineObs.disconnect(); } catch(_){}
-      __lqeRateLineObs = null;
+    function addLoadingAnimation(cardId, renderElement) {
+        if (!renderElement) return; // Перевірка наявності елемента
+        if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", Add loading animation");
+        // Знаходимо лінію рейтингу в контексті renderElement
+        var rateLine = $('.full-start-new__rate-line', renderElement);
+        // Перевіряємо наявність лінії та відсутність вже доданої анімації
+        if (!rateLine.length || $('.loading-dots-container', rateLine).length) return;
+        // Додаємо HTML структуру анімації
+        rateLine.append(
+            '<div class="loading-dots-container">' +
+            '<div class="loading-dots">' +
+            '<span class="loading-dots__text">Пошук...</span>' + // Текст завантаження
+            '<span class="loading-dots__dot"></span>' + // Крапка 1
+            '<span class="loading-dots__dot"></span>' + // Крапка 2
+            '<span class="loading-dots__dot"></span>' + // Крапка 3
+            '</div>' +
+            '</div>'
+        );
+        // Робимо анімацію видимою
+        $('.loading-dots-container', rateLine).css({
+            'opacity': '1',
+            'visibility': 'visible'
+        });
     }
-  });
-  if (render[0]) __lqeRateLineObs.observe(render[0], {childList:true, subtree:true});
 
-  setTimeout(function(){
-    if (__lqeRateLineObs){ try { __lqeRateLineObs.disconnect(); } catch(_){}
-      __lqeRateLineObs = null;
+    /**
+     * Видаляє анімацію завантаження
+     * @param {string} cardId - ID картки
+     * @param {Element} renderElement - DOM елемент
+     */
+    function removeLoadingAnimation(cardId, renderElement) {
+        if (!renderElement) return;
+        if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", Remove loading animation");
+        // Видаляємо контейнер з анімацією
+        $('.loading-dots-container', renderElement).remove();
     }
-  }, 6000);
-}
-
-function removeLoadingAnimation(cardId, renderElement){
-  if (!renderElement) return;
-  var render = $(renderElement);
-  if (!render.length) return;
-
-  $('#lqe-search-loader', render).remove();
-  $('#lqe-loader-fake', render).remove();
-
-  var rl = $('.full-start-new__rate-line:not([data-lqe-fake]), .full-start__rate-line:not([data-lqe-fake])', render).first();
-  if (rl.length) rl.removeClass('lqe-is-loading');
-
-  try { if (__lqeRateLineObs) __lqeRateLineObs.disconnect(); } catch(_){}
-  __lqeRateLineObs = null;
-}
-
 
     // ===================== УТІЛІТИ =====================
     
@@ -1271,6 +1075,32 @@ function simplifyQualityLabel(fullLabel, originalTitle) {
         }
     }
 
+    /**
+     * Показує заглушку завантаження якості
+     * @param {string} cardId - ID картки
+     * @param {Element} renderElement - DOM елемент
+     */
+    function showFullCardQualityPlaceholder(cardId, renderElement) {
+        if (!renderElement) return;
+        var rateLine = $('.full-start-new__rate-line', renderElement);
+        if (!rateLine.length) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Cannot show placeholder, .full-start-new__rate-line not found.");
+            return;
+        }
+        
+        // Перевіряємо, чи немає вже плейсхолдера якості
+        if (!$('.full-start__status.lqe-quality', rateLine).length) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Adding quality placeholder on full card.");
+            var placeholder = document.createElement('div');
+            placeholder.className = 'full-start__status lqe-quality';
+            placeholder.textContent = 'Пошук...';
+            placeholder.style.opacity = '0.7';
+            
+            rateLine.append(placeholder); // Додаємо плейсхолдер
+        } else {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Placeholder already exists on full card, skipping.");
+        }
+    }
 
     /**
      * Оновлює елемент якості на повній картці
@@ -1321,61 +1151,38 @@ function simplifyQualityLabel(fullLabel, originalTitle) {
      * @param {string} fullTorrentTitle - Назва торренту
      * @param {boolean} bypassTranslation - Пропустити переклад
      */
-function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, bypassTranslation) {
-    var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle);
+    function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, bypassTranslation) {
+        var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle);
 
-    // Старі WebView не мають optional chaining, тому робимо руками
-    if (bypassTranslation && LQE_CONFIG.USE_SIMPLE_QUALITY_LABELS) {
-        var detectedCardId = null;
-
-        // cardView.card_data.id ?
-        if (cardView && cardView.card_data && cardView.card_data.id) {
-            detectedCardId = cardView.card_data.id;
-        } else {
-            // або cardView.closest('.card').card_data.id ?
-            var closestCard = (cardView && cardView.closest) ? cardView.closest('.card') : null;
-            if (closestCard && closestCard.card_data && closestCard.card_data.id) {
-                detectedCardId = closestCard.card_data.id;
+	// ✅ Якщо це ручне перевизначення І увімкнено спрощені мітки — беремо simple_label
+	if (bypassTranslation && LQE_CONFIG.USE_SIMPLE_QUALITY_LABELS) {
+    	var cardId = cardView?.card_data?.id || cardView?.closest('.card')?.card_data?.id;
+    	var manualData = LQE_CONFIG.MANUAL_OVERRIDES[cardId];
+    	if (manualData && manualData.simple_label) {
+        displayQuality = manualData.simple_label;
+    	}
+	}
+		
+        // Перевіряємо наявність ідентичного елемента
+        var existing = cardView.querySelector('.card__quality');
+        if (existing) {
+            var inner = existing.querySelector('div');
+            if (inner && inner.textContent === displayQuality) {
+                return; // Не оновлюємо якщо текст не змінився
             }
+            existing.remove(); // Видаляємо старий
         }
 
-        if (detectedCardId && LQE_CONFIG.MANUAL_OVERRIDES[detectedCardId]) {
-            var manualData = LQE_CONFIG.MANUAL_OVERRIDES[detectedCardId];
-            if (manualData && manualData.simple_label) {
-                displayQuality = manualData.simple_label;
-            }
-        }
-    }
-
-    // прибираємо старий .card__quality, якщо він уже є
-    var existing = cardView.querySelector('.card__quality');
-    if (existing) {
-        var inner = existing.querySelector('div');
-        if (inner && inner.textContent === displayQuality) {
-            // вже оновлено, нічого не робимо
-        } else {
-            existing.remove();
-        }
-    }
-
-    // якщо елемента немає або ми його щойно зняли — ставимо свіжий
-    if (!cardView.querySelector('.card__quality')) {
+        // Створюємо новий елемент
         var qualityDiv = document.createElement('div');
         qualityDiv.className = 'card__quality';
-
         var innerElement = document.createElement('div');
         innerElement.textContent = displayQuality;
         qualityDiv.appendChild(innerElement);
-
         cardView.appendChild(qualityDiv);
-
-        // плавне з'явлення, з поліфілом requestAnimationFrame це працюватиме навіть у старому WebView
-        requestAnimationFrame(function () {
-            qualityDiv.classList.add('show');
-        });
+        // Плавне з'явлення
+        requestAnimationFrame(function(){ qualityDiv.classList.add('show'); });
     }
-}
-
 
     // ===================== ОБРОБКА ПОВНОЇ КАРТКИ =====================
     
@@ -1384,150 +1191,111 @@ function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, b
      * @param {object} cardData - Дані картки
      * @param {Element} renderElement - DOM елемент
      */
-function processFullCardQuality(cardData, renderElement) {
-    // Захист від некоректного виклику
-    if (!renderElement) {
-        console.error("LQE-LOG", "Render element is null in processFullCardQuality. Aborting.");
-        return;
-    }
-
-    var cardId = cardData && cardData.id;
-
-    if (LQE_CONFIG.LOGGING_GENERAL) {
-        console.log("LQE-LOG", "card: " + cardId + ", Processing full card. Data: ", cardData);
-    }
-
-    // Нормалізуємо дані картки (єдине джерело правди для пошуку/кешу)
-    var normalizedCard = {
-        id: cardData.id,
-        title: cardData.title || cardData.name || '',
-        original_title: cardData.original_title || cardData.original_name || '',
-        type: getCardType(cardData),
-        release_date: cardData.release_date || cardData.first_air_date || ''
-    };
-
-    if (LQE_CONFIG.LOGGING_GENERAL) {
-        console.log("LQE-LOG", "card: " + cardId + ", Normalized full card data: ", normalizedCard);
-    }
-
-    // Рядок із рейтингами та статусами (НЕ ховаємо його ніколи)
-
-	var rateLine = $('.full-start-new__rate-line', renderElement);
-		if (rateLine.length) {
-    		rateLine.addClass('done');
-		} else {
-        if (LQE_CONFIG.LOGGING_GENERAL) {
-            console.log("LQE-LOG", "card: " + cardId + ", .full-start-new__rate-line not found, skipping loading animation.");
+    function processFullCardQuality(cardData, renderElement) {
+        if (!renderElement) {
+            console.error("LQE-LOG", "Render element is null in processFullCardQuality. Aborting.");
+            return;
         }
-    }
-
-    // Якщо вимкнено показ мітки якості у повній картці:
-    // - прибираємо можливі попередні мітки
-    // - знімаємо анімацію завантаження
-    // - і виходимо (рядок із IMDb/віком/статусом лишається)
-    if (window.LQE_CONFIG && LQE_CONFIG.SHOW_FULL_CARD_LABEL === false) {
-        if (LQE_CONFIG.LOGGING_GENERAL) {
-            console.log("LQE-LOG", "Full-card quality label disabled by setting");
+        
+        var cardId = cardData.id;
+        if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", Processing full card. Data: ", cardData);
+        // Нормалізуємо дані картки
+        var normalizedCard = {
+            id: cardData.id,
+            title: cardData.title || cardData.name || '',
+            original_title: cardData.original_title || cardData.original_name || '',
+            type: getCardType(cardData),
+            release_date: cardData.release_date || cardData.first_air_date || ''
+        };
+        if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", Normalized full card data: ", normalizedCard);
+        
+        var rateLine = $('.full-start-new__rate-line', renderElement);
+        if (rateLine.length) {
+            // Ховаємо оригінальну лінію та додаємо анімацію завантаження
+            rateLine.css('visibility', 'hidden');
+            rateLine.addClass('done');
+            addLoadingAnimation(cardId, renderElement);
+        } else {
+            if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", .full-start-new__rate-line not found, skipping loading animation.");
         }
-        clearFullCardQualityElements(cardId, renderElement);
-        removeLoadingAnimation(cardId, renderElement);
-        return;
-    }
-
-    // Тип контенту та ключ кешу
-    var isTvSeries = (normalizedCard.type === 'tv' || normalizedCard.name);
-    var cacheKey = LQE_CONFIG.CACHE_VERSION + '_' + (isTvSeries ? 'tv_' : 'movie_') + normalizedCard.id;
-
-    // Ручне перевизначення має найвищий пріоритет
-    var manualOverrideData = LQE_CONFIG.MANUAL_OVERRIDES[cardId];
-    if (manualOverrideData) {
-        if (LQE_CONFIG.LOGGING_QUALITY) {
-            console.log("LQE-QUALITY", "card: " + cardId + ", Found manual override:", manualOverrideData);
-        }
-        // bypassTranslation=true — показати саме наш напис (із можливим спрощенням через apply())
-        updateFullCardQualityElement(null, manualOverrideData.full_label, cardId, renderElement, true);
-        removeLoadingAnimation(cardId, renderElement);
-        return;
-    }
-
-    // Якщо вимкнено мітки для серіалів — прибираємо лише нашу мітку/анімацію і виходимо
-    if (isTvSeries && LQE_CONFIG.SHOW_QUALITY_FOR_TV_SERIES === false) {
-        if (LQE_CONFIG.LOGGING_QUALITY) {
-            console.log('LQE-QUALITY', 'card: ' + cardId + ', Quality feature disabled for TV series (as configured), skipping quality fetch.');
-        }
-        clearFullCardQualityElements(cardId, renderElement);
-        removeLoadingAnimation(cardId, renderElement);
-        return;
-    }
-
-    // Спроба взяти дані з кешу
-    var cachedQualityData = getQualityCache(cacheKey);
-    if (cachedQualityData) {
-        if (LQE_CONFIG.LOGGING_QUALITY) {
-            console.log("LQE-QUALITY", "card: " + cardId + ", Quality data found in cache:", cachedQualityData);
+        
+        // Визначаємо тип контенту та створюємо ключ кешу
+        var isTvSeries = (normalizedCard.type === 'tv' || normalizedCard.name);
+        var cacheKey = LQE_CONFIG.CACHE_VERSION + '_' + (isTvSeries ? 'tv_' : 'movie_') + normalizedCard.id;
+        // Перевіряємо ручні налаштування (найвищий пріоритет)
+        var manualOverrideData = LQE_CONFIG.MANUAL_OVERRIDES[cardId];
+        if (manualOverrideData) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Found manual override:", manualOverrideData);
+            updateFullCardQualityElement(null, manualOverrideData.full_label, cardId, renderElement, true);
+            removeLoadingAnimation(cardId, renderElement);
+            rateLine.css('visibility', 'visible');
+            return;
         }
 
-        // Миттєво малюємо мітку з кешу
-        updateFullCardQualityElement(
-            cachedQualityData.quality_code,
-            cachedQualityData.full_label,
-            cardId,
-            renderElement
-        );
-
-        // Якщо кеш застаріває — тихо оновимо у фоні, без впливу на інші елементи рядка
-        if (Date.now() - cachedQualityData.timestamp > LQE_CONFIG.CACHE_REFRESH_THRESHOLD_MS) {
-            if (LQE_CONFIG.LOGGING_QUALITY) {
-                console.log("LQE-QUALITY", "card: " + cardId + ", Cache is old, scheduling background refresh AND UI update.");
-            }
-            getBestReleaseFromJacred(normalizedCard, cardId, function (jrResult) {
-                if (jrResult && jrResult.quality && jrResult.quality !== 'NO') {
-                    saveQualityCache(cacheKey, {
-                        quality_code: jrResult.quality,
-                        full_label: jrResult.full_label
-                    }, cardId);
-                    updateFullCardQualityElement(
-                        jrResult.quality,
-                        jrResult.full_label,
-                        cardId,
-                        renderElement
-                    );
-                    if (LQE_CONFIG.LOGGING_QUALITY) {
-                        console.log("LQE-QUALITY", "card: " + cardId + ", Background cache and UI refresh completed.");
-                    }
+        // Отримуємо дані з кешу
+        var cachedQualityData = getQualityCache(cacheKey);
+        // Перевіряємо, чи не вимкнено якість для серіалів
+        if (!(isTvSeries && LQE_CONFIG.SHOW_QUALITY_FOR_TV_SERIES === false)) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log('LQE-QUALITY', 'card: ' + cardId + ', Quality feature enabled for this content, starting processing.');
+            if (cachedQualityData) {
+                // Використовуємо кешовані дані
+                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Quality data found in cache:", cachedQualityData);
+                updateFullCardQualityElement(cachedQualityData.quality_code, cachedQualityData.full_label, cardId, renderElement);
+                
+                // Фонове оновлення застарілого кешу
+                if (Date.now() - cachedQualityData.timestamp > LQE_CONFIG.CACHE_REFRESH_THRESHOLD_MS) {
+                    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Cache is old, scheduling background refresh AND UI update.");
+                    getBestReleaseFromJacred(normalizedCard, cardId, function(jrResult) {
+                        if (jrResult && jrResult.quality && jrResult.quality !== 'NO') {
+                            saveQualityCache(cacheKey, {
+                                quality_code: jrResult.quality,
+                                full_label: jrResult.full_label
+                            }, cardId);
+                            updateFullCardQualityElement(jrResult.quality, jrResult.full_label, cardId, renderElement);
+                            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Background cache and UI refresh completed.");
+                        }
+                    });
                 }
-            });
+                
+                removeLoadingAnimation(cardId, renderElement);
+                rateLine.css('visibility', 'visible');
+            } else {
+                // Новий пошук якості
+                clearFullCardQualityElements(cardId, renderElement);
+                showFullCardQualityPlaceholder(cardId, renderElement);
+                
+                getBestReleaseFromJacred(normalizedCard, cardId, function(jrResult) {
+                    if (LQE_CONFIG.LOGGING_QUALITY) console.log('LQE-QUALITY', 'card: ' + cardId + ', JacRed callback received for full card. Result:', jrResult);
+                    var qualityCode = (jrResult && jrResult.quality) || null;
+                    var fullTorrentTitle = (jrResult && jrResult.full_label) || null;
+                     
+                    if (LQE_CONFIG.LOGGING_QUALITY) console.log(`LQE-QUALITY: JacRed returned - qualityCode: "${qualityCode}", full label: "${fullTorrentTitle}"`);
+                    
+                    if (qualityCode && qualityCode !== 'NO') {
+                        saveQualityCache(cacheKey, {
+                            quality_code: qualityCode,
+                            full_label: fullTorrentTitle
+                        }, cardId);
+                        updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, renderElement);
+                    } else {
+                        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", 'card: ' + cardId + ', No quality found from JacRed or it was "NO". Clearing quality elements.');
+                        clearFullCardQualityElements(cardId, renderElement);
+                    }
+                    
+                    removeLoadingAnimation(cardId, renderElement);
+                    rateLine.css('visibility', 'visible');
+                });
+            }
+        } else {
+            // Якість вимкнено для серіалів
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log('LQE-QUALITY', 'card: ' + cardId + ', Quality feature disabled for TV series (as configured), skipping quality fetch.');
+            clearFullCardQualityElements(cardId, renderElement);
+            removeLoadingAnimation(cardId, renderElement);
+            rateLine.css('visibility', 'visible');
         }
-
-        // Анімацію прибираємо (рядок рейтингу завжди видимий)
-        removeLoadingAnimation(cardId, renderElement);
-        return;
+        
+        if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", Full card quality processing initiated.");
     }
-
-    // Кешу нема — робимо свіжий пошук
-clearFullCardQualityElements(cardId, renderElement);
-
-// показуємо лоадер рівно на час запиту
-addLoadingAnimation(cardId, renderElement);
-
-getBestReleaseFromJacred(normalizedCard, cardId, function (jrResult) {
-  var qualityCode = (jrResult && jrResult.quality) || null;
-  var fullTorrentTitle = (jrResult && jrResult.full_label) || null;
-
-  if (qualityCode && qualityCode !== 'NO'){
-    saveQualityCache(cacheKey, { quality_code: qualityCode, full_label: fullTorrentTitle }, cardId);
-    updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, renderElement);
-  } else {
-    clearFullCardQualityElements(cardId, renderElement);
-  }
-  removeLoadingAnimation(cardId, renderElement);
-});
-
-    if (LQE_CONFIG.LOGGING_GENERAL) {
-        console.log("LQE-LOG", "card: " + cardId + ", Full card quality processing initiated.");
-    }
-}
-
 
     // ===================== ОБРОБКА СПИСКОВИХ КАРТОК =====================
     
@@ -1789,170 +1557,4 @@ getBestReleaseFromJacred(normalizedCard, cardId, function (jrResult) {
         }
     }
 
-
-
-
-
-
-	
-
-/* ===== LQE: Settings (Interface -> "Мітки якості") ===== */
-(function(){
-  'use strict';
-
-  var SETTINGS_KEY = 'lqe_user_settings_v1';
-  var st;
-// Простий тост з fallback, якщо Lampa.Noty недоступний
-function lqeToast(msg){
-  try {
-    if (Lampa && typeof Lampa.Noty === 'function') { Lampa.Noty(msg); return; }
-    if (Lampa && Lampa.Noty && Lampa.Noty.show) { Lampa.Noty.show(msg); return; }
-  } catch(e){}
-  var id='lqe_toast';
-  var el=document.getElementById(id);
-  if(!el){
-    el=document.createElement('div');
-    el.id=id;
-    el.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:2rem;padding:.6rem 1rem;background:rgba(0,0,0,.85);color:#fff;border-radius:.5rem;z-index:9999;font-size:14px;transition:opacity .2s;opacity:0';
-    document.body.appendChild(el);
-  }
-  el.textContent=msg;
-  el.style.opacity='1';
-  setTimeout(function(){ el.style.opacity='0'; }, 1300);
-}
- 
-	
-  
-
-  function load(){
-    var s = (Lampa.Storage.get(SETTINGS_KEY) || {});
-    return {
-      show_tv: (typeof s.show_tv === 'boolean') ? s.show_tv : true,
-      show_full_card: (typeof s.show_full_card === 'boolean') ? s.show_full_card : true,
-      label_style: s.label_style || 'short'
-    };
-  }
-
-function apply(){
-  LQE_CONFIG.SHOW_QUALITY_FOR_TV_SERIES = !!st.show_tv;
-  if (typeof LQE_CONFIG.SHOW_FULL_CARD_LABEL !== 'boolean') LQE_CONFIG.SHOW_FULL_CARD_LABEL = true;
-  LQE_CONFIG.SHOW_FULL_CARD_LABEL = !!st.show_full_card;
-// Відображення саме повної мітки (не всього рядка)
-if (document && document.body) {
-  document.body.classList.toggle('lqe-hide-full', !LQE_CONFIG.SHOW_FULL_CARD_LABEL);
-}
-
-  LQE_CONFIG.USE_SIMPLE_QUALITY_LABELS = (st.label_style === 'short');
-}
-
-function save(){
-  Lampa.Storage.set(SETTINGS_KEY, st);
-  apply();
-  lqeToast('Збережено');
-}
-
-  // Кнопка "Очистити кеш"
-function lqeClearCache(){
-  try{
-    var key = (window.LQE_CONFIG && LQE_CONFIG.CACHE_KEY) ? LQE_CONFIG.CACHE_KEY : 'lampa_quality_cache';
-    Lampa.Storage.set(key, {}); // повне очищення кеш-об’єкта
-    lqeToast('Кеш очищено');
-  }catch(e){
-    console.error('LQE clear cache error:', e);
-  }
-}
-
-  function registerUI(){
-    // 1) Кнопка в «Інтерфейс», що відкриває нашу сторінку
-    Lampa.Template.add('settings_lqe', '<div></div>');
-    Lampa.SettingsApi.addParam({
-      component: 'interface',
-      param: { type: 'button', component: 'lqe' },
-      field: {
-        name: 'Мітки якості',
-        description: 'Керування відображенням міток якості'
-      },
-	  onChange: function(){
-        Lampa.Settings.create('lqe', {
-          template: 'settings_lqe',
-          onBack: function(){ Lampa.Settings.create('interface'); }
-        });
-      }
-    });
-
-
-
- // 2) Перемикач (через select): мітки для серіалів
- Lampa.SettingsApi.addParam({
-   component: 'lqe',
-   param: {
-     name: 'lqe_show_tv',
-     type: 'select',
-     values: { 'true': 'Увімкнено', 'false': 'Вимкнено' },
-     default: String(st.show_tv)
-   },
-   field: { name: 'Відображати мітки якості для серіалів' },
-   onChange: function(v){ st.show_tv = (String(v) === 'true'); save(); }
- });
-
-
- // 3) Перемикач (через select): мітка у повній картці
- Lampa.SettingsApi.addParam({
-   component: 'lqe',
-   param: {
-     name: 'lqe_show_full_card',
-     type: 'select',
-     values: { 'true': 'Увімкнено', 'false': 'Вимкнено' },
-     default: String(st.show_full_card)
-   },
-   field: { name: 'Відображати мітку якості у повній картці' },
-   onChange: function(v){ st.show_full_card = (String(v) === 'true'); save(); }
- });
-
-
-    // 4) Селектор стилю мітки
-    Lampa.SettingsApi.addParam({
-      component: 'lqe',
-      param: {
-        name: 'lqe_label_style',
-        type: 'select',
-        values: {
-          short: 'Скорочене відображення (4K, FHD)',
-          full: 'Повне відображення (4K WEB-DL, 1080P BRRIP)'
-        },
-        default: st.label_style
-      },
-      field: { name: 'Стиль мітки якості' },
-      onChange: function(v){ st.label_style = v; save(); }
-    });
-
-    // 5) Кнопка "Очистити кеш"
-    Lampa.SettingsApi.addParam({
-      component: 'lqe',
-      param: { type: 'button', component: 'lqe_clear_cache' },
-      field: { name: 'Очистити кеш' },
-      onChange: function(){ lqeClearCache(); }
-    });
-  }
-
-  function start(){
-    st = load();
-    apply();
-    
-    if (Lampa && Lampa.SettingsApi && typeof Lampa.SettingsApi.addParam === 'function') {
-      // !!! ЗАСТОСУВАТИ ЗМІНУ ТУТ: обгортаємо виклик у setTimeout(..., 0)
-      setTimeout(registerUI, 0); 
-    }
-  }
-
-  // Реєструємо після готовності застосунку (як у TMDB-Networks)
-  if (window.appready) start();
-  else if (Lampa && Lampa.Listener) Lampa.Listener.follow('app', function(e){ if (e.type === 'ready') start(); });
-
-// при застосуванні/збереженні:
-//LQE_CONFIG.SHOW_FULL_CARD_LABEL = !!st.show_full_card;
-	
-})();
-
-	
 })();
