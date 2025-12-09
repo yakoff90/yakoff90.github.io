@@ -311,8 +311,8 @@
    */
   var LMP_ENH_CONFIG = {
     apiKeys: {
-      mdblist: '', // ✅ ключ до MDBList
-      omdb: '' // ✅ ключ до OMDb
+      mdblist: 'nmqhlb9966w9m86h3yntb0dpz', // ✅ ключ до MDBList
+      omdb: '358837db' // ✅ ключ до OMDb
     },
     // true  -> іконки стають монохромні через filter: grayscale(100%)
     // false -> кольорові логотипи як є
