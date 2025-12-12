@@ -71,7 +71,7 @@
       name: 'Мій', // Нова назва
       settings: {
           url: 'ubbwflju.deploy.cx', // Нова адреса
-          key: '1', // Новий ключ API
+          key: '', // Новий ключ API
           parser_torrent_type: 'jackett' // Тип парсера
       }
 
