@@ -105,10 +105,9 @@ var styleTracks = "<style id=\"lampa_tracks_styles\">" +
     // Основний стиль для контейнера мітки
     ".card__tracks {" +
     " position: absolute !important; " + // Абсолютне позиціонування
-    " right: auto !important; " + // Відступ праворуч
-    " left: 50% !important; " + // Скидаємо позиціонування зліва
+    " right: 0.3em !important; " + // Відступ праворуч
+    " left: auto !important; " + // Скидаємо позиціонування зліва
     " top: 0.3em !important; " + // Позиція за замовчуванням (коли RatingUp неактивний)
-    "  transform: translateX(-50%) !important
     " background: rgba(0,0,0,0.5) !important;" + // Напівпрозорий чорний фон
     " color: #FFFFFF !important;" + // Білий колір тексту
     " font-size: 1.3em !important;" + // Розмір шрифту
