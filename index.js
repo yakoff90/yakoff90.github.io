@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plugins for Lampa</title>
+
+    <!-- Додати в <head> -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎁</text></svg>">
+    <meta name="description" content="Plugins for Lampa media player - collection of useful extensions and tools">
+    <meta name="keywords" content="lampa, plugins, media player, extensions, javascript">
+    
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .language-switcher {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+        
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #FFD700;
+            padding: 8px 15px;
+            margin: 0 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        
+        .lang-btn:hover {
+            background: rgba(255, 215, 0, 0.2);
+        }
+        
+        .lang-btn.active {
+            background: rgba(255, 215, 0, 0.3);
+            border-color: #FFD700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+        }
+
+        /* Фіксуємо висоту опису для всіх карток */
+        .plugin-card p {
+            min-height: 60px; /* Фіксована мінімальна висота */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        /* Мінімалістичні стилі для донат-секції */
+        .donation-section {
+            text-align: center;
+            margin: 30px 0;
+            padding: 15px;
+        }
+        
+        .donation-section h2 {
+            color: #FFD700;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .wallet-address {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            word-break: break-all;
+            font-size: 0.9em;
+            color: #ccc;
+        }
+        
+        .copy-btn {
+            background: transparent;
+            border: 1px solid #FFD700;
+            color: #FFD700;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.8em;
+        }
+        
+        .copy-btn:hover {
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        /* Адаптація для мобільних пристроїв */
+        @media (max-width: 768px) {
+            .language-switcher {
+                top: 15px;
+                right: 15px;
+            }
+            
+            .lang-btn {
+                padding: 6px 12px;
+                font-size: 14px;
+                margin: 0 3px;
+            }
+            
+            header {
+                padding-top: 50px;
+            }
+            
+            header h1 {
+                font-size: 1.8em;
+                text-align: center;
+                margin: 0 auto;
+            }
+            
+            header p {
+                text-align: center;
+            }
+            
+            /* Менша висота опису на мобільних */
+            .plugin-card p {
+                min-height: 50px;
+                font-size: 0.9em;
+            }
+            
+            .wallet-address {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        /* Для десктопу */
+        @media (min-width: 769px) {
+            header {
+                position: relative;
+            }
+            
+            header h1 {
+                text-align: center;
+                margin: 0 auto;
+                max-width: 80%;
+            }
+            
+            .plugin-card p {
+                min-height: 70px; /* Більша висота на десктопі */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="language-switcher">
+            <nav aria-label="Мова сайту" style="display: contents;">
+        <button class="lang-btn" data-lang="eng" aria-label="Switch to English">ENG</button>
+        <button class="lang-btn" data-lang="ukr" aria-label="Перейти на українську">UKR</button>
+                </nav>
+        </div>
+
+        <header>
+            <h1 data-eng="🎁 Plugins for Lampa" data-ukr="🎁 Плагіни для Lampa">🎁 Plugins for Lampa</h1>
+            <p data-eng="List of available plugins for Lampa media player" data-ukr="Список доступних плагінів для медіа-плеєра Lampa">List of available plugins for Lampa media player</p>
+        </header>
+
+        <main>
+            <!-- Torr Styles -->
+            <div class="plugin-card">
+                <h2>Torr Styles</h2>
+                <p data-eng="Plugin for adding styling Torrents results for Lampa" data-ukr="Плагін для додавання стилізації результатів Torrents">Plugin for styling Torrents results</p>
+                <div class="links">
+                    <a href="torr_styles.js" download class="btn" data-eng="Download" data-ukr="Завантажити">Download</a>
+                    <a href="https://ne3nayskas.github.io/plugins/torr_styles.js" 
+                       class="btn" 
+                       target="_blank" 
+                       rel="noopener noreferrer">
+                       URL-link
+                    </a>
+                </div>
+                <code>https://ne3nayskas.github.io/plugins/torr_styles.js</code>
+            </div>
+
+            <!-- Exit -->
+            <div class="plugin-card">
+                <h2>Exit</h2>
+                <p data-eng="Plugin for adding Exit button in Lampa for left menu" data-ukr="Плагін додавання кнопки Вихід - в меню Lampa">Plugin for adding Exit button in Lampa menu</p>
+                <div class="links">
+                    <a href="exit.js" download class="btn" data-eng="Download" data-ukr="Завантажити">Download</a>
+                    <a href="https://ne3nayskas.github.io/plugins/exit.js" 
+                       class="btn" 
+                       target="_blank" 
+                       rel="noopener noreferrer">
+                       URL-link
+                    </a>
+                </div>
+                <code>https://ne3nayskas.github.io/plugins/exit.js</code>
+            </div>
+
+            <!-- Logo -->
+            <div class="plugin-card">
+                <h2>Logo</h2>
+                <p data-eng="Plugin for adding movie logos instead of titles in Lampa cards" data-ukr="Плагін додавання логотипів фільмів - замість назви, в картках Lampa">Plugin for adding movie logos instead of titles in Lampa cards</p>
+                <div class="links">
+                    <a href="logo.js" download class="btn" data-eng="Download" data-ukr="Завантажити">Download</a>
+                    <a href="https://ne3nayskas.github.io/plugins/logo.js" 
+                       class="btn" 
+                       target="_blank" 
+                       rel="noopener noreferrer">
+                       URL-link
+                    </a>
+                </div>
+                <code>https://ne3nayskas.github.io/plugins/logo.js</code>
+            </div>
+
+            <!-- Quality -->
+            <div class="plugin-card">
+                <h2>Quality</h2>
+                <p data-eng="Plugin adds maximum available quality marks for movies" data-ukr="Плагін додає відмітки максимально можливої якості існуючої на фільмах">Plugin adds maximum available quality marks for movies</p>
+                <div class="links">
+                    <a href="quality.js" download class="btn" data-eng="Download" data-ukr="Завантажити">Download</a>
+                    <a href="https://ne3nayskas.github.io/plugins/quality.js" 
+                       class="btn" 
+                       target="_blank" 
+                       rel="noopener noreferrer">
+                       URL-link
+                    </a>
+                </div>
+                <code>https://ne3nayskas.github.io/plugins/quality.js</code>
+            </div>
+
+            <!-- Seasons -->
+            <div class="plugin-card">
+                <h2>Seasons</h2>
+                <p data-eng="Plugin shows season/series info on movies cards" data-ukr="Плагін показує на картках фільмів інформацію про сезон/серії">Plugin shows season/series info on movies cards</p>
+                <div class="links">
+                    <a href="seasons.js" download class="btn" data-eng="Download" data-ukr="Завантажити">Download</a>
+                    <a href="https://ne3nayskas.github.io/plugins/seasons.js" 
+                       class="btn" 
+                       target="_blank" 
+                       rel="noopener noreferrer">
+                       URL-link
+                    </a>
+                </div>
+                <code>https://ne3nayskas.github.io/plugins/seasons.js</code>
+            </div>
+
+            <!-- NoTrailers -->
+            <div class="plugin-card">
+                <h2>NoTrailers</h2>
+                <p data-eng="Plugin removes Trailers button in movie cards" data-ukr="Плагін прибирає кнопку Трейлери в картках фільмів">Plugin removes Trailers button in movie cards</p>
+                <div class="links">
+                    <a href="notrailers.js" download class="btn" data-eng="Download" data-ukr="Завантажити">Download</a>
+                    <a href="https://ne3nayskas.github.io/plugins/notrailers.js" 
+                       class="btn" 
+                       target="_blank" 
+                       rel="noopener noreferrer">
+                       URL-link
+                    </a>
+                </div>
+                <code>https://ne3nayskas.github.io/plugins/notrailers.js</code>
+            </div>
+
+            <!-- etor -->
+            <div class="plugin-card">
+                <h2>etor</h2>
+                <p data-eng="Plugin for adding parser and torrserver items to the Lampa settings menu" data-ukr="Плагін для додавання в меню налаштувань Lampa пунктів парсер і торрсервер">Plugin for adding parser and torrserver items to the Lampa settings menu</p>
+                <div class="links">
+                    <a href="etor.js" download class="btn" data-eng="Download" data-ukr="Завантажити">Download</a>
+                    <a href="https://ne3nayskas.github.io/plugins/etor.js" 
+                       class="btn" 
+                       target="_blank" 
+                       rel="noopener noreferrer">
+                       URL-link
+                    </a>
+                </div>
+                <code>https://ne3nayskas.github.io/plugins/etor.js</code>
+            </div>
+
+            <!-- iptv -->
+            <div class="plugin-card">
+                <h2>iptv</h2>
+                <p data-eng="Plugin for adding iptv to Lampa" data-ukr="Плагін для перегляду iptv в Lampa">Plugin for adding iptv</p>
+                <div class="links">
+                    <a href="iptv.js" download class="btn" data-eng="Download" data-ukr="Завантажити">Download</a>
+                    <a href="https://ne3nayskas.github.io/plugins/iptv.js" 
+                       class="btn" 
+                       target="_blank" 
+                       rel="noopener noreferrer">
+                       URL-link
+                    </a>
+                </div>
+                <code>https://ne3nayskas.github.io/plugins/iptv.js</code>
+            </div>
+
+            <!-- Other plugins -->
+            <div class="plugin-card">
+                <h2 data-eng="Other plugins" data-ukr="Інші плагіни">Other plugins</h2>
+                <p data-eng="Your future plugins can be here ... 😍" data-ukr="Тут можуть бути ваші майбутні плагіни ... 😍">Your future plugins can be here</p>
+                <div class="links">
+                    <a href="#" class="btn" data-eng="Coming soon..." data-ukr="Скоро...">Coming soon...</a>
+                </div>
+            </div>
+        </main>
+
+<!-- Мінімалістична донат-секція -->
+<section class="donation-section">
+    <div style="text-align: center; margin: 16px 0; font-family: monospace;">
+        <!-- Шапка секції -->
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #FFD700; font-size: 1.4em; margin: 0; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <span>🎁</span>
+                <span data-eng="Donate 😍" data-ukr="Донат 😍">Донат</span>
+            </h3>
+            <p style="color: #ccc; font-size: 0.9em; margin: 5px 0 0 0;">
+                <span data-eng="Support the project development" data-ukr="Підтримайте розвиток проєкту">Підтримайте розвиток проєкту</span>
+            </p>
+        </div>
+
+        <div style="margin-bottom: 15px; display: flex; align-items: center; flex-wrap: wrap; justify-content: center;">
+            <span style="font-size: 1.2em; margin-right: 8px; color: #26a17b;">💳</span>
+            <span style="color: #26a17b; margin-right: 10px;">USDT (TRC-20):</span>
+            <span style="color: #26a17b; cursor: pointer; padding: 5px; background: rgba(255,215,0,0.1); border-radius: 4px; margin-top: 5px; word-break: break-all; font-size: 0.9em;" 
+                  onclick="copyToClipboard(this.textContent)">
+                TBFqyUHLUrv7dsH6kC82UBBDX4qcYCu1Kk
+            </span>
+        </div>
+
+        <div style="margin-bottom: 15px; display: flex; align-items: center; flex-wrap: wrap; justify-content: center;">
+            <span style="font-size: 1.2em; margin-right: 8px; color: #26a17b;">💳</span>
+            <span style="color: #ff7518; margin-right: 10px;">BTC:</span>
+            <span style="color: #ff7518; cursor: pointer; padding: 5px; background: rgba(255,215,0,0.1); border-radius: 4px; margin-top: 5px; word-break: break-all; font-size: 0.9em;" 
+                  onclick="copyToClipboard(this.textContent)">
+                bc1pju27alugynflg4a8c5yp3zhdphupcmwzee3nguyjmnsrvztu4kwsy0drfz
+            </span>
+        </div>
+        
+        <div style="display: flex; align-items: center; flex-wrap: wrap; justify-content: center;">
+            <span style="font-size: 1.2em; margin-right: 8px; color: #ff4444;">💳</span>
+            <span style="color: #0088cc; margin-right: 10px;">TON:</span>
+            <span style="color: #0088cc; cursor: pointer; padding: 5px; background: rgba(255,215,0,0.1); border-radius: 4px; margin-top: 5px; word-break: break-all; font-size: 0.9em;" 
+                  onclick="copyToClipboard(this.textContent)">
+                UQA2NF78jCVRMj59LNpgR82moLsXA1Uo9fTakE-jbyCoM5zt
+            </span>
+        </div>
+    </div>
+</section>
+
+        <footer>
+            <p data-eng="© 2024 ne3nayskas. All rights reserved." data-ukr="© 2024 ne3nayskas. Всі права захищені.">© 2024 ne3nayskas. All rights reserved.</p>
+            <p style="font-size: 12px; opacity: 0.7; margin-top: 10px;">
+                <span data-eng="The information presented here does not infringe any copyrights on logos, names, or content, and is provided solely for educational and programming purposes in JavaScript and HTML." 
+                      data-ukr="Інформація, розміщена тут, не порушує авторських прав на логотипи, назви чи контент, і розміщена виключно з метою навчання та програмування в JavaScript та HTML.">
+                    The information presented here does not infringe any copyrights on logos, names, or content, and is provided solely for educational and programming purposes in JavaScript and HTML.
+                </span>
+            </p>
+        </footer>
+        
+    </div>
+
+    <script>
+        // Мовні налаштування
+        document.addEventListener('DOMContentLoaded', function() {
+            const langButtons = document.querySelectorAll('.lang-btn');
+            const currentLang = localStorage.getItem('language') || 'eng';
+            
+            // Встановлюємо активну мову
+            function setActiveLanguage(lang) {
+                document.documentElement.lang = lang === 'ukr' ? 'uk' : 'en';
+                langButtons.forEach(btn => {
+                btn.classList.remove('active');
+                btn.setAttribute('aria-pressed', 'false');
+    
+                    if (btn.dataset.lang === lang) {
+                        btn.classList.add('active');
+                        btn.setAttribute('aria-pressed', 'true');
+                    }
+                });
+                
+                // Оновлюємо всі тексти
+                document.querySelectorAll('[data-eng], [data-ukr]').forEach(element => {
+                    if (element.dataset[lang]) {
+                        element.textContent = element.dataset[lang];
+                    }
+                });
+                
+                // Зберігаємо вибір
+                localStorage.setItem('language', lang);
+            }
+            
+            // Обробка кліків по кнопках
+            langButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    setActiveLanguage(this.dataset.lang);
+                });
+            });
+            
+            // Ініціалізація
+            setActiveLanguage(currentLang);
+        });
+    </script>
+
+    <script>
+// Функція для копіювання тексту
+function copyToClipboard(text) {
+    const currentLang = localStorage.getItem('language') || 'eng';
+    const successMessage = currentLang === 'ukr' ? 'Посилання скопійовано!' : 'Link copied!';
+    const errorMessage = currentLang === 'ukr' ? 'Помилка копіювання' : 'Copy error';
+    
+    navigator.clipboard.writeText(text).then(() => {
+        // Показуємо сповіщення про успішне копіювання
+        showNotification(successMessage, 'success');
+    }).catch(err => {
+        console.error('Помилка копіювання: ', err);
+        showNotification(errorMessage, 'error');
+    });
+}
+
+// Функція для показу сповіщень
+function showNotification(message, type) {
+    // Створюємо елемент сповіщення
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: bold;
+        z-index: 10000;
+        transition: all 0.3s ease;
+        transform: translateX(100%);
+        opacity: 0;
+    `;
+    
+    // Встановлюємо колір в залежності від типу
+    if (type === 'success') {
+        notification.style.background = 'linear-gradient(45deg, #4CAF50, #45a049)';
+    } else {
+        notification.style.background = 'linear-gradient(45deg, #f44336, #d32f2f)';
+    }
+    
+    // Додаємо сповіщення на сторінку
+    document.body.appendChild(notification);
+    
+    // Показуємо сповіщення
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+        notification.style.opacity = '1';
+    }, 100);
+    
+    // Ховаємо сповіщення через 3 секунди
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        notification.style.opacity = '0';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
+
+// Додаємо обробники подій для кодів
+document.addEventListener('DOMContentLoaded', function() {
+    // Знаходимо всі блоки з кодом
+    const codeBlocks = document.querySelectorAll('code');
+    
+    // Функція для оновлення всіх підказок
+    function updateAllTooltips() {
+        const currentLang = localStorage.getItem('language') || 'eng';
+        const tooltipText = currentLang === 'ukr' 
+            ? 'Клікніть для копіювання посилання' 
+            : 'Click to copy link';
+        
+        codeBlocks.forEach(code => {
+            code.title = tooltipText;
+        });
+    }
+    
+    // Додаємо обробник кліку для кожного блоку
+    codeBlocks.forEach(code => {
+        // Додаємо курсор-вказівник
+        code.style.cursor = 'pointer';
+        
+        // Встановлюємо початкову підказку
+        updateAllTooltips();
+        
+        // Обробник кліку
+        code.addEventListener('click', function() {
+            copyToClipboard(this.textContent);
+        });
+        
+        // Змінюємо стиль при наведенні
+        code.addEventListener('mouseenter', function() {
+            this.style.background = 'rgba(0, 0, 0, 0.4)';
+            this.style.boxShadow = '0 0 10px rgba(0, 255, 0, 0.3)';
+        });
+        
+        code.addEventListener('mouseleave', function() {
+            this.style.background = 'rgba(0, 0, 0, 0.3)';
+            this.style.boxShadow = 'none';
+        });
+    });
+    
+    // Слухаємо кліки на кнопки мов і оновлюємо підказки
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Невелика затримка, щоб дати час змінити мову в localStorage
+            setTimeout(updateAllTooltips, 100);
+        });
+    });
+});
+</script>
+
+</body>
+</html>
