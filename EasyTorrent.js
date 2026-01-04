@@ -178,11 +178,11 @@
     });
   }
 
-  // === ПРОСТА ПРАЦЮЮЧА ФУНКЦІЯ QR-НАЛАШТУВАНЬ ===
+  // === ПОВНИЙ ФУНКЦІОНАЛ QR-НАЛАШТУВАНЬ ЯК В ОРИГІНАЛІ ===
   function showQRSetup() {
     console.log("[EasyTorrent] Запуск QR налаштувань...");
     
-    // Генерація коду
+    // Генерація коду (точно як в оригіналі)
     function generatePairCode() {
       const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
       let code = "";
@@ -195,96 +195,177 @@
     const pairCode = generatePairCode();
     const qrUrl = PLUGIN_WEB_URL + "?pairCode=" + pairCode;
     
-    // Показуємо інформацію в сповіщенні
-    Lampa.Noty.show(
-      "Налаштування через телефон:\n\n" +
-      "1. Відкрийте на телефоні:\n" +
-      qrUrl + "\n\n" +
-      "2. Введіть код: " + pairCode + "\n\n" +
-      "3. Налаштуйте пріоритети",
-      15000 // Показувати 15 секунд
-    );
+    console.log("[EasyTorrent] QR налаштування з кодом:", pairCode);
     
-    // Після сповіщення показуємо просте меню
-    setTimeout(function() {
-      Lampa.Select.show({
-        title: "Налаштування пріоритетів",
-        items: [
-          { 
-            title: "Посилання скопійовано", 
-            subtitle: "Перейдіть на телефоні",
-            action: "copied" 
-          },
-          { 
-            title: "Код сполучення", 
-            subtitle: pairCode,
-            noselect: true 
-          },
-          { 
-            title: "🔁 Перевірити конфігурацію", 
-            subtitle: "Завантажити налаштування",
-            action: "check_config" 
-          },
-          { 
-            title: "← Назад", 
-            action: "back"
-          }
-        ],
-        onSelect: function(item) {
-          if (item.action === "check_config") {
-            checkForConfiguration(pairCode);
-          } else if (item.action === "back") {
-            Lampa.Controller.toggle("settings_component");
-          } else if (item.action === "copied") {
-            Lampa.Noty.show("Готово! Налаштуйте на телефоні");
-          }
-        },
-        onBack: function() {
-          Lampa.Controller.toggle("settings_component");
+    // Створюємо HTML для модального вікна (майже як в оригіналі)
+    const modalHtml = `
+      <div class="about">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <div id="qrCodeContainer" style="background: white; padding: 20px; border-radius: 15px; display: inline-block; margin-bottom: 20px;height: 20em;width: 20em;">
+            <div style="text-align: center; padding: 60px 20px;">
+              <div style="font-size: 1.5em; color: #333; margin-bottom: 15px;">QR-код</div>
+              <div style="font-size: 1em; color: #666; margin-bottom: 20px;">Відскануйте код телефоном</div>
+              <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; display: inline-block;">
+                <div style="font-family: monospace; font-size: 1.2em; color: #333;">${pairCode}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="about__text" style="text-align: center; margin-bottom: 15px;">
+          <strong>Або перейдіть вручну:</strong><br>
+          <span style="word-break: break-all; font-size: 0.9em;">${qrUrl}</span>
+        </div>
+        <div class="about__text" style="text-align: center;">
+          <strong>Код сполучення:</strong>
+          <div style="font-size: 2em; font-weight: bold; letter-spacing: 0.3em; margin: 10px 0; color: #667eea;">${pairCode}</div>
+        </div>
+        <div class="about__text" id="qrStatus" style="text-align: center; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 10px; margin-top: 20px;">
+          ⏳ Очікування конфігурації...
+        </div>
+      </div>
+    `;
+
+    // Відкриваємо модальне вікно
+    var modal = Lampa.Modal.open({
+      title: "🔗 Налаштування пріоритетів",
+      html: modalHtml,
+      size: "medium",
+      onBack: function() {
+        if (syncInterval) {
+          clearInterval(syncInterval);
+          syncInterval = null;
+        }
+        Lampa.Modal.close();
+        Lampa.Controller.toggle("settings_component");
+      }
+    });
+
+    // Функція для запиту конфігурації з Supabase
+    function fetchConfigFromSupabase() {
+      return new Promise(function(resolve, reject) {
+        try {
+          var xhr = new XMLHttpRequest();
+          var url = SUPABASE_URL + "/rest/v1/tv_configs?id=eq." + encodeURIComponent(pairCode) + "&select=data,updated_at";
+          
+          xhr.open('GET', url, true);
+          xhr.setRequestHeader('apikey', SUPABASE_KEY);
+          xhr.setRequestHeader('Authorization', 'Bearer ' + SUPABASE_KEY);
+          xhr.timeout = 10000;
+          
+          xhr.onload = function() {
+            if (xhr.status === 200) {
+              try {
+                var response = JSON.parse(xhr.responseText);
+                if (response && response.length > 0 && response[0].data) {
+                  resolve(response[0].data);
+                } else {
+                  resolve(null);
+                }
+              } catch (e) {
+                reject(e);
+              }
+            } else {
+              reject(new Error('HTTP error: ' + xhr.status));
+            }
+          };
+          
+          xhr.onerror = function() {
+            reject(new Error('Network error'));
+          };
+          
+          xhr.ontimeout = function() {
+            reject(new Error('Request timeout'));
+          };
+          
+          xhr.send();
+        } catch (error) {
+          reject(error);
         }
       });
-    }, 2000);
-  }
-  
-  // Функція перевірки конфігурації
-  function checkForConfiguration(pairCode) {
-    console.log("[EasyTorrent] Перевірка конфігурації для коду:", pairCode);
-    
-    Lampa.Noty.show("Перевірка конфігурації...");
-    
-    try {
-      // Спроба отримати конфігурацію
-      var xhr = new XMLHttpRequest();
-      var url = SUPABASE_URL + "/rest/v1/tv_configs?id=eq." + encodeURIComponent(pairCode) + "&select=data";
-      
-      xhr.open('GET', url, false); // Синхронний запит
-      xhr.setRequestHeader('apikey', SUPABASE_KEY);
-      xhr.setRequestHeader('Authorization', 'Bearer ' + SUPABASE_KEY);
-      xhr.timeout = 5000;
-      
-      xhr.send();
-      
-      if (xhr.status === 200) {
-        var response = JSON.parse(xhr.responseText);
-        if (response && response.length > 0 && response[0].data) {
-          // Конфігурація знайдена
-          saveConfig(response[0].data);
-          Lampa.Noty.show("✅ Конфігурація оновлена!");
-          Lampa.Controller.toggle("settings_component");
-          return true;
-        } else {
-          Lampa.Noty.show("Конфігурація ще не готова");
-          return false;
-        }
-      } else {
-        Lampa.Noty.show("Помилка з'єднання");
-        return false;
-      }
-    } catch (e) {
-      console.error("[EasyTorrent] Помилка перевірки:", e);
-      Lampa.Noty.show("Помилка перевірки");
-      return false;
     }
+
+    let lastGenerated = null;
+    let attempts = 0;
+    const maxAttempts = 60; // 60 спроб * 5 секунд = 5 хвилин
+    
+    // Функція для оновлення статусу
+    function updateStatus(text, color) {
+      try {
+        // Спробуємо знайти елемент через document
+        var statusElement = document.getElementById("qrStatus");
+        if (statusElement) {
+          statusElement.innerHTML = text;
+          if (color) {
+            statusElement.style.color = color;
+          }
+        }
+      } catch (e) {
+        console.error("[EasyTorrent] Помилка оновлення статусу:", e);
+      }
+    }
+    
+    // Функція перевірки конфігурації
+    function checkForConfig() {
+      attempts++;
+      
+      if (attempts > maxAttempts) {
+        // Занадто багато спроб
+        if (syncInterval) {
+          clearInterval(syncInterval);
+          syncInterval = null;
+        }
+        
+        updateStatus("⏰ Час очікування вийшов<br><small>Спробуйте ще раз</small>", "#f44336");
+        
+        setTimeout(function() {
+          Lampa.Modal.close();
+          Lampa.Controller.toggle("settings_component");
+        }, 3000);
+        return;
+      }
+      
+      console.log("[EasyTorrent] Перевірка конфігурації, спроба", attempts);
+      
+      // Оновлюємо статус
+      var dots = ".".repeat((attempts % 3) + 1);
+      updateStatus("⏳ Очікування конфігурації" + dots + "<br><small>Спроба " + attempts + " з " + maxAttempts + "</small>");
+      
+      fetchConfigFromSupabase()
+        .then(function(configData) {
+          if (configData && configData.generated !== lastGenerated) {
+            lastGenerated = configData.generated;
+            
+            // Зберігаємо конфігурацію
+            saveConfig(configData);
+            
+            // Оновлюємо статус
+            updateStatus("✅ Конфігурація отримана!<br><small>Закриття через 2 секунди...</small>", "#4CAF50");
+            
+            // Зупиняємо перевірку
+            if (syncInterval) {
+              clearInterval(syncInterval);
+              syncInterval = null;
+            }
+            
+            // Закриваємо через 2 секунди
+            setTimeout(function() {
+              Lampa.Modal.close();
+              Lampa.Noty.show("Конфігурація оновлена!");
+              Lampa.Controller.toggle("settings_component");
+            }, 2000);
+          }
+        })
+        .catch(function(error) {
+          console.error("[EasyTorrent] Помилка отримання конфігурації:", error);
+          updateStatus("⚠️ Помилка з'єднання<br><small>Спроба " + attempts + " з " + maxAttempts + "</small>", "#ff9800");
+        });
+    }
+    
+    // Запускаємо перевірку кожні 5 секунд (як в оригіналі)
+    syncInterval = setInterval(checkForConfig, 5000);
+    
+    // Перша перевірка через 1 секунду
+    setTimeout(checkForConfig, 1000);
   }
   
   // Словник озвучок
@@ -998,7 +1079,7 @@
     document.head.appendChild(style);
   }
   
-  // === ФУНКЦІЯ ДОДАВАННЯ НАЛАШТУВАНЬ ===
+  // === ПОВНИЙ ФУНКЦІОНАЛ НАЛАШТУВАНЬ ЯК В ОРИГІНАЛІ ===
   function addSettingsComponent() {
     // Перевірка стандартних налаштувань
     if (typeof Lampa.Storage.get("easytorrent_enabled") === "undefined") {
@@ -1119,7 +1200,7 @@
       }
     });
     
-    // QR-налаштування (спрощена працююча версія)
+    // QR-налаштування (як в оригіналі)
     Lampa.SettingsApi.addParam({
       component: "easytorrent",
       param: { name: "easytorrent_qr_setup", type: "static" },
