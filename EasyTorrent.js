@@ -101,67 +101,6 @@
       uk: "Помилка: Невірний формат JSON",
       en: "Error: Invalid JSON format",
     },
-    qr_setup_title: {
-      ru: "Настройка через QR-код",
-      uk: "Налаштування через QR-код",
-      en: "QR Code Setup"
-    },
-    qr_setup_desc: {
-      ru: "Отсканируйте QR-код для настройки приоритетов",
-      uk: "Відскануйте QR-код для налаштування пріоритетів",
-      en: "Scan QR code to configure priorities"
-    }
-  };
-  
-  // Словник озвучок
-  const audioTracksDict = {
-    "Дубляж RU": ["дубляж", "дб", "d", "dub"],
-    "Дубляж UKR": ["ukr", "укр"],
-    "Дубляж Піфагор": ["піфагор", "пифагор"],
-    "Дубляж Red Head Sound": ["red head sound", "rhs"],
-    "Дубляж Videofilm": ["videofilm"],
-    "Дубляж MovieDalen": ["moviedalen"],
-    "Дубляж LeDoyen": ["ledoyen"],
-    "Дубляж Whiskey Sound": ["whiskey sound"],
-    "Дубляж IRON VOICE": ["iron voice"],
-    "Дубляж AlexFilm": ["alexfilm"],
-    "Дубляж Amedia": ["amedia"],
-    "MVO HDRezka": ["hdrezka", "hdrezka studio"],
-    "MVO LostFilm": ["lostfilm"],
-    "MVO TVShows": ["tvshows", "tv shows"],
-    "MVO Jaskier": ["jaskier"],
-    "MVO RuDub": ["rudub"],
-    "MVO LE-Production": ["le-production"],
-    "MVO Кубик в Кубі": ["кубик в кубе", "кубик в кубі"],
-    "MVO NewStudio": ["newstudio"],
-    "MVO Good People": ["good people"],
-    "MVO IdeaFilm": ["ideafilm"],
-    "MVO AMS": ["ams"],
-    "MVO Baibako": ["baibako"],
-    "MVO Profix Media": ["profix media"],
-    "MVO NewComers": ["newcomers"],
-    "MVO GoLTFilm": ["goltfilm"],
-    "MVO JimmyJ": ["jimmyj"],
-    "MVO Kerob": ["kerob"],
-    "MVO LakeFilms": ["lakefilms"],
-    "MVO Novamedia": ["novamedia"],
-    "MVO Twister": ["twister"],
-    "MVO Voice Project": ["voice project"],
-    "MVO Dragon Money Studio": ["dragon money", "dms"],
-    "MVO Syncmer": ["syncmer"],
-    "MVO ColdFilm": ["coldfilm"],
-    "MVO SunshineStudio": ["sunshinestudio"],
-    "MVO Ultradox": ["ultradox"],
-    "MVO Octopus": ["octopus"],
-    "MVO OMSKBIRD": ["omskbird records", "omskbird"],
-    "AVO Володарський": ["володарский"],
-    "AVO Яроцький": ["яроцкий", "м. яроцкий"],
-    "AVO Сербін": ["сербин", "ю. сербин"],
-    "PRO Gears Media": ["gears media"],
-    "PRO Hamsterstudio": ["hamsterstudio", "hamster"],
-    "PRO P.S.Energy": ["p.s.energy"],
-    "UKR НеЗупиняйПродакшн": ["незупиняйпродакшн"],
-    Original: ["original"],
   };
 
   // Допоміжні функції
@@ -238,67 +177,67 @@
       }
     });
   }
-  
-  // Генерація коду для сполучення
-  function generatePairCode() {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let code = "";
-    for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return code;
-  }
-  
-  // Запит конфігурації з Supabase
-  function fetchConfigFromSupabase(pairCode) {
-    return new Promise(function(resolve, reject) {
-      const url = SUPABASE_URL + "/rest/v1/tv_configs?id=eq." + encodeURIComponent(pairCode) + "&select=data,updated_at";
-      
-      const xhr = new XMLHttpRequest();
-      xhr.open('GET', url, true);
-      xhr.setRequestHeader('apikey', SUPABASE_KEY);
-      xhr.setRequestHeader('Authorization', 'Bearer ' + SUPABASE_KEY);
-      
-      xhr.onload = function() {
-        if (xhr.status === 200) {
-          try {
-            const response = JSON.parse(xhr.responseText);
-            if (response && response.length > 0) {
-              resolve(response[0].data);
-            } else {
-              resolve(null);
-            }
-          } catch (e) {
-            reject(e);
-          }
-        } else {
-          reject(new Error('HTTP error: ' + xhr.status));
-        }
-      };
-      
-      xhr.onerror = function() {
-        reject(new Error('Network error'));
-      };
-      
-      xhr.send();
-    });
-  }
-  
-  // Відображення QR-коду для налаштування
+
+  // === ФУНКЦІЯ V() З ОРИГІНАЛЬНОГО КОДУ (адаптована) ===
   function showQRSetup() {
+    // Генерація коду
+    function generatePairCode() {
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      let code = "";
+      for (let i = 0; i < 6; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
+    }
+
+    // Запит конфігурації
+    function fetchConfig(pairCode) {
+      return new Promise(function(resolve, reject) {
+        const url = SUPABASE_URL + "/rest/v1/tv_configs?id=eq." + encodeURIComponent(pairCode) + "&select=data,updated_at";
+        
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.setRequestHeader('apikey', SUPABASE_KEY);
+        xhr.setRequestHeader('Authorization', 'Bearer ' + SUPABASE_KEY);
+        
+        xhr.onload = function() {
+          if (xhr.status === 200) {
+            try {
+              const response = JSON.parse(xhr.responseText);
+              if (response && response.length > 0) {
+                resolve(response[0].data);
+              } else {
+                resolve(null);
+              }
+            } catch (e) {
+              reject(e);
+            }
+          } else {
+            reject(new Error('HTTP error: ' + xhr.status));
+          }
+        };
+        
+        xhr.onerror = function() {
+          reject(new Error('Network error'));
+        };
+        
+        xhr.send();
+      });
+    }
+
     const pairCode = generatePairCode();
     const qrUrl = PLUGIN_WEB_URL + "?pairCode=" + pairCode;
     
-    console.log("[EasyTorrent] QR setup with code:", pairCode);
+    console.log("[EasyTorrent] QR налаштування з кодом:", pairCode);
     
-    const modalContent = `
+    const modalHtml = `
       <div class="about">
         <div style="text-align: center; margin-bottom: 20px;">
-          <div id="qrCodeContainer" style="background: white; padding: 20px; border-radius: 15px; display: inline-block; margin-bottom: 20px; height: 20em; width: 20em;"></div>
+          <div id="qrCodeContainer" style="background: white; padding: 20px; border-radius: 15px; display: inline-block; margin-bottom: 20px;height: 20em;width: 20em;"></div>
         </div>
         <div class="about__text" style="text-align: center; margin-bottom: 15px;">
           <strong>Або перейдіть вручну:</strong><br>
-          <span style="word-break: break-all; font-size: 0.9em;">${qrUrl}</span>
+          <span style="word-break: break-all;">${qrUrl}</span>
         </div>
         <div class="about__text" style="text-align: center;">
           <strong>Код сполучення:</strong>
@@ -309,10 +248,10 @@
         </div>
       </div>
     `;
-    
-    const modal = Lampa.Modal.open({
+
+    Lampa.Modal.open({
       title: "🔗 Налаштування пріоритетів",
-      html: modalContent,
+      html: modalHtml,
       size: "medium",
       onBack: function() {
         if (syncInterval) {
@@ -323,7 +262,7 @@
         Lampa.Controller.toggle("settings_component");
       }
     });
-    
+
     // Генерація QR-коду
     setTimeout(function() {
       const qrContainer = document.getElementById("qrCodeContainer");
@@ -332,22 +271,13 @@
           Lampa.Utils.qrcode(qrUrl, qrContainer);
         } catch (error) {
           qrContainer.innerHTML = '<p style="color: #f44336;">Помилка генерації QR-коду</p>';
-          console.error("[EasyTorrent] QR generation error:", error);
         }
-      } else if (qrContainer) {
-        qrContainer.innerHTML = `
-          <div style="text-align: center; padding: 40px 20px;">
-            <div style="font-size: 1.2em; color: #333; margin-bottom: 10px;">QR-код не підтримується</div>
-            <div style="font-size: 0.9em; color: #666;">Скопіюйте посилання вручну</div>
-          </div>
-        `;
       }
     }, 100);
-    
-    // Запускаємо перевірку конфігурації
+
     let lastGenerated = null;
     syncInterval = setInterval(function() {
-      fetchConfigFromSupabase(pairCode)
+      fetchConfig(pairCode)
         .then(function(configData) {
           if (configData && configData.generated !== lastGenerated) {
             lastGenerated = configData.generated;
@@ -374,29 +304,12 @@
           }
         })
         .catch(function(error) {
-          console.error("[EasyTorrent] Config fetch error:", error);
+          console.error("[EasyTorrent] Помилка отримання конфігурації:", error);
         });
-    }, 5000); // Перевіряємо кожні 5 секунд
-    
-    // Автоматичне закриття через 5 хвилин
-    setTimeout(function() {
-      if (syncInterval) {
-        clearInterval(syncInterval);
-        syncInterval = null;
-        
-        const statusElement = document.getElementById("qrStatus");
-        if (statusElement) {
-          statusElement.innerHTML = "⏰ Час очікування вийшов";
-          statusElement.style.color = "#f44336";
-        }
-        
-        setTimeout(function() {
-          Lampa.Modal.close();
-          Lampa.Controller.toggle("settings_component");
-        }, 3000);
-      }
-    }, 5 * 60 * 1000);
+    }, 5000);
   }
+  
+  // Решта функцій залишаються без змін...
   
   // Аналіз роздільної здатності
   function getResolution(torrent) {
@@ -1058,8 +971,16 @@
     document.head.appendChild(style);
   }
   
-  // Додавання компонента в налаштування
+  // === ОРИГІНАЛЬНА ФУНКЦІЯ ДОДАВАННЯ НАЛАШТУВАНЬ ===
   function addSettingsComponent() {
+    // Перевірка стандартних налаштувань
+    if (typeof Lampa.Storage.get("easytorrent_enabled") === "undefined") {
+      Lampa.Storage.set("easytorrent_enabled", true);
+    }
+    if (typeof Lampa.Storage.get("easytorrent_show_scores") === "undefined") {
+      Lampa.Storage.set("easytorrent_show_scores", true);
+    }
+    
     // Додаємо компонент
     Lampa.SettingsApi.addComponent({
       component: "easytorrent",
@@ -1149,7 +1070,7 @@
                       JSON.parse(newConfig);
                       saveConfig(newConfig);
                       updateConfigText();
-                      Lampa.Noty.show("Конфігурація збережена!");
+                      Lampa.Noty.show("OK");
                     } catch (e) {
                       Lampa.Noty.show(getLocalizedText("config_error"));
                     }
@@ -1159,7 +1080,7 @@
               } else if (item.action === "reset") {
                 saveConfig(defaultConfig);
                 updateConfigText();
-                Lampa.Noty.show("Конфігурація скинута!");
+                Lampa.Noty.show("OK");
                 Lampa.Controller.toggle("settings");
               }
             },
@@ -1171,13 +1092,13 @@
       }
     });
     
-    // QR-налаштування
+    // QR-налаштування (прямо з оригінального коду)
     Lampa.SettingsApi.addParam({
       component: "easytorrent",
       param: { name: "easytorrent_qr_setup", type: "static" },
       field: {
-        name: getLocalizedText("qr_setup_title"),
-        description: getLocalizedText("qr_setup_desc")
+        name: "Розставити пріоритети",
+        description: "Відкрийте візард на телефоні через QR-код"
       },
       onRender: function(element) {
         element.on("hover:enter", function() {
