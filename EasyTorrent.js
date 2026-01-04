@@ -178,135 +178,236 @@
     });
   }
 
-  // === ФУНКЦІЯ V() З ОРИГІНАЛЬНОГО КОДУ (адаптована) ===
+  // === СПРОЩЕНА ФУНКЦІЯ QR-НАЛАШТУВАНЬ ===
   function showQRSetup() {
-    // Генерація коду
-    function generatePairCode() {
-      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-      let code = "";
-      for (let i = 0; i < 6; i++) {
-        code += chars.charAt(Math.floor(Math.random() * chars.length));
+    console.log("[EasyTorrent] Запуск QR налаштувань...");
+    
+    try {
+      // Генерація коду
+      function generatePairCode() {
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        let code = "";
+        for (let i = 0; i < 6; i++) {
+          code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return code;
       }
-      return code;
-    }
 
-    // Запит конфігурації
-    function fetchConfig(pairCode) {
-      return new Promise(function(resolve, reject) {
-        const url = SUPABASE_URL + "/rest/v1/tv_configs?id=eq." + encodeURIComponent(pairCode) + "&select=data,updated_at";
-        
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', url, true);
-        xhr.setRequestHeader('apikey', SUPABASE_KEY);
-        xhr.setRequestHeader('Authorization', 'Bearer ' + SUPABASE_KEY);
-        
-        xhr.onload = function() {
-          if (xhr.status === 200) {
-            try {
-              const response = JSON.parse(xhr.responseText);
-              if (response && response.length > 0) {
-                resolve(response[0].data);
-              } else {
-                resolve(null);
-              }
-            } catch (e) {
-              reject(e);
-            }
-          } else {
-            reject(new Error('HTTP error: ' + xhr.status));
+      const pairCode = generatePairCode();
+      const qrUrl = PLUGIN_WEB_URL + "?pairCode=" + pairCode;
+      
+      console.log("[EasyTorrent] Код сполучення:", pairCode);
+      
+      // Просте модальне вікно без QR-коду (поки що)
+      const modalHtml = `
+        <div class="about" style="padding: 20px;">
+          <div style="text-align: center; margin-bottom: 25px;">
+            <div style="font-size: 1.3em; font-weight: bold; margin-bottom: 15px; color: #fff;">
+              Налаштування через телефон
+            </div>
+            <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin: 15px 0;">
+              <div style="font-size: 1.1em; margin-bottom: 10px; color: #ccc;">
+                Перейдіть за посиланням:
+              </div>
+              <div style="word-break: break-all; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px; font-family: monospace; color: #4CAF50;">
+                ${qrUrl}
+              </div>
+            </div>
+          </div>
+          
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div style="font-size: 1.1em; font-weight: bold; margin-bottom: 10px; color: #fff;">
+              Код сполучення:
+            </div>
+            <div style="font-size: 2.5em; font-weight: bold; letter-spacing: 0.3em; margin: 15px 0; color: #667eea; background: rgba(102,126,234,0.1); padding: 15px; border-radius: 10px;">
+              ${pairCode}
+            </div>
+            <div style="font-size: 0.9em; color: #aaa; margin-top: 10px;">
+              Введіть цей код на сторінці налаштувань
+            </div>
+          </div>
+          
+          <div id="qrStatus" style="text-align: center; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 10px; margin-top: 20px; font-size: 1em;">
+            ⏳ Чекаємо на конфігурацію...
+            <div style="font-size: 0.8em; color: #aaa; margin-top: 5px;">
+              Перевіряємо кожні 10 секунд
+            </div>
+          </div>
+          
+          <div style="text-align: center; margin-top: 20px;">
+            <div style="font-size: 0.8em; color: #888;">
+              Це вікно закриється автоматично при отриманні конфігурації
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Відкриваємо модальне вікно
+      Lampa.Modal.open({
+        title: "🔗 Налаштування пріоритетів",
+        html: modalHtml,
+        size: "medium",
+        onBack: function() {
+          if (syncInterval) {
+            clearInterval(syncInterval);
+            syncInterval = null;
           }
-        };
-        
-        xhr.onerror = function() {
-          reject(new Error('Network error'));
-        };
-        
-        xhr.send();
+          Lampa.Modal.close();
+          Lampa.Controller.toggle("settings_component");
+        }
       });
-    }
 
-    const pairCode = generatePairCode();
-    const qrUrl = PLUGIN_WEB_URL + "?pairCode=" + pairCode;
-    
-    console.log("[EasyTorrent] QR налаштування з кодом:", pairCode);
-    
-    const modalHtml = `
-      <div class="about">
-        <div style="text-align: center; margin-bottom: 20px;">
-          <div id="qrCodeContainer" style="background: white; padding: 20px; border-radius: 15px; display: inline-block; margin-bottom: 20px;height: 20em;width: 20em;"></div>
-        </div>
-        <div class="about__text" style="text-align: center; margin-bottom: 15px;">
-          <strong>Або перейдіть вручну:</strong><br>
-          <span style="word-break: break-all;">${qrUrl}</span>
-        </div>
-        <div class="about__text" style="text-align: center;">
-          <strong>Код сполучення:</strong>
-          <div style="font-size: 2em; font-weight: bold; letter-spacing: 0.3em; margin: 10px 0; color: #667eea;">${pairCode}</div>
-        </div>
-        <div class="about__text" id="qrStatus" style="text-align: center; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 10px; margin-top: 20px;">
-          ⏳ Очікування конфігурації...
-        </div>
-      </div>
-    `;
-
-    Lampa.Modal.open({
-      title: "🔗 Налаштування пріоритетів",
-      html: modalHtml,
-      size: "medium",
-      onBack: function() {
-        if (syncInterval) {
-          clearInterval(syncInterval);
-          syncInterval = null;
-        }
-        Lampa.Modal.close();
-        Lampa.Controller.toggle("settings_component");
+      // Функція для запиту конфігурації
+      function fetchConfig() {
+        return new Promise(function(resolve, reject) {
+          try {
+            // Використовуємо XMLHttpRequest для сумісності
+            var xhr = new XMLHttpRequest();
+            var url = SUPABASE_URL + "/rest/v1/tv_configs?id=eq." + encodeURIComponent(pairCode) + "&select=data,updated_at";
+            
+            console.log("[EasyTorrent] Запит до:", url);
+            
+            xhr.open('GET', url, true);
+            xhr.setRequestHeader('apikey', SUPABASE_KEY);
+            xhr.setRequestHeader('Authorization', 'Bearer ' + SUPABASE_KEY);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            
+            xhr.timeout = 10000; // 10 секунд таймаут
+            
+            xhr.onload = function() {
+              if (xhr.status === 200) {
+                try {
+                  var response = JSON.parse(xhr.responseText);
+                  console.log("[EasyTorrent] Відповідь отримана:", response);
+                  
+                  if (response && response.length > 0 && response[0].data) {
+                    resolve(response[0].data);
+                  } else {
+                    resolve(null);
+                  }
+                } catch (e) {
+                  console.error("[EasyTorrent] Помилка парсингу відповіді:", e);
+                  reject(e);
+                }
+              } else {
+                console.error("[EasyTorrent] HTTP помилка:", xhr.status);
+                reject(new Error('HTTP error: ' + xhr.status));
+              }
+            };
+            
+            xhr.onerror = function() {
+              console.error("[EasyTorrent] Помилка мережі");
+              reject(new Error('Network error'));
+            };
+            
+            xhr.ontimeout = function() {
+              console.error("[EasyTorrent] Таймаут запиту");
+              reject(new Error('Request timeout'));
+            };
+            
+            xhr.send();
+          } catch (error) {
+            console.error("[EasyTorrent] Помилка при виконанні запиту:", error);
+            reject(error);
+          }
+        });
       }
-    });
 
-    // Генерація QR-коду
-    setTimeout(function() {
-      const qrContainer = document.getElementById("qrCodeContainer");
-      if (qrContainer && Lampa.Utils && Lampa.Utils.qrcode) {
-        try {
-          Lampa.Utils.qrcode(qrUrl, qrContainer);
-        } catch (error) {
-          qrContainer.innerHTML = '<p style="color: #f44336;">Помилка генерації QR-коду</p>';
+      let lastGenerated = null;
+      let attempts = 0;
+      const maxAttempts = 30; // 30 спроб * 10 секунд = 5 хвилин
+      
+      // Функція перевірки конфігурації
+      function checkForConfig() {
+        attempts++;
+        
+        if (attempts > maxAttempts) {
+          // Занадто багато спроб
+          if (syncInterval) {
+            clearInterval(syncInterval);
+            syncInterval = null;
+          }
+          
+          var statusElement = document.getElementById("qrStatus");
+          if (statusElement) {
+            statusElement.innerHTML = "⏰ Час очікування вийшов<br>" +
+                                     "<div style='font-size: 0.8em; color: #f44336; margin-top: 5px;'>" +
+                                     "Спробуйте ще раз</div>";
+            statusElement.style.color = "#f44336";
+          }
+          
+          setTimeout(function() {
+            Lampa.Modal.close();
+            Lampa.Controller.toggle("settings_component");
+          }, 3000);
+          return;
         }
-      }
-    }, 100);
-
-    let lastGenerated = null;
-    syncInterval = setInterval(function() {
-      fetchConfig(pairCode)
-        .then(function(configData) {
-          if (configData && configData.generated !== lastGenerated) {
-            lastGenerated = configData.generated;
-            
-            saveConfig(configData);
-            
-            // Оновлюємо статус
-            const statusElement = document.getElementById("qrStatus");
-            if (statusElement) {
-              statusElement.innerHTML = "✅ Конфігурація отримана!";
-              statusElement.style.color = "#4CAF50";
-            }
-            
-            // Закриваємо через 2 секунди
-            setTimeout(function() {
+        
+        console.log("[EasyTorrent] Перевірка конфігурації, спроба", attempts);
+        
+        fetchConfig()
+          .then(function(configData) {
+            if (configData && configData.generated !== lastGenerated) {
+              lastGenerated = configData.generated;
+              
+              // Зберігаємо конфігурацію
+              saveConfig(configData);
+              
+              // Оновлюємо статус
+              var statusElement = document.getElementById("qrStatus");
+              if (statusElement) {
+                statusElement.innerHTML = "✅ Конфігурація отримана!";
+                statusElement.style.color = "#4CAF50";
+              }
+              
+              // Зупиняємо перевірку
               if (syncInterval) {
                 clearInterval(syncInterval);
                 syncInterval = null;
               }
-              Lampa.Modal.close();
-              Lampa.Noty.show("Конфігурація оновлена!");
-              Lampa.Controller.toggle("settings_component");
-            }, 2000);
-          }
-        })
-        .catch(function(error) {
-          console.error("[EasyTorrent] Помилка отримання конфігурації:", error);
-        });
-    }, 5000);
+              
+              // Закриваємо через 2 секунди
+              setTimeout(function() {
+                Lampa.Modal.close();
+                Lampa.Noty.show("Конфігурація оновлена!");
+                Lampa.Controller.toggle("settings_component");
+              }, 2000);
+            } else {
+              // Оновлюємо статус
+              var statusElement = document.getElementById("qrStatus");
+              if (statusElement) {
+                var dots = ".".repeat((attempts % 3) + 1);
+                statusElement.innerHTML = "⏳ Чекаємо на конфігурацію" + dots + 
+                                         "<div style='font-size: 0.8em; color: #aaa; margin-top: 5px;'>" +
+                                         "Спроба " + attempts + " з " + maxAttempts + "</div>";
+              }
+            }
+          })
+          .catch(function(error) {
+            console.error("[EasyTorrent] Помилка отримання конфігурації:", error);
+            
+            // Оновлюємо статус
+            var statusElement = document.getElementById("qrStatus");
+            if (statusElement) {
+              var dots = ".".repeat((attempts % 3) + 1);
+              statusElement.innerHTML = "⚠️ Помилка з'єднання" + dots + 
+                                       "<div style='font-size: 0.8em; color: #ff9800; margin-top: 5px;'>" +
+                                       "Спроба " + attempts + " з " + maxAttempts + "</div>";
+              statusElement.style.color = "#ff9800";
+            }
+          });
+      }
+      
+      // Запускаємо перевірку кожні 10 секунд
+      syncInterval = setInterval(checkForConfig, 10000);
+      
+      // Перша перевірка через 1 секунду
+      setTimeout(checkForConfig, 1000);
+      
+    } catch (error) {
+      console.error("[EasyTorrent] Критична помилка в QR налаштуваннях:", error);
+      Lampa.Noty.show("Помилка: " + error.message);
+    }
   }
   
   // Решта функцій залишаються без змін...
@@ -453,6 +554,57 @@
     
     return 0;
   }
+  
+  // Словник озвучок
+  const audioTracksDict = {
+    "Дубляж RU": ["дубляж", "дб", "d", "dub"],
+    "Дубляж UKR": ["ukr", "укр"],
+    "Дубляж Піфагор": ["піфагор", "пифагор"],
+    "Дубляж Red Head Sound": ["red head sound", "rhs"],
+    "Дубляж Videofilm": ["videofilm"],
+    "Дубляж MovieDalen": ["moviedalen"],
+    "Дубляж LeDoyen": ["ledoyen"],
+    "Дубляж Whiskey Sound": ["whiskey sound"],
+    "Дубляж IRON VOICE": ["iron voice"],
+    "Дубляж AlexFilm": ["alexfilm"],
+    "Дубляж Amedia": ["amedia"],
+    "MVO HDRezka": ["hdrezka", "hdrezka studio"],
+    "MVO LostFilm": ["lostfilm"],
+    "MVO TVShows": ["tvshows", "tv shows"],
+    "MVO Jaskier": ["jaskier"],
+    "MVO RuDub": ["rudub"],
+    "MVO LE-Production": ["le-production"],
+    "MVO Кубик в Кубі": ["кубик в кубе", "кубик в кубі"],
+    "MVO NewStudio": ["newstudio"],
+    "MVO Good People": ["good people"],
+    "MVO IdeaFilm": ["ideafilm"],
+    "MVO AMS": ["ams"],
+    "MVO Baibako": ["baibako"],
+    "MVO Profix Media": ["profix media"],
+    "MVO NewComers": ["newcomers"],
+    "MVO GoLTFilm": ["goltfilm"],
+    "MVO JimmyJ": ["jimmyj"],
+    "MVO Kerob": ["kerob"],
+    "MVO LakeFilms": ["lakefilms"],
+    "MVO Novamedia": ["novamedia"],
+    "MVO Twister": ["twister"],
+    "MVO Voice Project": ["voice project"],
+    "MVO Dragon Money Studio": ["dragon money", "dms"],
+    "MVO Syncmer": ["syncmer"],
+    "MVO ColdFilm": ["coldfilm"],
+    "MVO SunshineStudio": ["sunshinestudio"],
+    "MVO Ultradox": ["ultradox"],
+    "MVO Octopus": ["octopus"],
+    "MVO OMSKBIRD": ["omskbird records", "omskbird"],
+    "AVO Володарський": ["володарский"],
+    "AVO Яроцький": ["яроцкий", "м. яроцкий"],
+    "AVO Сербін": ["сербин", "ю. сербин"],
+    "PRO Gears Media": ["gears media"],
+    "PRO Hamsterstudio": ["hamsterstudio", "hamster"],
+    "PRO P.S.Energy": ["p.s.energy"],
+    "UKR НеЗупиняйПродакшн": ["незупиняйпродакшн"],
+    Original: ["original"],
+  };
   
   // Аналіз озвучок
   function getAudioTracks(torrent) {
@@ -971,7 +1123,7 @@
     document.head.appendChild(style);
   }
   
-  // === ОРИГІНАЛЬНА ФУНКЦІЯ ДОДАВАННЯ НАЛАШТУВАНЬ ===
+  // === ФУНКЦІЯ ДОДАВАННЯ НАЛАШТУВАНЬ ===
   function addSettingsComponent() {
     // Перевірка стандартних налаштувань
     if (typeof Lampa.Storage.get("easytorrent_enabled") === "undefined") {
@@ -1092,7 +1244,7 @@
       }
     });
     
-    // QR-налаштування (прямо з оригінального коду)
+    // QR-налаштування (спрощена версія)
     Lampa.SettingsApi.addParam({
       component: "easytorrent",
       param: { name: "easytorrent_qr_setup", type: "static" },
@@ -1102,6 +1254,7 @@
       },
       onRender: function(element) {
         element.on("hover:enter", function() {
+          console.log("[EasyTorrent] Натиснуто QR налаштування");
           showQRSetup();
         });
       }
