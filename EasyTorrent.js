@@ -1,12 +1,13 @@
 !(function () {
   "use strict";
   
-  console.log("[EasyTorrent] Завантаження плагіна...");
+  console.log("[EasyTorrent] Завантаження плагіна v1.1.0...");
   
   const PLUGIN_NAME = "EasyTorrent";
   const PLUGIN_VERSION = "1.1.0 Beta";
+  const PLUGIN_ICON = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/></svg>';
   
-  // Основна конфігурація
+  // Конфігурація за замовчуванням
   const defaultConfig = {
     version: "2.0",
     generated: "2026-01-01T21:21:24.718Z",
@@ -58,35 +59,107 @@
 
   let currentConfig = defaultConfig;
   
-  // Спрощена ініціалізація
-  function initPlugin() {
-    console.log("[EasyTorrent] Ініціалізація плагіна...");
-    
+  // Локалізація
+  const localization = {
+    easytorrent_title: {
+      ru: "Рекомендации торрентов",
+      uk: "Рекомендації торрентів",
+      en: "Torrent Recommendations",
+    },
+    easytorrent_desc: {
+      ru: "Показывать рекомендуемые торренты на основе качества, HDR и озвучки",
+      uk: "Показувати рекомендовані торренти на основі якості, HDR та озвучки",
+      en: "Show recommended torrents based on quality, HDR and audio",
+    },
+    recommended_section_title: { ru: "Рекомендуемые", uk: "Рекомендовані", en: "Recommended" },
+    show_scores: { ru: "Показывать оценки", uk: "Показувати бали", en: "Show scores" },
+    show_scores_desc: {
+      ru: "Отображать оценку качества торрента",
+      uk: "Відображати оцінку якості торрента",
+      en: "Display torrent quality score",
+    },
+    ideal_badge: { ru: "Идеальный", uk: "Ідеально", en: "Ideal" },
+    recommended_badge: { ru: "Рекомендуется", uk: "Рекомендовано", en: "Recommended" },
+    config_json: { ru: "Конфигурация (JSON)", uk: "Конфігурація (JSON)", en: "Configuration (JSON)" },
+    config_json_desc: {
+      ru: "Нажмите для просмотра или изменения настроек",
+      uk: "Натисніть для перегляду або зміни налаштувань",
+      en: "Click to view or change settings",
+    },
+    config_view: { ru: "Просмотреть параметры", uk: "Переглянути параметри", en: "View parameters" },
+    config_edit: { ru: "Вставить JSON", uk: "Вставити JSON", en: "Paste JSON" },
+    config_reset: { ru: "Сбросить к заводским", uk: "Скинути до заводських", en: "Reset to defaults" },
+    config_error: {
+      ru: "Ошибка: Неверный формат JSON",
+      uk: "Помилка: Невірний формат JSON",
+      en: "Error: Invalid JSON format",
+    },
+  };
+  
+  // Словник озвучок
+  const audioTracksDict = {
+    "Дубляж RU": ["дубляж", "дб", "d", "dub"],
+    "Дубляж UKR": ["ukr", "укр"],
+    "Дубляж Піфагор": ["піфагор", "пифагор"],
+    "Дубляж Red Head Sound": ["red head sound", "rhs"],
+    "Дубляж Videofilm": ["videofilm"],
+    "Дубляж MovieDalen": ["moviedalen"],
+    "Дубляж LeDoyen": ["ledoyen"],
+    "Дубляж Whiskey Sound": ["whiskey sound"],
+    "Дубляж IRON VOICE": ["iron voice"],
+    "Дубляж AlexFilm": ["alexfilm"],
+    "Дубляж Amedia": ["amedia"],
+    "MVO HDRezka": ["hdrezka", "hdrezka studio"],
+    "MVO LostFilm": ["lostfilm"],
+    "MVO TVShows": ["tvshows", "tv shows"],
+    "MVO Jaskier": ["jaskier"],
+    "MVO RuDub": ["rudub"],
+    "MVO LE-Production": ["le-production"],
+    "MVO Кубик в Кубі": ["кубик в кубе", "кубик в кубі"],
+    "MVO NewStudio": ["newstudio"],
+    "MVO Good People": ["good people"],
+    "MVO IdeaFilm": ["ideafilm"],
+    "MVO AMS": ["ams"],
+    "MVO Baibako": ["baibako"],
+    "MVO Profix Media": ["profix media"],
+    "MVO NewComers": ["newcomers"],
+    "MVO GoLTFilm": ["goltfilm"],
+    "MVO JimmyJ": ["jimmyj"],
+    "MVO Kerob": ["kerob"],
+    "MVO LakeFilms": ["lakefilms"],
+    "MVO Novamedia": ["novamedia"],
+    "MVO Twister": ["twister"],
+    "MVO Voice Project": ["voice project"],
+    "MVO Dragon Money Studio": ["dragon money", "dms"],
+    "MVO Syncmer": ["syncmer"],
+    "MVO ColdFilm": ["coldfilm"],
+    "MVO SunshineStudio": ["sunshinestudio"],
+    "MVO Ultradox": ["ultradox"],
+    "MVO Octopus": ["octopus"],
+    "MVO OMSKBIRD": ["omskbird records", "omskbird"],
+    "AVO Володарський": ["володарский"],
+    "AVO Яроцький": ["яроцкий", "м. яроцкий"],
+    "AVO Сербін": ["сербин", "ю. сербин"],
+    "PRO Gears Media": ["gears media"],
+    "PRO Hamsterstudio": ["hamsterstudio", "hamster"],
+    "PRO P.S.Energy": ["p.s.energy"],
+    "UKR НеЗупиняйПродакшн": ["незупиняйпродакшн"],
+    Original: ["original"],
+  };
+
+  // Допоміжні функції
+  function getLocalizedText(key) {
+    const lang = Lampa.Storage.get("language", "ru");
+    return (localization[key] && (localization[key][lang] || localization[key].uk || localization[key].ru)) || key;
+  }
+  
+  function saveConfig(config) {
+    const configStr = typeof config === 'string' ? config : JSON.stringify(config);
+    Lampa.Storage.set("easytorrent_config_json", configStr);
     try {
-      // Перевіряємо, чи Lampa існує
-      if (typeof Lampa === 'undefined') {
-        console.error("[EasyTorrent] Lampa не знайдена!");
-        return;
-      }
-      
-      console.log("[EasyTorrent] Lampa знайдена, версія:", Lampa.version || "невідома");
-      
-      // Завантажуємо збережену конфігурацію
-      loadConfig();
-      
-      // Додаємо компонент в налаштування
-      addSettingsComponent();
-      
-      // Патчимо парсер
-      patchParser();
-      
-      // Додаємо CSS стилі
-      addStyles();
-      
-      console.log("[EasyTorrent] Плагін успішно ініціалізований!");
-      
-    } catch (error) {
-      console.error("[EasyTorrent] Помилка ініціалізації:", error);
+      currentConfig = JSON.parse(configStr);
+    } catch (e) {
+      currentConfig = defaultConfig;
     }
   }
   
@@ -95,55 +168,727 @@
       const savedConfig = Lampa.Storage.get("easytorrent_config_json");
       if (savedConfig) {
         currentConfig = JSON.parse(savedConfig);
-        console.log("[EasyTorrent] Конфігурація завантажена");
       } else {
-        Lampa.Storage.set("easytorrent_config_json", JSON.stringify(defaultConfig));
-        console.log("[EasyTorrent] Використана конфігурація за замовчуванням");
+        saveConfig(defaultConfig);
       }
     } catch (error) {
-      console.error("[EasyTorrent] Помилка завантаження конфігурації:", error);
       currentConfig = defaultConfig;
     }
   }
   
-  function addSettingsComponent() {
-    try {
-      // Перевіряємо, чи існує SettingsApi
-      if (!Lampa.SettingsApi) {
-        console.error("[EasyTorrent] SettingsApi не знайдена!");
-        return;
+  // Функція для перегляду конфігурації
+  function showConfigViewer() {
+    const items = [
+      { title: "Версія конфігу", subtitle: currentConfig.version, noselect: true },
+      { title: "Тип пристрою", subtitle: (currentConfig.device.type || "tv_4k").toUpperCase(), noselect: true },
+      { title: "Підтримка HDR", subtitle: (currentConfig.device.supported_hdr || []).join(", ") || "немає", noselect: true },
+      { title: "Підтримка звуку", subtitle: (currentConfig.device.supported_audio || []).join(", ") || "стерео", noselect: true },
+      { title: "Пріоритет параметрів", subtitle: (currentConfig.parameter_priority || []).join(" > "), noselect: true },
+      { 
+        title: "Пріоритет озвучок", 
+        subtitle: (currentConfig.audio_track_priority || []).length + " шт. • Натисніть для перегляду",
+        action: "show_voices" 
+      },
+      { title: "Мінімально сидів", subtitle: (currentConfig.preferences || {}).min_seeds || 2, noselect: true },
+      { title: "Кількість рекомендацій", subtitle: (currentConfig.preferences || {}).recommendation_count || 3, noselect: true },
+    ];
+    
+    Lampa.Select.show({
+      title: "Поточна конфігурація",
+      items: items,
+      onSelect: function(item) {
+        if (item.action === "show_voices") {
+          showVoicesList();
+        }
+      },
+      onBack: function() {
+        Lampa.Controller.toggle("settings");
       }
-      
-      // Додаємо компонент
-      Lampa.SettingsApi.addComponent({
-        component: "easytorrent",
-        name: PLUGIN_NAME,
-        icon: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/></svg>'
-      });
-      
-      // Додаємо параметри
-      addSettingsParams();
-      
-      console.log("[EasyTorrent] Компонент доданий до налаштувань");
-      
-    } catch (error) {
-      console.error("[EasyTorrent] Помилка додавання компонента:", error);
-    }
+    });
   }
   
-  function addSettingsParams() {
-    // Простий перемикач
-    Lampa.SettingsApi.addParam({
-      component: "easytorrent",
-      param: { 
-        name: "easytorrent_enabled", 
-        type: "trigger", 
-        default: true 
-      },
-      field: { 
-        name: "Увімкнути EasyTorrent", 
-        description: "Показувати рекомендовані торренти" 
+  function showVoicesList() {
+    const voices = currentConfig.audio_track_priority || [];
+    const items = voices.map(function(voice, index) {
+      return { title: (index + 1) + ". " + voice, noselect: true };
+    });
+    
+    Lampa.Select.show({
+      title: "Пріоритет озвучок",
+      items: items,
+      onBack: function() {
+        showConfigViewer();
       }
+    });
+  }
+  
+  // Аналіз роздільної здатності
+  function getResolution(torrent) {
+    const title = (torrent.Title || torrent.title || "").toLowerCase();
+    
+    // Перевірка через ffprobe
+    if (torrent.ffprobe && Array.isArray(torrent.ffprobe)) {
+      for (var i = 0; i < torrent.ffprobe.length; i++) {
+        if (torrent.ffprobe[i].codec_type === "video") {
+          const video = torrent.ffprobe[i];
+          if (video.height) {
+            if (video.height >= 2160 || (video.width && video.width >= 3800)) return 2160;
+            if (video.height >= 1440 || (video.width && video.width >= 2500)) return 1440;
+            if (video.height >= 1080 || (video.width && video.width >= 1900)) return 1080;
+            if (video.height >= 720 || (video.width && video.width >= 1260)) return 720;
+            return 480;
+          }
+        }
+      }
+    }
+    
+    // Перевірка по назві
+    if (title.indexOf("2160p") !== -1 || title.indexOf("4k") !== -1) return 2160;
+    if (title.indexOf("1440p") !== -1 || title.indexOf("2k") !== -1) return 1440;
+    if (title.indexOf("1080p") !== -1) return 1080;
+    if (title.indexOf("720p") !== -1) return 720;
+    
+    return null;
+  }
+  
+  // Аналіз HDR
+  function getHDRType(torrent) {
+    const title = (torrent.Title || torrent.title || "").toLowerCase();
+    const hdrTypes = [];
+    
+    // Перевірка Dolby Vision через ffprobe
+    if (torrent.ffprobe && Array.isArray(torrent.ffprobe)) {
+      for (var i = 0; i < torrent.ffprobe.length; i++) {
+        if (torrent.ffprobe[i].codec_type === "video" && torrent.ffprobe[i].side_data_list) {
+          const sideData = torrent.ffprobe[i].side_data_list;
+          for (var j = 0; j < sideData.length; j++) {
+            if (sideData[j].side_data_type && 
+                (sideData[j].side_data_type.indexOf("DOVI") !== -1 || 
+                 sideData[j].side_data_type.indexOf("Dolby Vision") !== -1)) {
+              hdrTypes.push("dolby_vision");
+              break;
+            }
+          }
+        }
+      }
+    }
+    
+    // Перевірка по назві
+    if (title.indexOf("hdr10+") !== -1 || title.indexOf("hdr10plus") !== -1) {
+      if (hdrTypes.indexOf("hdr10plus") === -1) hdrTypes.push("hdr10plus");
+    }
+    
+    if (title.indexOf("hdr10") !== -1) {
+      if (hdrTypes.indexOf("hdr10") === -1) hdrTypes.push("hdr10");
+    }
+    
+    if (title.indexOf("dolby vision") !== -1 || title.indexOf("dovi") !== -1) {
+      if (hdrTypes.indexOf("dolby_vision") === -1) hdrTypes.push("dolby_vision");
+    }
+    
+    if (title.indexOf("sdr") !== -1) {
+      if (hdrTypes.indexOf("sdr") === -1) hdrTypes.push("sdr");
+    }
+    
+    // Якщо немає HDR, повертаємо SDR
+    if (hdrTypes.length === 0) return "sdr";
+    
+    // Вибираємо найкращий HDR
+    const hdrScores = {
+      dolby_vision: 40,
+      hdr10plus: 32,
+      hdr10: 32,
+      sdr: -16
+    };
+    
+    var bestHDR = hdrTypes[0];
+    var bestScore = hdrScores[bestHDR] || 0;
+    
+    for (var i = 1; i < hdrTypes.length; i++) {
+      var score = hdrScores[hdrTypes[i]] || 0;
+      if (score > bestScore) {
+        bestScore = score;
+        bestHDR = hdrTypes[i];
+      }
+    }
+    
+    return bestHDR;
+  }
+  
+  // Аналіз бітрейту
+  function getBitrate(torrent, movieInfo, isSeries, episodeCount) {
+    const title = torrent.Title || torrent.title || "";
+    const size = torrent.Size || torrent.size_bytes || 0;
+    
+    // Перевірка через ffprobe
+    if (torrent.ffprobe && Array.isArray(torrent.ffprobe)) {
+      for (var i = 0; i < torrent.ffprobe.length; i++) {
+        if (torrent.ffprobe[i].codec_type === "video") {
+          const video = torrent.ffprobe[i];
+          
+          if (video.tags && video.tags.BPS) {
+            const bps = parseInt(video.tags.BPS, 10);
+            if (!isNaN(bps) && bps > 0) return Math.round(bps / 1000000);
+          }
+          
+          if (video.bit_rate) {
+            const bps = parseInt(video.bit_rate, 10);
+            if (!isNaN(bps) && bps > 0) return Math.round(bps / 1000000);
+          }
+        }
+      }
+    }
+    
+    // Розрахунок через розмір файлу
+    var duration = movieInfo ? (movieInfo.runtime || movieInfo.duration || movieInfo.episode_run_time) : 0;
+    if (Array.isArray(duration)) duration = duration[0] || 0;
+    
+    if (isSeries && !duration) duration = 45;
+    
+    if (size > 0 && duration > 0) {
+      var episodeMultiplier = 1;
+      if (isSeries && episodeCount > 1) {
+        episodeMultiplier = episodeCount;
+      }
+      
+      const totalSeconds = 60 * duration * episodeMultiplier;
+      const totalBits = 8 * size;
+      const bitrateMbps = Math.round(totalBits / (1000 * 1000) / totalSeconds);
+      
+      if (bitrateMbps > 0) return Math.min(bitrateMbps, 150);
+    }
+    
+    // Перевірка в назві
+    const bitrateMatch = title.match(/(\d+\.?\d*)\s*(?:Mbps|Мбит)/i);
+    if (bitrateMatch) return Math.round(parseFloat(bitrateMatch[1]));
+    
+    return 0;
+  }
+  
+  // Аналіз озвучок
+  function getAudioTracks(torrent) {
+    const title = (torrent.Title || torrent.title || "").toLowerCase();
+    const tracks = [];
+    
+    // Перевірка через ffprobe
+    if (torrent.ffprobe && Array.isArray(torrent.ffprobe)) {
+      for (var i = 0; i < torrent.ffprobe.length; i++) {
+        if (torrent.ffprobe[i].codec_type === "audio") {
+          const audio = torrent.ffprobe[i];
+          const tags = audio.tags || {};
+          const audioTitle = (tags.title || tags.handler_name || "").toLowerCase();
+          const language = (tags.language || "").toLowerCase();
+          
+          // Перевіряємо всі озвучки
+          for (var trackName in audioTracksDict) {
+            if (tracks.indexOf(trackName) !== -1) continue;
+            
+            var patterns = audioTracksDict[trackName];
+            var found = false;
+            
+            for (var j = 0; j < patterns.length; j++) {
+              var pattern = patterns[j].toLowerCase();
+              
+              // Спеціальна перевірка для російського дубляжу
+              if (trackName === "Дубляж RU") {
+                if ((language === "rus" || language === "russian") && 
+                    (audioTitle.indexOf("dub") !== -1 || audioTitle.indexOf("дубляж") !== -1)) {
+                  found = true;
+                  break;
+                }
+              }
+              
+              if (pattern === language) {
+                found = true;
+                break;
+              }
+              
+              if (pattern.length <= 3) {
+                var regex = new RegExp("\\b" + pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "i");
+                if (regex.test(audioTitle)) {
+                  found = true;
+                  break;
+                }
+              } else if (audioTitle.indexOf(pattern) !== -1) {
+                found = true;
+                break;
+              }
+            }
+            
+            if (found) tracks.push(trackName);
+          }
+        }
+      }
+    }
+    
+    // Перевірка по назві торрента
+    for (var trackName in audioTracksDict) {
+      if (tracks.indexOf(trackName) !== -1) continue;
+      
+      var patterns = audioTracksDict[trackName];
+      var found = false;
+      
+      for (var j = 0; j < patterns.length; j++) {
+        var pattern = patterns[j].toLowerCase();
+        
+        if (pattern.length <= 3) {
+          var regex = new RegExp("\\b" + pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "i");
+          if (regex.test(title)) {
+            found = true;
+            break;
+          }
+        } else if (title.indexOf(pattern) !== -1) {
+          found = true;
+          break;
+        }
+      }
+      
+      if (found) tracks.push(trackName);
+    }
+    
+    return tracks;
+  }
+  
+  // Оцінка торренту
+  function calculateScore(torrent, features) {
+    var score = 100;
+    var breakdown = {
+      base: 100,
+      resolution: 0,
+      hdr: 0,
+      bitrate: 0,
+      availability: 0,
+      audio_track: 0
+    };
+    
+    const seeds = torrent.Seeds || torrent.seeds || torrent.Seeders || torrent.seeders || 0;
+    const scoringRules = currentConfig.scoring_rules;
+    
+    // Оцінка роздільної здатності
+    if (features.resolution) {
+      var resScore = scoringRules.resolution[features.resolution] || 0;
+      var resWeight = (scoringRules.weights.resolution || 100) / 100;
+      breakdown.resolution = resScore * resWeight;
+      score += breakdown.resolution;
+    }
+    
+    // Оцінка HDR
+    if (features.hdr_type) {
+      var hdrScore = scoringRules.hdr[features.hdr_type] || 0;
+      var hdrWeight = (scoringRules.weights.hdr || 100) / 100;
+      breakdown.hdr = hdrScore * hdrWeight;
+      score += breakdown.hdr;
+    }
+    
+    // Оцінка бітрейту
+    var bitrateWeight = (scoringRules.weights.bitrate || 55) / 100;
+    if (features.bitrate > 0) {
+      var thresholds = scoringRules.bitrate_bonus.thresholds;
+      for (var i = 0; i < thresholds.length; i++) {
+        if (features.bitrate >= thresholds[i].min && features.bitrate < thresholds[i].max) {
+          breakdown.bitrate = thresholds[i].bonus * bitrateWeight;
+          score += breakdown.bitrate;
+          break;
+        }
+      }
+    } else {
+      var bitratePriority = currentConfig.parameter_priority.indexOf("bitrate");
+      var penalty = bitratePriority === 0 ? -50 : bitratePriority === 1 ? -30 : -15;
+      breakdown.bitrate = penalty * bitrateWeight;
+      score += breakdown.bitrate;
+    }
+    
+    // Оцінка озвучки
+    var audioWeight = (scoringRules.weights.audio_track || 100) / 100;
+    var priorityTracks = currentConfig.audio_track_priority || [];
+    var torrentTracks = features.audio_tracks || [];
+    
+    for (var i = 0; i < priorityTracks.length; i++) {
+      var trackName = priorityTracks[i];
+      var found = false;
+      
+      for (var j = 0; j < torrentTracks.length; j++) {
+        if (torrentTracks[j] === trackName) {
+          found = true;
+          break;
+        }
+      }
+      
+      if (found) {
+        breakdown.audio_track = 15 * (priorityTracks.length - i) * audioWeight;
+        score += breakdown.audio_track;
+        break;
+      }
+    }
+    
+    // Оцінка доступності (сіди)
+    var availabilityWeight = (scoringRules.weights.availability || 70) / 100;
+    var minSeeds = currentConfig.preferences.min_seeds || scoringRules.availability.min_seeds || 2;
+    
+    if (seeds < minSeeds) {
+      var availabilityPriority = currentConfig.parameter_priority.indexOf("availability");
+      var penalty = availabilityPriority === 0 ? -80 : availabilityPriority === 1 ? -40 : -20;
+      breakdown.availability = penalty * availabilityWeight;
+    } else {
+      breakdown.availability = 12 * Math.log(seeds + 1) / Math.log(10) * availabilityWeight;
+    }
+    
+    score += breakdown.availability;
+    
+    // Спеціальний бонус для 4K
+    var firstPriority = currentConfig.parameter_priority[0];
+    if (firstPriority === "resolution" && currentConfig.device.type.indexOf("4k") !== -1) {
+      if (features.resolution === 2160 && features.bitrate > 0) {
+        breakdown.special = 80;
+        score += 80;
+      } else if (features.resolution === 2160) {
+        breakdown.special = 30;
+        score += 30;
+      } else if (features.resolution === 1080 && seeds > 50 && features.bitrate > 0) {
+        breakdown.special = 10;
+        score += 10;
+      }
+    }
+    
+    // Бонус за Toloka
+    var tracker = (torrent.Tracker || torrent.tracker || "").toLowerCase();
+    if (tracker.indexOf("toloka") !== -1) {
+      breakdown.tracker_bonus = 20;
+      score += 20;
+    }
+    
+    score = Math.max(0, Math.round(score));
+    
+    return {
+      score: score,
+      breakdown: breakdown,
+      seeds: seeds
+    };
+  }
+  
+  // Обробка результатів парсера
+  function processParserResults(data, source) {
+    if (!data || !data.Results || !Array.isArray(data.Results)) return;
+    
+    console.log("[EasyTorrent] Обробка", data.Results.length, "торрентів");
+    
+    var movieInfo = source ? source.movie : null;
+    var isSeries = movieInfo && (movieInfo.original_name || movieInfo.number_of_seasons > 0 || movieInfo.seasons);
+    
+    // Аналізуємо всі торренти
+    var scoredTorrents = [];
+    
+    for (var i = 0; i < data.Results.length; i++) {
+      var torrent = data.Results[i];
+      
+      // Отримуємо характеристики
+      var features = {
+        resolution: getResolution(torrent),
+        hdr_type: getHDRType(torrent),
+        audio_tracks: getAudioTracks(torrent),
+        bitrate: getBitrate(torrent, movieInfo, isSeries, 1)
+      };
+      
+      // Розраховуємо оцінку
+      var scoreResult = calculateScore(torrent, features);
+      
+      scoredTorrents.push({
+        element: torrent,
+        originalIndex: i,
+        features: features,
+        score: scoreResult.score,
+        breakdown: scoreResult.breakdown,
+        seeds: scoreResult.seeds
+      });
+    }
+    
+    // Сортуємо за оцінкою
+    scoredTorrents.sort(function(a, b) {
+      if (b.score !== a.score) return b.score - a.score;
+      if (b.features.bitrate !== a.features.bitrate) return b.features.bitrate - a.features.bitrate;
+      return b.seeds - a.seeds;
+    });
+    
+    // Зберігаємо інформацію в торрентах
+    for (var i = 0; i < scoredTorrents.length; i++) {
+      var item = scoredTorrents[i];
+      item.element._recommendScore = item.score;
+      item.element._recommendBreakdown = item.breakdown;
+      item.element._recommendFeatures = item.features;
+      item.element._recommendRank = i;
+      item.element._recommendIsIdeal = (i === 0 && item.score >= 150);
+    }
+    
+    // Логування для дебагу
+    if (Lampa.Storage.get("easytorrent_show_scores", false)) {
+      console.log("=== EasyTorrent Scores ===");
+      for (var i = 0; i < Math.min(10, scoredTorrents.length); i++) {
+        var item = scoredTorrents[i];
+        console.log(
+          (i + 1) + ". [" + item.score + "] " + 
+          (item.features.resolution || "?") + "p " + 
+          item.features.hdr_type + " " + 
+          item.features.bitrate + "Mbps " +
+          "Seeds:" + item.seeds + " | " + 
+          (item.element.Title || "").substring(0, 60)
+        );
+      }
+    }
+    
+    console.log("[EasyTorrent] Оброблено", scoredTorrents.length, "торрентів");
+  }
+  
+  // Відображення бейджів на торрентах
+  function renderTorrentBadge(event) {
+    if (event.type !== "render" || !event.element || !event.item) return;
+    if (!Lampa.Storage.get("easytorrent_enabled", true)) return;
+    
+    var torrent = event.element;
+    var item = event.item;
+    
+    // Видаляємо старі бейджі
+    item.find(".torrent-recommend-panel").remove();
+    
+    // Перевіряємо, чи є оцінка
+    if (torrent._recommendRank === undefined) return;
+    
+    var rank = torrent._recommendRank;
+    var score = torrent._recommendScore;
+    var breakdown = torrent._recommendBreakdown || {};
+    var features = torrent._recommendFeatures || {};
+    var showScores = Lampa.Storage.get("easytorrent_show_scores", true);
+    var recCount = currentConfig.preferences.recommendation_count || 3;
+    
+    // Показуємо тільки для топ-рекомендацій або якщо увімкнено показ оцінок
+    if (!torrent._recommendIsIdeal && rank >= recCount && !showScores) return;
+    
+    // Формуємо мета-інформацію
+    var metaInfo = [];
+    if (features.resolution) metaInfo.push(features.resolution + "p");
+    if (features.hdr_type) {
+      var hdrNames = {
+        dolby_vision: "DV",
+        hdr10plus: "HDR10+",
+        hdr10: "HDR10",
+        sdr: "SDR"
+      };
+      metaInfo.push(hdrNames[features.hdr_type] || features.hdr_type.toUpperCase());
+    }
+    if (features.bitrate) metaInfo.push(features.bitrate + " Mbps");
+    
+    // Визначаємо тип бейджа
+    var badgeType = "neutral";
+    var badgeText = "";
+    
+    if (torrent._recommendIsIdeal) {
+      badgeType = "ideal";
+      badgeText = getLocalizedText("ideal_badge");
+    } else if (rank < recCount) {
+      badgeType = "recommended";
+      badgeText = getLocalizedText("recommended_badge") + " • #" + (rank + 1);
+    } else {
+      badgeType = "neutral";
+      badgeText = "Оцінка";
+    }
+    
+    // Створюємо панель
+    var panel = $('<div class="torrent-recommend-panel torrent-recommend-panel--' + badgeType + '"></div>');
+    
+    // Ліва частина
+    var leftPart = $('<div class="torrent-recommend-panel__left"></div>');
+    leftPart.append('<div class="torrent-recommend-panel__label">' + badgeText + '</div>');
+    
+    if (metaInfo.length > 0) {
+      leftPart.append('<div class="torrent-recommend-panel__meta">' + metaInfo.join(" • ") + '</div>');
+    }
+    
+    panel.append(leftPart);
+    
+    // Права частина (оцінка)
+    var rightPart = $('<div class="torrent-recommend-panel__right"></div>');
+    if (showScores && score !== undefined) {
+      rightPart.append('<div class="torrent-recommend-panel__score">' + score + '</div>');
+    }
+    
+    panel.append(rightPart);
+    
+    // Детальна розбивка оцінки
+    if (showScores && Object.keys(breakdown).length > 0) {
+      var chips = $('<div class="torrent-recommend-panel__chips"></div>');
+      var chipItems = [
+        { key: "audio_track", name: "Озвучка" },
+        { key: "resolution", name: "Розд." },
+        { key: "bitrate", name: "Бітрейт" },
+        { key: "availability", name: "Сіди" },
+        { key: "hdr", name: "HDR" },
+        { key: "special", name: "Бонус" },
+        { key: "tracker_bonus", name: "Трекер" }
+      ];
+      
+      for (var i = 0; i < chipItems.length; i++) {
+        var chip = chipItems[i];
+        if (breakdown[chip.key] !== undefined && breakdown[chip.key] !== 0) {
+          var value = Math.round(breakdown[chip.key]);
+          var sign = value > 0 ? "+" : "";
+          var chipClass = value >= 0 ? "tr-chip--pos" : "tr-chip--neg";
+          
+          chips.append(
+            '<div class="tr-chip ' + chipClass + '">' +
+            '<span class="tr-chip__name">' + chip.name + '</span>' +
+            '<span class="tr-chip__val">' + sign + value + '</span>' +
+            '</div>'
+          );
+        }
+      }
+      
+      if (chips.children().length > 0) {
+        panel.append(chips);
+      }
+    }
+    
+    item.append(panel);
+  }
+  
+  // Додавання CSS стилів
+  function addStyles() {
+    var style = document.createElement("style");
+    style.textContent = `
+      .torrent-recommend-panel {
+        display: flex;
+        align-items: center;
+        gap: 0.9em;
+        margin: 0.8em -1em -1em;
+        padding: 0.75em 1em 0.85em;
+        border-radius: 0 0 0.3em 0.3em;
+        border-top: 1px solid rgba(255,255,255,0.10);
+        background: rgba(0,0,0,0.18);
+      }
+      
+      .torrent-recommend-panel__left {
+        min-width: 0;
+        flex: 1 1 auto;
+      }
+      
+      .torrent-recommend-panel__label {
+        font-size: 0.95em;
+        font-weight: 800;
+        letter-spacing: 0.2px;
+        color: rgba(255,255,255,0.92);
+        line-height: 1.15;
+      }
+      
+      .torrent-recommend-panel__meta {
+        margin-top: 0.25em;
+        font-size: 0.82em;
+        font-weight: 600;
+        color: rgba(255,255,255,0.58);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      .torrent-recommend-panel__right {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+      }
+      
+      .torrent-recommend-panel__score {
+        font-size: 1.05em;
+        font-weight: 900;
+        padding: 0.25em 0.55em;
+        border-radius: 0.6em;
+        background: rgba(255,255,255,0.10);
+        border: 1px solid rgba(255,255,255,0.12);
+        color: rgba(255,255,255,0.95);
+      }
+      
+      .torrent-recommend-panel__chips {
+        display: flex;
+        flex: 2 1 auto;
+        gap: 0.45em;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        margin-top: 0.5em;
+      }
+      
+      .torrent-recommend-panel__chips:empty {
+        display: none;
+      }
+      
+      .tr-chip {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0.35em;
+        padding: 0.28em 0.55em;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.10);
+      }
+      
+      .tr-chip__name {
+        font-size: 0.78em;
+        font-weight: 700;
+        color: rgba(255,255,255,0.60);
+      }
+      
+      .tr-chip__val {
+        font-size: 0.86em;
+        font-weight: 900;
+        color: rgba(255,255,255,0.92);
+      }
+      
+      .tr-chip--pos {
+        background: rgba(76,175,80,0.10);
+        border-color: rgba(76,175,80,0.22);
+      }
+      
+      .tr-chip--pos .tr-chip__val {
+        color: rgba(120,255,170,0.95);
+      }
+      
+      .tr-chip--neg {
+        background: rgba(244,67,54,0.10);
+        border-color: rgba(244,67,54,0.22);
+      }
+      
+      .tr-chip--neg .tr-chip__val {
+        color: rgba(255,120,120,0.95);
+      }
+      
+      .torrent-recommend-panel--ideal {
+        background: rgba(255,215,0,0.16);
+        border-top-color: rgba(255,215,0,0.20);
+      }
+      
+      .torrent-recommend-panel--ideal .torrent-recommend-panel__label {
+        color: rgba(255,235,140,0.98);
+      }
+      
+      .torrent-recommend-panel--recommended {
+        background: rgba(76,175,80,0.08);
+        border-top-color: rgba(76,175,80,0.18);
+      }
+      
+      .torrent-recommend-panel--recommended .torrent-recommend-panel__label {
+        color: rgba(160,255,200,0.92);
+      }
+      
+      .torrent-item.focus .torrent-recommend-panel {
+        background: rgba(255,255,255,0.08);
+        border-top-color: rgba(255,255,255,0.16);
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  
+  // Додавання компонента в налаштування
+  function addSettingsComponent() {
+    // Додаємо компонент
+    Lampa.SettingsApi.addComponent({
+      component: "easytorrent",
+      name: PLUGIN_NAME,
+      icon: PLUGIN_ICON
     });
     
     // Інформація про плагін
@@ -151,208 +896,209 @@
       component: "easytorrent",
       param: { name: "easytorrent_about", type: "static" },
       field: { name: "<div>" + PLUGIN_NAME + " " + PLUGIN_VERSION + "</div>" },
-      onRender: function (element) {
+      onRender: function(element) {
         element.css("opacity", "0.7");
-        element.find(".settings-param__name").css({ 
-          "font-size": "1.2em", 
-          "margin-bottom": "0.3em" 
+        element.find(".settings-param__name").css({
+          "font-size": "1.2em",
+          "margin-bottom": "0.3em"
         });
         element.append(
           '<div style="font-size: 0.9em; padding: 0 1.2em; line-height: 1.4;">' +
-          'Система рекомендацій торрентів<br>' +
-          'На основі якості, HDR та озвучки' +
+          'Автор: DarkestClouds<br>' +
+          'Система рекомендацій торрентів на основі якості, HDR та озвучки' +
           '</div>'
         );
       }
     });
+    
+    // Основний перемикач
+    Lampa.SettingsApi.addParam({
+      component: "easytorrent",
+      param: { name: "easytorrent_enabled", type: "trigger", default: true },
+      field: {
+        name: getLocalizedText("easytorrent_title"),
+        description: getLocalizedText("easytorrent_desc")
+      }
+    });
+    
+    // Показ оцінок
+    Lampa.SettingsApi.addParam({
+      component: "easytorrent",
+      param: { name: "easytorrent_show_scores", type: "trigger", default: true },
+      field: {
+        name: getLocalizedText("show_scores"),
+        description: getLocalizedText("show_scores_desc")
+      }
+    });
+    
+    // Конфігурація JSON
+    Lampa.SettingsApi.addParam({
+      component: "easytorrent",
+      param: {
+        name: "easytorrent_config_json",
+        type: "static",
+        default: JSON.stringify(defaultConfig)
+      },
+      field: {
+        name: getLocalizedText("config_json"),
+        description: getLocalizedText("config_json_desc")
+      },
+      onRender: function(element) {
+        var updateConfigText = function() {
+          var deviceType = (currentConfig.device.type || "tv_4k").toUpperCase();
+          var firstPriority = (currentConfig.parameter_priority || [])[0] || "resolution";
+          element.find(".settings-param__value").text(deviceType + " | " + firstPriority);
+        };
+        
+        updateConfigText();
+        
+        element.on("hover:enter", function() {
+          Lampa.Select.show({
+            title: getLocalizedText("config_json"),
+            items: [
+              { title: getLocalizedText("config_view"), action: "view" },
+              { title: getLocalizedText("config_edit"), action: "edit" },
+              { title: getLocalizedText("config_reset"), action: "reset" }
+            ],
+            onSelect: function(item) {
+              if (item.action === "view") {
+                showConfigViewer();
+              } else if (item.action === "edit") {
+                Lampa.Input.edit({
+                  value: Lampa.Storage.get("easytorrent_config_json") || JSON.stringify(defaultConfig),
+                  free: true
+                }, function(newConfig) {
+                  if (newConfig) {
+                    try {
+                      JSON.parse(newConfig);
+                      saveConfig(newConfig);
+                      updateConfigText();
+                      Lampa.Noty.show("Конфігурація збережена!");
+                    } catch (e) {
+                      Lampa.Noty.show(getLocalizedText("config_error"));
+                    }
+                  }
+                  Lampa.Controller.toggle("settings");
+                });
+              } else if (item.action === "reset") {
+                saveConfig(defaultConfig);
+                updateConfigText();
+                Lampa.Noty.show("Конфігурація скинута!");
+                Lampa.Controller.toggle("settings");
+              }
+            },
+            onBack: function() {
+              Lampa.Controller.toggle("settings");
+            }
+          });
+        });
+      }
+    });
   }
   
+  // Патчинг парсера
   function patchParser() {
+    var parser = window.Lampa.Parser || 
+                 (window.Lampa.Component ? window.Lampa.Component.Parser : null);
+    
+    if (!parser || !parser.get) {
+      console.error("[EasyTorrent] Парсер не знайдено");
+      return;
+    }
+    
+    console.log("[EasyTorrent] Патчимо парсер...");
+    
+    var originalGet = parser.get;
+    
+    parser.get = function(source, callback, params) {
+      return originalGet.call(
+        this,
+        source,
+        function(data) {
+          // Обробляємо результати
+          if (Lampa.Storage.get("easytorrent_enabled", true)) {
+            processParserResults(data, source);
+          }
+          
+          // Викликаємо оригінальний callback
+          return callback.apply(this, arguments);
+        },
+        params
+      );
+    };
+    
+    console.log("[EasyTorrent] Парсер успішно пропатчений");
+  }
+  
+  // Головна функція ініціалізації
+  function initPlugin() {
+    console.log("[EasyTorrent] Ініціалізація...");
+    
     try {
-      // Шукаємо парсер
-      const parser = window.Lampa.Parser || 
-                    (window.Lampa.Component ? window.Lampa.Component.Parser : null);
+      // Завантажуємо конфігурацію
+      loadConfig();
       
-      if (!parser || !parser.get) {
-        console.error("[EasyTorrent] Парсер не знайдено");
-        return;
-      }
+      // Додаємо CSS
+      addStyles();
       
-      console.log("[EasyTorrent] Знайдено парсер, патчимо...");
+      // Додаємо компонент в налаштування
+      addSettingsComponent();
       
-      // Зберігаємо оригінальну функцію
-      const originalGet = parser.get;
+      // Патчимо парсер
+      patchParser();
       
-      // Замінюємо функцію
-      parser.get = function (source, callback, params) {
-        return originalGet.call(
-          this,
-          source,
-          function (data) {
-            // Обробляємо результати
-            if (data && data.Results && Array.isArray(data.Results)) {
-              console.log("[EasyTorrent] Обробка", data.Results.length, "торрентів");
-              
-              // Маркуємо торренти
-              data.Results.forEach((torrent, index) => {
-                torrent._easytorrent_processed = true;
-                torrent._easytorrent_index = index;
-                
-                // Проста оцінка на основі роздільної здатності
-                const title = (torrent.Title || torrent.title || "").toLowerCase();
-                let score = 50; // Базовий бал
-                
-                if (title.includes("2160p") || title.includes("4k")) {
-                  score += 30;
-                } else if (title.includes("1080p")) {
-                  score += 20;
-                } else if (title.includes("720p")) {
-                  score += 10;
-                }
-                
-                // Бонус за сиди
-                const seeds = torrent.Seeds || torrent.seeds || torrent.Seeders || torrent.seeders || 0;
-                if (seeds > 10) score += 10;
-                if (seeds > 50) score += 10;
-                
-                torrent._easytorrent_score = score;
-              });
-              
-              // Сортуємо за оцінкою
-              data.Results.sort((a, b) => {
-                return (b._easytorrent_score || 0) - (a._easytorrent_score || 0);
-              });
-              
-              // Оновлюємо індекси після сортування
-              data.Results.forEach((torrent, index) => {
-                torrent._easytorrent_rank = index;
-              });
-            }
-            
-            // Викликаємо оригінальний callback
-            return callback.apply(this, arguments);
-          },
-          params
-        );
-      };
+      // Додаємо обробник для відображення бейджів
+      Lampa.Listener.follow("torrent", renderTorrentBadge);
       
-      console.log("[EasyTorrent] Парсер успішно пропатчений");
+      console.log("[EasyTorrent] Плагін успішно ініціалізований!");
       
     } catch (error) {
-      console.error("[EasyTorrent] Помилка патчингу парсера:", error);
+      console.error("[EasyTorrent] Помилка ініціалізації:", error);
     }
   }
   
-  function addStyles() {
-    const style = document.createElement('style');
-    style.textContent = `
-      .torrent-recommend-badge {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background: rgba(76, 175, 80, 0.9);
-        color: white;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 0.8em;
-        font-weight: bold;
-        z-index: 10;
-      }
-      
-      .torrent-recommend-badge.top {
-        background: rgba(255, 193, 7, 0.9);
-      }
-      
-      .easytorrent-info {
-        margin: 10px;
-        padding: 10px;
-        background: rgba(0,0,0,0.2);
-        border-radius: 5px;
-        font-size: 0.9em;
-      }
-    `;
-    document.head.appendChild(style);
-  }
-  
-  // Додаємо простий обробник для відображення бейджів
-  function addTorrentRenderHandler() {
-    if (Lampa.Listener && Lampa.Listener.follow) {
-      Lampa.Listener.follow("torrent", function (event) {
-        if (event.type === "render" && event.element && event.item) {
-          const torrent = event.element;
-          const item = event.item;
-          
-          // Видаляємо старі бейджі
-          item.find(".torrent-recommend-badge").remove();
-          
-          // Перевіряємо, чи торрент оброблений
-          if (torrent._easytorrent_processed && torrent._easytorrent_rank !== undefined) {
-            const rank = torrent._easytorrent_rank;
-            const score = torrent._easytorrent_score || 0;
-            
-            // Додаємо бейдж тільки для топ-3
-            if (rank < 3) {
-              const badgeClass = rank === 0 ? "torrent-recommend-badge top" : "torrent-recommend-badge";
-              const badgeText = rank === 0 ? "★ Топ" : "#" + (rank + 1);
-              
-              const badge = $('<div class="' + badgeClass + '">' + badgeText + '</div>');
-              item.append(badge);
-            }
-          }
-        }
-      });
-      
-      console.log("[EasyTorrent] Обробник торрентів доданий");
-    }
-  }
-  
-  // Основний запуск
+  // Запуск плагіна
   function startPlugin() {
-    console.log("[EasyTorrent] Запуск плагіна...");
+    console.log("[EasyTorrent] Запуск...");
     
-    // Чекаємо, поки Lampa буде готова
-    if (window.Lampa && window.Lampa.Storage) {
+    if (window.Lampa && window.Lampa.Storage && window.Lampa.SettingsApi) {
       console.log("[EasyTorrent] Lampa вже завантажена");
       initPlugin();
-      setTimeout(addTorrentRenderHandler, 1000);
     } else if (window.appready) {
       console.log("[EasyTorrent] appready = true");
       initPlugin();
-      setTimeout(addTorrentRenderHandler, 1000);
     } else {
-      console.log("[EasyTorrent] Чекаємо на завантаження Lampa...");
+      console.log("[EasyTorrent] Чекаємо на Lampa...");
       
-      // Спробуємо через слухач подій
+      // Чекаємо через слухач подій
       if (Lampa.Listener && Lampa.Listener.follow) {
-        Lampa.Listener.follow("app", function (event) {
+        Lampa.Listener.follow("app", function(event) {
           if (event.type === "ready") {
-            console.log("[EasyTorrent] Lampa готова через Listener");
-            initPlugin();
-            setTimeout(addTorrentRenderHandler, 1000);
+            console.log("[EasyTorrent] Lampa готова");
+            setTimeout(initPlugin, 100);
           }
         });
       } else {
-        // Альтернативний спосіб: чекаємо на завантаження
-        const checkLampa = setInterval(function() {
-          if (window.Lampa && window.Lampa.Storage) {
-            clearInterval(checkLampa);
+        // Чекаємо через інтервал
+        var checkInterval = setInterval(function() {
+          if (window.Lampa && window.Lampa.Storage && window.Lampa.SettingsApi) {
+            clearInterval(checkInterval);
             console.log("[EasyTorrent] Lampa завантажена через інтервал");
-            initPlugin();
-            setTimeout(addTorrentRenderHandler, 1000);
+            setTimeout(initPlugin, 100);
           }
         }, 500);
         
-        // Максимальне очікування - 30 секунд
+        // Таймаут 30 секунд
         setTimeout(function() {
-          clearInterval(checkLampa);
+          clearInterval(checkInterval);
           console.log("[EasyTorrent] Таймаут очікування Lampa");
         }, 30000);
       }
     }
   }
   
-  // Запускаємо плагін
-  console.log("[EasyTorrent] Плагін завантажено, починаємо ініціалізацію...");
+  // Початок виконання
+  console.log("[EasyTorrent] Початок завантаження...");
   startPlugin();
   
 })();
