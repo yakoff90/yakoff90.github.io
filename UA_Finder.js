@@ -1,291 +1,220 @@
 /**
  * Lampa Track Finder v3 для Samsung TV
  * --------------------------------------------------------------------------------
- * Повна адаптація для Samsung Smart TV без вирізання функціоналу.
- * Змінено тільки мережеві запити для сумісності з браузером TV.
+ * Повна адаптація для Samsung Smart TV з сумісним синтаксисом.
  * --------------------------------------------------------------------------------
  */
 
-
-
 (function() {
-    'use strict'; // Використовуємо суворий режим для кращої якості коду та запобігання помилок.
+    'use strict';
 
-    // ===================== КОНФІГУРАЦІЯ ПЛАГІНА (LTF - Lampa Track Finder) =====================
+    // ===================== КОНФІГУРАЦІЯ ПЛАГІНА =====================
     
-    // ✅ використовуємо CSS для швидкості відмальовки прапора 
     var ukraineFlagSVG = '<i class="flag-css"></i>';
     
-   
-    // Головний об'єкт конфігурації
     var LTF_CONFIG = window.LTF_CONFIG || {
-        BADGE_STYLE: 'text',        // 'text' | 'flag_count' | 'flag_only'
-        SHOW_FOR_TV: true,          // показувати на серіалах
-        // --- Налаштування кешу ---
-        CACHE_VERSION: 4, // ❗ Змініть це число (напр. 5), якщо хочете примусово скинути весь кеш у користувачів.
-        CACHE_KEY: 'lampa_ukr_tracks_cache', // Унікальний ключ для зберігання кешу в LocalStorage.
-        CACHE_VALID_TIME_MS: 24 * 60 * 60 * 1000, // Час життя кешу (24 години). Після цього він вважається недійсним.
-        CACHE_REFRESH_THRESHOLD_MS: 12 * 60 * 60 * 1000, // Через скільки часу кеш потребує фонового оновлення (22 годин).
-
-        // --- Налаштування логування для налагодження ---
-        LOGGING_GENERAL: false, // Загальні логи (старт плагіна, оновлення мережі).
-        LOGGING_TRACKS: false, // Логи пошуку (що шукаємо, що знайшли, фільтрація).
-        LOGGING_CARDLIST: false, // Логи обробки карток (скільки карток в пачці, тощо).
-
-        // --- Налаштування API та мережі ---
-        JACRED_PROTOCOL: 'http://', // Протокол для API JacRed.
-        JACRED_URL: 'jacred.xyz', // Домен API JacRed.
-        PROXY_LIST: [ // Список проксі-серверів для обходу CORS-обмежень.
+        BADGE_STYLE: 'text',
+        SHOW_FOR_TV: true,
+        CACHE_VERSION: 4,
+        CACHE_KEY: 'lampa_ukr_tracks_cache',
+        CACHE_VALID_TIME_MS: 24 * 60 * 60 * 1000,
+        CACHE_REFRESH_THRESHOLD_MS: 12 * 60 * 60 * 1000,
+        LOGGING_GENERAL: false,
+        LOGGING_TRACKS: false,
+        LOGGING_CARDLIST: false,
+        JACRED_PROTOCOL: 'http://',
+        JACRED_URL: 'jacred.xyz',
+        PROXY_LIST: [
             'http://api.allorigins.win/raw?url=',
             'http://cors.bwa.workers.dev/'
         ],
-        PROXY_TIMEOUT_MS: 5000, // Збільшено для TV (5 секунд)
-        MAX_PARALLEL_REQUESTS: 5, // Зменшено для TV
+        PROXY_TIMEOUT_MS: 5000,
+        MAX_PARALLEL_REQUESTS: 5,
         MAX_RETRY_ATTEMPTS: 2,
-
-        // --- Налаштування функціоналу ---
-        SHOW_TRACKS_FOR_TV_SERIES: true, // Чи показувати мітки для серіалів (true або false).
-
-        // --- ✅ ОНОВЛЕНО: Налаштування відображення ---
-        DISPLAY_MODE: 'flag_count', // Режим відображення мітки. Варіанти:
-                                    // 'text': "Ukr" або "2xUkr"
-                                    // 'flag_count': [SVG] або "2x[SVG]"
-                                    // 'flag_only': [SVG] (завжди, якщо доріжки є)
-
-        // --- Ручні перевизначення доріжок для конкретних ID контенту ---
+        SHOW_TRACKS_FOR_TV_SERIES: true,
+        DISPLAY_MODE: 'flag_count',
         MANUAL_OVERRIDES: {
-            '207703': { track_count: 1 },    //✅Примусово показувати Ukr для цього ID
-            '1195518': { track_count: 2 },   //✅Примусово показувати 2xUkr для цього ID
-            '215995': { track_count: 2 },     //✅Примусово показувати 2xUkr для цього ID
-            '1234821': { track_count: 2 },   //✅Примусово показувати 2xUkr для цього ID
-            '933260': { track_count: 3 },    //✅Примусово показувати 3xUkr для цього ID
-            '245827': { track_count: 0 }     //✅Примусово не показувати Ukr для цього ID
-            /*'Тут ID фільму': { track_count: 0 },*/   // Приклад: примусово приховати
+            '207703': { track_count: 1 },
+            '1195518': { track_count: 2 },
+            '215995': { track_count: 2 },
+            '1234821': { track_count: 2 },
+            '933260': { track_count: 3 },
+            '245827': { track_count: 0 }
         }
-        // КІНЕЦЬ перевизначень
-    
     };
 
     window.LTF_CONFIG = LTF_CONFIG;
 
-    
-    // ======== АВТОМАТИЧНЕ СКИДАННЯ СТАРОГО КЕШУ ПРИ ОНОВЛЕННІ ========
-    // Ця IIFE (Immediately Invoked Function Expression) виконується один раз при старті.
-    // Вона перевіряє, чи є в кеші записи від старої версії (без префікса версії),
-    // і якщо так - очищує весь кеш, щоб уникнути конфліктів.
+    // ======== АВТОМАТИЧНЕ СКИДАННЯ СТАРОГО КЕШУ ========
     (function resetOldCache() {
         var cache = Lampa.Storage.get(LTF_CONFIG.CACHE_KEY) || {};
-        // Перевіряємо, чи є хоч один ключ, що НЕ починається з поточної версії
-        var hasOld = Object.keys(cache).some(k => !k.startsWith(LTF_CONFIG.CACHE_VERSION + '_'));
-            if (hasOld) {
+        var hasOld = false;
+        for (var key in cache) {
+            if (cache.hasOwnProperty(key)) {
+                if (key.indexOf(LTF_CONFIG.CACHE_VERSION + '_') !== 0) {
+                    hasOld = true;
+                    break;
+                }
+            }
+        }
+        if (hasOld) {
             console.log('UA-Finder: виявлено старий кеш, виконується очищення...');
             Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, {});
-            }
+        }
     })();
     
-// ===================== СТИЛІ CSS =====================
-// Цей блок створює та додає на сторінку всі необхідні стилі для відображення міток.
-var styleTracks = "<style id=\"lampa_tracks_styles\">" +
-    // Встановлюємо контекст позиціонування для постера.
-    // Це потрібно, щоб .card__tracks міг позиціонуватися абсолютно відносно нього.
-    ".card__view { position: relative; }" +
-
-    // Основний стиль для контейнера мітки
-    ".card__tracks {" +
-    " position: absolute !important; " + // Абсолютне позиціонування
-    " right: 0.3em !important; " + // Відступ праворуч
-    " left: auto !important; " + // Скидаємо позиціонування зліва
-    " top: 0.3em !important; " + // Позиція за замовчуванням (коли RatingUp неактивний)
-    " background: rgba(0,0,0,0.5) !important;" + // Напівпрозорий чорний фон
-    " color: #FFFFFF !important;" + // Білий колір тексту
-    " font-size: 1.3em !important;" + // Розмір шрифту
-    " padding: 0.2em 0.5em !important;" + // Внутрішні відступи
-    " border-radius: 1em !important;" + // Закруглення кутів
-    " font-weight: 700 !important;" + // Жирний шрифт
-    " z-index: 20 !important;" + // Високий z-index, щоб бути поверх інших елементів
-    " width: fit-content !important; " + // Ширина за вмістом
-    " max-width: calc(100% - 1em) !important; " + // Максимальна ширина
-    " overflow: hidden !important;" + // Приховувати все, що виходить за межі
-    "}" +
-    
-    // Додатковий клас, який застосовується динамічно,
-    // якщо плагін RatingUp активний і перемістив рейтинг вгору.
-    ".card__tracks.positioned-below-rating {" +
-    " top: 1.85em !important; " + // Зміщуємо мітку нижче рейтингу
-    "}" +
-    
-    // Стиль для внутрішнього `div`, що містить текст або SVG
-    ".card__tracks div {" +
-    " text-transform: none !important; " + // Без перетворення у великі літери
-    " font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif !important; " + // Шрифт
-    " font-weight: 700 !important; " + // Жирність
-    " letter-spacing: 0.1px !important; " + // Міжлітерна відстань
-    " font-size: 1.05em !important; " + // Розмір шрифту
-    " color: #FFFFFF !important;" + // Колір тексту
-    " padding: 0 !important; " + // Скидання відступів
-    " white-space: nowrap !important;" + // Заборона переносу рядка
-    " display: flex !important; " + // Flex-контейнер для вирівнювання (напр. "2x" і "[SVG]")
-    " align-items: center !important; " + // Вертикальне вирівнювання
-    " gap: 4px !important; " + // Відстань між елементами (між "2x" і "[SVG]")
-    " text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3) !important; " + // Тінь для тексту
-    "}" +
-
-    /* Стилі CSS для прапора*/
-    ".card__tracks .flag-css {" +
-    " display: inline-block;" +
-    " width: 1.5em;" +
-    " height: 0.8em;" +
-    " vertical-align: middle;" +
-    
-    // 1. Прапор (базові кольори)
-    " background: linear-gradient(to bottom, #0057B7 0%, #0057B7 50%, #FFD700 50%, #FFD700 100%);" +
-    
-    // 2. Заокруглення
-    " border-radius: 2px;" + 
-    " border: none !important;" + // Гарантуємо відсутність стандартної рамки
-    
-    // 3. Створення "Об'ємної Рамки" та "3D-Втиснення"
-    " box-shadow: " +
-        // Зовнішня тінь (1): Створює м'який, градієнтний контур (імітація зовнішньої рамки)
+    // ===================== СТИЛІ CSS =====================
+    var styleTracks = "<style id=\"lampa_tracks_styles\">" +
+        ".card__view { position: relative; }" +
+        ".card__tracks {" +
+        " position: absolute !important;" +
+        " right: 0.3em !important;" +
+        " left: auto !important;" +
+        " top: 0.3em !important;" +
+        " background: rgba(0,0,0,0.5) !important;" +
+        " color: #FFFFFF !important;" +
+        " font-size: 1.3em !important;" +
+        " padding: 0.2em 0.5em !important;" +
+        " border-radius: 1em !important;" +
+        " font-weight: 700 !important;" +
+        " z-index: 20 !important;" +
+        " width: fit-content !important;" +
+        " max-width: calc(100% - 1em) !important;" +
+        " overflow: hidden !important;" +
+        "}" +
+        ".card__tracks.positioned-below-rating {" +
+        " top: 1.85em !important;" +
+        "}" +
+        ".card__tracks div {" +
+        " text-transform: none !important;" +
+        " font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif !important;" +
+        " font-weight: 700 !important;" +
+        " letter-spacing: 0.1px !important;" +
+        " font-size: 1.05em !important;" +
+        " color: #FFFFFF !important;" +
+        " padding: 0 !important;" +
+        " white-space: nowrap !important;" +
+        " display: flex !important;" +
+        " align-items: center !important;" +
+        " gap: 4px !important;" +
+        " text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3) !important;" +
+        "}" +
+        ".card__tracks .flag-css {" +
+        " display: inline-block;" +
+        " width: 1.5em;" +
+        " height: 0.8em;" +
+        " vertical-align: middle;" +
+        " background: linear-gradient(to bottom, #0057B7 0%, #0057B7 50%, #FFD700 50%, #FFD700 100%);" +
+        " border-radius: 2px;" +
+        " border: none !important;" +
+        " box-shadow: " +
         "0 0 2px 0 rgba(0,0,0,0.6), " +
-        // Зовнішня тінь (2): Легка, широка, напівпрозора тінь для "глибини"
-        "0 0 1px 1px rgba(0,0,0,0.2), " + 
-        
-        // Внутрішня тінь (3, 4): Створюють ефект заглиблення (як у попередньому кроці)
-        "inset 0px 1px 0px 0px #004593, " + // Темно-синій (верхній край)
-        "inset 0px -1px 0px 0px #D0A800;" + // Темно-жовтий (нижній край)
+        "0 0 1px 1px rgba(0,0,0,0.2), " +
+        "inset 0px 1px 0px 0px #004593, " +
+        "inset 0px -1px 0px 0px #D0A800;" +
+        "}" +
+        "</style>";
     
-    "}" +
+    if (typeof Lampa !== 'undefined' && Lampa.Template) {
+        Lampa.Template.add('lampa_tracks_css', styleTracks);
+    }
     
-     "</style>";
-    
-// Додаємо стилі в DOM один раз при завантаженні плагіна.
-Lampa.Template.add('lampa_tracks_css', styleTracks);
-$('body').append(Lampa.Template.get('lampa_tracks_css', {}, true));
-
-    // ===================== УПРАВЛІННЯ ЧЕРГОЮ ЗАПИТІВ =====================
-    // Це система, що запобігає "забиванню" мережі.
-    // Всі запити до API стають у чергу і виконуються невеликими пачками.
-
-    var requestQueue = []; // Масив, де зберігаються завдання на пошук.
-    var activeRequests = 0; // Лічильник активних (тих, що виконуються зараз) запитів.
-    var networkHealth = 1.0; // Показник "здоров'я" мережі (1.0 = добре, 0.3 = погано).
-
-    /**
-     * Додає завдання (функцію пошуку) до черги.
-     * @param {function} fn - Функція, яку потрібно виконати.
-     */
-    function enqueueTask(fn) {
-        requestQueue.push(fn); // Додати в кінець черги.
-        processQueue(); // Спробувати запустити обробку.
+    // Додаємо стилі
+    function addStyles() {
+        if (document.body && !document.getElementById('lampa_tracks_styles')) {
+            var styleElement = document.createElement('style');
+            styleElement.id = 'lampa_tracks_styles';
+            styleElement.innerHTML = styleTracks;
+            document.head.appendChild(styleElement);
+        }
     }
 
-    /**
-     * Обробляє чергу, запускаючи завдання по одному, з урахуванням ліміту.
-     */
+    // ===================== УПРАВЛІННЯ ЧЕРГОЮ ЗАПИТІВ =====================
+    var requestQueue = [];
+    var activeRequests = 0;
+    var networkHealth = 1.0;
+
+    function enqueueTask(fn) {
+        requestQueue.push(fn);
+        processQueue();
+    }
+
     function processQueue() {
-        // Адаптивний ліміт: базується на MAX_PARALLEL_REQUESTS, але зменшується,
-        // якщо мережа "хворіє" (напр. проксі не відповідають).
         var adaptiveLimit = Math.max(3, Math.min(LTF_CONFIG.MAX_PARALLEL_REQUESTS, Math.floor(LTF_CONFIG.MAX_PARALLEL_REQUESTS * networkHealth)));
         
-        // Не перевищувати адаптивний ліміт.
         if (activeRequests >= adaptiveLimit) return; 
         
-        var task = requestQueue.shift(); // Взяти перше завдання з черги.
-        if (!task) return; // Якщо черга порожня, вийти.
+        var task = requestQueue.shift();
+        if (!task) return;
 
-        activeRequests++; // Збільшити лічильник активних запитів.
+        activeRequests++;
         
         try {
-            // Виконати завдання.
-            // Важливо: ми передаємо в завдання функцію `onTaskDone`,
-            // яку це завдання *зобов'язане* викликати, коли завершиться.
             task(function onTaskDone() {
-                activeRequests--; // Зменшити лічильник.
-                // Запустити обробку наступного завдання асинхронно (через 0ms).
-                setTimeout(processQueue, 0); 
+                activeRequests--;
+                setTimeout(processQueue, 0);
             });
         } catch (e) {
             console.error("LTF-LOG", "Помилка виконання завдання з черги:", e);
-            activeRequests--; // Все одно зменшити лічильник при помилці.
+            activeRequests--;
             setTimeout(processQueue, 0);
         }
     }
 
-    /**
-     * Оновлює показник "здоров'я мережі" (використовується в 'fetchWithProxy').
-     * @param {boolean} success - Чи був останній запит успішним.
-     */
     function updateNetworkHealth(success) {
         if (success) {
-            // Покращити здоров'я при успіху (до максимуму 1.0)
-            networkHealth = Math.min(1.0, networkHealth + 0.1); 
+            networkHealth = Math.min(1.0, networkHealth + 0.1);
         } else {
-            // Погіршити здоров'я при помилці (до мінімуму 0.3)
-            networkHealth = Math.max(0.3, networkHealth - 0.2); 
+            networkHealth = Math.max(0.3, networkHealth - 0.2);
         }
         if (LTF_CONFIG.LOGGING_GENERAL) console.log("LTF-LOG", "Оновлено здоров'я мережі:", networkHealth);
     }
 
-    // ===================== МЕРЕЖЕВІ ФУНКЦІЇ (АДАПТОВАНО ДЛЯ SAMSUNG TV) =====================
-    /**
-     * Виконує мережевий запит через список проксі-серверів, щоб обійти CORS.
-     * Використовує XMLHttpRequest замість fetch для сумісності з Samsung TV.
-     * @param {string} url - URL-адреса для запиту.
-     * @param {string} cardId - ID картки для логування.
-     * @param {function} callback - Функція, яка викликається з результатом `(error, data)`.
-     */
+    // ===================== МЕРЕЖЕВІ ФУНКЦІЇ =====================
     function fetchWithProxy(url, cardId, callback) {
-        var currentProxyIndex = 0; // Починаємо з першого проксі.
-        var callbackCalled = false; // Прапорець, щоб уникнути подвійного виклику callback.
+        var currentProxyIndex = 0;
+        var callbackCalled = false;
 
         function tryNextProxy() {
-            // Якщо всі проксі не спрацювали.
             if (currentProxyIndex >= LTF_CONFIG.PROXY_LIST.length) {
                 if (!callbackCalled) {
                     callbackCalled = true;
-                    updateNetworkHealth(false); // ❗ Погіршуємо здоров'я мережі
+                    updateNetworkHealth(false);
                     callback(new Error('Всі проксі не відповіли для ' + url));
                 }
                 return;
             }
             
-            // Формуємо URL через проксі.
             var proxyUrl = LTF_CONFIG.PROXY_LIST[currentProxyIndex] + encodeURIComponent(url);
-            
-            // Встановлюємо таймаут для запиту.
             var timeoutId = setTimeout(function() {
                 if (!callbackCalled) {
-                    currentProxyIndex++; // Переходимо до наступного проксі.
+                    currentProxyIndex++;
                     tryNextProxy();
                 }
             }, LTF_CONFIG.PROXY_TIMEOUT_MS);
 
-            // Використовуємо XMLHttpRequest замість fetch для сумісності з TV
             var xhr = new XMLHttpRequest();
             xhr.open('GET', proxyUrl, true);
             xhr.timeout = LTF_CONFIG.PROXY_TIMEOUT_MS;
             
             xhr.onload = function() {
-                clearTimeout(timeoutId); // Прибираємо таймаут.
+                clearTimeout(timeoutId);
                 if (!callbackCalled) {
                     callbackCalled = true;
                     if (xhr.status >= 200 && xhr.status < 300) {
-                        updateNetworkHealth(true); // ✅ Покращуємо здоров'я мережі
-                        callback(null, xhr.responseText); // Успіх, повертаємо дані.
+                        updateNetworkHealth(true);
+                        callback(null, xhr.responseText);
                     } else {
-                        // Якщо сталася помилка HTTP
-                        currentProxyIndex++; // Переходимо до наступного проксі.
+                        currentProxyIndex++;
                         tryNextProxy();
                     }
                 }
             };
             
             xhr.onerror = function() {
-                // Якщо сталася мережева помилка
                 clearTimeout(timeoutId);
                 if (!callbackCalled) {
-                    currentProxyIndex++; // Переходимо до наступного проксі.
+                    currentProxyIndex++;
                     tryNextProxy();
                 }
             };
@@ -293,7 +222,7 @@ $('body').append(Lampa.Template.get('lampa_tracks_css', {}, true));
             xhr.ontimeout = function() {
                 clearTimeout(timeoutId);
                 if (!callbackCalled) {
-                    currentProxyIndex++; // Переходимо до наступного проксі.
+                    currentProxyIndex++;
                     tryNextProxy();
                 }
             };
@@ -303,114 +232,68 @@ $('body').append(Lampa.Template.get('lampa_tracks_css', {}, true));
             } catch (e) {
                 clearTimeout(timeoutId);
                 if (!callbackCalled) {
-                    currentProxyIndex++; // Переходимо до наступного проксі.
+                    currentProxyIndex++;
                     tryNextProxy();
                 }
             }
         }
-        tryNextProxy(); // Починаємо спроби.
+        tryNextProxy();
     }
     
     // ===================== ДОПОМІЖНІ ФУНКЦІЇ =====================
-    /**
-     * Визначає тип контенту (фільм/серіал) з даних картки Lampa.
-     * @param {object} cardData - Дані картки Lampa.
-     * @returns {string} - 'movie' або 'tv'.
-     */
     function getCardType(cardData) {
         var type = cardData.media_type || cardData.type;
         if (type === 'movie' || type === 'tv') return type;
-        // Додаткова евристика: якщо є 'name', це, ймовірно, серіал
         return cardData.name || cardData.original_name ? 'tv' : 'movie';
     }
 
-    // ===================== ОСНОВНА ЛОГІКА ПІДРАХУНКУ ДОРІЖОК =====================
-    /**
-     * Рахує кількість українських доріжок у назві, ігноруючи субтитри.
-     * @param {string} title - Назва торрента.
-     * @returns {number} - Кількість знайдених українських аудіодоріжок.
-     */
     function countUkrainianTracks(title) {
-        if (!title) return 0; // Якщо назва порожня, повернути 0.
-        let cleanTitle = title.toLowerCase(); // Переводимо в нижній регістр.
+        if (!title) return 0;
+        var cleanTitle = title.toLowerCase();
         
-        // ❗ Важливий крок: Ігнорування субтитрів.
-        // Знаходимо позицію слова "sub" (субтитри).
-        const subsIndex = cleanTitle.indexOf('sub');
-        // Якщо "sub" знайдено, обрізаємо рядок, щоб аналізувати тільки частину ДО субтитрів.
+        var subsIndex = cleanTitle.indexOf('sub');
         if (subsIndex !== -1) {
             cleanTitle = cleanTitle.substring(0, subsIndex);
         }
 
-        // Крок 1: Шукаємо мульти-доріжки формату "NxUkr" (наприклад, "3xUkr").
-        const multiTrackMatch = cleanTitle.match(/(\d+)x\s*ukr/);
+        var multiTrackMatch = cleanTitle.match(/(\d+)x\s*ukr/);
         if (multiTrackMatch && multiTrackMatch[1]) {
-            // Якщо знайдено, повертаємо число, яке стоїть перед "xUkr".
             return parseInt(multiTrackMatch[1], 10);
         }
 
-        // Крок 2: Якщо мульти-доріжок немає, шукаємо одиночні згадки "ukr".
-        // Використовуємо \b (границя слова), щоб не знайти "ukr" всередині інших слів.
-        const singleTrackMatches = cleanTitle.match(/\bukr\b/g);
+        var singleTrackMatches = cleanTitle.match(/\bukr\b/g);
         if (singleTrackMatches) {
-            // Повертаємо кількість знайдених збігів (зазвичай 1).
             return singleTrackMatches.length;
         }
 
-        // Якщо нічого не знайдено, повертаємо 0.
         return 0;
     }
 
-    /*
-     * Форматує текст мітки на основі кількості доріжок та налаштування DISPLAY_MODE.
-     * @param {number} count - Кількість доріжок.
-     * @returns {string|null} - HTML-рядок для мітки або null.
-     */
     function formatTrackLabel(count) {
-        if (!count || count === 0) return null; // Не показувати мітку, якщо доріжок 0.
+        if (!count || count === 0) return null;
 
-        // Використовуємо 'switch' для чистої обробки трьох варіантів
         switch (LTF_CONFIG.DISPLAY_MODE) {
-            
             case 'flag_only':
-                // 1. Тільки прапор (завжди, якщо count > 0)
-                return ukraineFlagSVG; // Поверне [SVG]
-            
+                return ukraineFlagSVG;
             case 'flag_count':
-                // 2. Прапор з лічильником
-                if (count === 1) return ukraineFlagSVG; // Поверне [SVG]
-                return `${count}x${ukraineFlagSVG}`; // Поверне '2x[SVG]'
-            
+                if (count === 1) return ukraineFlagSVG;
+                return count + 'x' + ukraineFlagSVG;
             case 'text':
             default:
-                // 3. Текст (і як варіант за замовчуванням)
-                if (count === 1) return 'Ukr'; // Поверне 'Ukr'
-                return `${count}xUkr`; // Поверне '2xUkr'
+                if (count === 1) return 'Ukr';
+                return count + 'xUkr';
         }
     }
 
     // ===================== ПОШУК НА JACRED =====================
-    /**
-     * Знаходить найкращий реліз за максимальною кількістю українських доріжок.
-     * Ця функція стає в чергу 'enqueueTask'.
-     * @param {object} normalizedCard - Нормалізовані дані картки.
-     * @param {string} cardId - ID картки.
-     * @param {function} callback - Функція, яка викликається з фінальним результатом.
-     */
     function getBestReleaseWithUkr(normalizedCard, cardId, callback) {
-        // 'done' - це функція onTaskDone з 'processQueue',
-        // яку ми *мусимо* викликати в кінці, щоб черга продовжилася.
         enqueueTask(function(done) {
-
-            // --- Попередні перевірки (Pre-flight checks) ---
-            // Якщо дата відсутня або некоректна — не запускаємо пошук
             if (!normalizedCard.release_date || normalizedCard.release_date.toLowerCase().includes('невідомо') || isNaN(new Date(normalizedCard.release_date).getTime())) {
-                callback(null); // Повертаємо "не знайдено"
-                done(); // ❗ Завершуємо завдання в черзі
+                callback(null);
+                done();
                 return;
             }
             
-            // Перевірка, чи реліз ще не вийшов.
             var releaseDate = normalizedCard.release_date ? new Date(normalizedCard.release_date) : null;
             if (releaseDate && releaseDate.getTime() > Date.now()) {
                 callback(null);
@@ -418,7 +301,6 @@ $('body').append(Lampa.Template.get('lampa_tracks_css', {}, true));
                 return;
             }
 
-            // Перевірка наявності та коректності року.
             var year = '';
             if (normalizedCard.release_date && normalizedCard.release_date.length >= 4) {
                 year = normalizedCard.release_date.substring(0, 4);
@@ -430,26 +312,19 @@ $('body').append(Lampa.Template.get('lampa_tracks_css', {}, true));
             }
             var searchYearNum = parseInt(year, 10);
             
-            /**
-             * Допоміжна функція: витягує рік з назви торрента (напр. "Фільм (2023)").
-             */
             function extractYearFromTitle(title) {
                 var regex = /(?:^|[^\d])(\d{4})(?:[^\d]|$)/g;
                 var match, lastYear = 0;
                 var currentYear = new Date().getFullYear();
                 while ((match = regex.exec(title)) !== null) {
                     var extractedYear = parseInt(match[1], 10);
-                    // Обмежуємо максимальний рік поточним + 2
-                    if (extractedYear >= 1900 && extractedYear <= currentYear + 2) { 
+                    if (extractedYear >= 1900 && extractedYear <= currentYear + 2) {
                         lastYear = extractedYear;
                     }
                 }
                 return lastYear;
             }
 
-            /**
-             * Внутрішня функція для виконання одного запиту до API JacRed.
-             */
             function searchJacredApi(searchTitle, searchYear, apiCallback) {
                 var userId = Lampa.Storage.get('lampac_unic_id', '');
                 var apiUrl = LTF_CONFIG.JACRED_PROTOCOL + LTF_CONFIG.JACRED_URL + '/api/v1.0/torrents?search=' +
@@ -457,310 +332,233 @@ $('body').append(Lampa.Template.get('lampa_tracks_css', {}, true));
                     '&year=' + searchYear +
                     '&uid=' + userId;
                 
-                // Робимо запит через проксі
                 fetchWithProxy(apiUrl, cardId, function(error, responseText) {
                     if (error || !responseText) {
-                        apiCallback(null); // Помилка, повертаємо "не знайдено"
+                        apiCallback(null);
                         return;
                     }
                     try {
-                        // Парсимо відповідь
                         var torrents = JSON.parse(responseText);
                         if (!Array.isArray(torrents) || torrents.length === 0) {
-                            apiCallback(null); // Торрентів не знайдено
+                            apiCallback(null);
                             return;
                         }
 
-                        let bestTrackCount = 0; // Найкраща кількість доріжок, яку ми знайшли
-                        let bestFoundTorrent = null; // Посилання на найкращий торрент
+                        var bestTrackCount = 0;
+                        var bestFoundTorrent = null;
 
-                        // Обходимо всі знайдені торренти
-                        for (let i = 0; i < torrents.length; i++) {
-                            const currentTorrent = torrents[i];
-                            const torrentTitle = currentTorrent.title.toLowerCase();
+                        for (var i = 0; i < torrents.length; i++) {
+                            var currentTorrent = torrents[i];
+                            var torrentTitle = currentTorrent.title.toLowerCase();
 
-                            // --- ДВОРІВНЕВИЙ ФІЛЬТР "ФІЛЬМ/СЕРІАЛ" ---
-                            // Це критично важливо, щоб фільм не підхопив доріжку від серіалу
-                            // з такою ж назвою (і навпаки).
+                            var isSeriesTorrent = /(сезон|season|s\d{1,2}|серии|серії|episodes|епізод|\d{1,2}\s*из\s*\d{1,2}|\d+×\d+)/.test(torrentTitle);
                             
-                            // Рівень 2: Перевірка по ключових словах у назві
-                            const isSeriesTorrent = /(сезон|season|s\d{1,2}|серии|серії|episodes|епізод|\d{1,2}\s*из\s*\d{1,2}|\d+×\d+)/.test(torrentTitle);
-                            
-                            // Якщо картка - СЕРІАЛ, а в торренті НЕМАЄ ознак серіалу -> пропускаємо
                             if (normalizedCard.type === 'tv' && !isSeriesTorrent) {
-                                if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Пропускаємо (схожий на фільм для картки серіалу):`, currentTorrent.title);
+                                if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG [' + cardId + ']: Пропускаємо (схожий на фільм для картки серіалу):', currentTorrent.title);
                                 continue; 
                             }
-                            // Якщо картка - ФІЛЬМ, а в торренті Є ознаки серіалу -> пропускаємо
+                            
                             if (normalizedCard.type === 'movie' && isSeriesTorrent) {
-                                if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Пропускаємо (схожий на серіал для картки фільму):`, currentTorrent.title);
+                                if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG [' + cardId + ']: Пропускаємо (схожий на серіал для картки фільму):', currentTorrent.title);
                                 continue;
                             }
                             
-                            // Рівень 3: Додаткова (суворіша) перевірка для ФІЛЬМІВ
                             if (normalizedCard.type === 'movie') {
-                                const hasStrongSeriesIndicators = /(сезон|season|s\d|серії|episodes|епізод|\d+×\d+)/i.test(torrentTitle);
+                                var hasStrongSeriesIndicators = /(сезон|season|s\d|серії|episodes|епізод|\d+×\d+)/i.test(torrentTitle);
                                 if (hasStrongSeriesIndicators) {
-                                    if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Пропускаємо (чіткі ознаки серіалу для картки фільму):`, currentTorrent.title);
+                                    if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG [' + cardId + ']: Пропускаємо (чіткі ознаки серіалу для картки фільму):', currentTorrent.title);
                                     continue;
                                 }
                             }
                             
-                            // --- ФІЛЬТР ЗА РОКОМ ---
-                            // Беремо рік з назви торрента, або (якщо там немає) з поля 'relased'
                             var parsedYear = extractYearFromTitle(currentTorrent.title) || parseInt(currentTorrent.relased, 10);
                             var yearDifference = Math.abs(parsedYear - searchYearNum);
 
-                            // --- НАЛАШТУВАННЯ ГНУЧКОСТІ ПОШУКУ ЗА РОКОМ ---                            
-                            // ✅Тут можна змінити припустиму різницю у роках.
-                            // > 0 : Тільки точний збіг року. Максимальна точність, але може пропускати релізи на межі років.
-                            // > 1 : Дозволяє різницю в 1 рік. РЕКОМЕНДОВАНО для серіалів та фільмів на межі років.
-                    
-                            if (parsedYear > 1900 && yearDifference > 0) { //(тільки точний збіг)
-                                if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Пропускаємо (рік не співпадає: ${parsedYear} vs ${searchYearNum}):`, currentTorrent.title);
+                            if (parsedYear > 1900 && yearDifference > 0) {
+                                if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG [' + cardId + ']: Пропускаємо (рік не співпадає: ' + parsedYear + ' vs ' + searchYearNum + '):', currentTorrent.title);
                                 continue;
                             }
                             
-                            // --- ПІДРАХУНОК ДОРІЖОК ---
-                            // Рахуємо доріжки в "чистій" назві (без субтитрів)
-                            const currentTrackCount = countUkrainianTracks(currentTorrent.title);
+                            var currentTrackCount = countUkrainianTracks(currentTorrent.title);
                             
-                            // Оновлюємо наш "найкращий" результат
                             if (currentTrackCount > bestTrackCount) {
                                 bestTrackCount = currentTrackCount;
                                 bestFoundTorrent = currentTorrent;
-                            } 
-                            // (Опціонально) Якщо кількість доріжок однакова, беремо той,
-                            // у якого довша назва (часто це повніша назва релізу).
-                            else if (currentTrackCount === bestTrackCount && bestTrackCount > 0 && bestFoundTorrent && currentTorrent.title.length > bestFoundTorrent.title.length) {
+                            } else if (currentTrackCount === bestTrackCount && bestTrackCount > 0 && bestFoundTorrent && currentTorrent.title.length > bestFoundTorrent.title.length) {
                                 bestFoundTorrent = currentTorrent;
                             }
-                        } // Кінець циклу for
+                        }
 
-                        // Повертаємо результат
                         if (bestFoundTorrent) {
                             apiCallback({ track_count: bestTrackCount });
                         } else {
-                            apiCallback(null); // Не знайдено
+                            apiCallback(null);
                         }
                     } catch (e) {
-                        apiCallback(null); // Помилка парсингу JSON
+                        apiCallback(null);
                     }
                 });
-            } // Кінець searchJacredApi
+            }
 
-            // --- ЛОГІКА ПАРАЛЕЛЬНОГО ПОШУКУ ---
-            // Шукаємо одночасно за оригінальною та локалізованою назвою.
-            // Це підвищує шанс знайти реліз.
-            const titlesToSearch = [ normalizedCard.original_title, normalizedCard.title ];
-            const uniqueTitles = [...new Set(titlesToSearch)].filter(Boolean); // Видаляємо дублікати та порожні рядки
+            var titlesToSearch = [normalizedCard.original_title, normalizedCard.title];
+            var uniqueTitles = [];
+            var seen = {};
             
-            if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG', `[${cardId}] Запускаємо пошук за назвами:`, uniqueTitles);
+            for (var i = 0; i < titlesToSearch.length; i++) {
+                var title = titlesToSearch[i];
+                if (title && !seen[title]) {
+                    seen[title] = true;
+                    uniqueTitles.push(title);
+                }
+            }
             
-            // Створюємо масив "промісів" - по одному на кожну назву
-            const searchPromises = uniqueTitles.map(title => {
-                return new Promise(resolve => {
-                    searchJacredApi(title, year, resolve); // 'resolve' - це 'apiCallback'
-                });
-            });
+            if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG', '[' + cardId + '] Запускаємо пошук за назвами:', uniqueTitles);
 
-            // Чекаємо, доки ВСІ пошуки завершаться
-            Promise.all(searchPromises).then(results => {
-                // results - це масив результатів, напр. [ {track_count: 1}, null, {track_count: 2} ]
-                
-                let bestOverallResult = null;
-                let maxTrackCount = 0;
-                
-                // Обираємо найкращий з усіх результатів
-                results.forEach(result => {
-                    if (!result || !result.track_count) return;
+            var searchPromises = [];
+            for (var j = 0; j < uniqueTitles.length; j++) {
+                (function(title) {
+                    searchPromises.push(new Promise(function(resolve) {
+                        searchJacredApi(title, year, resolve);
+                    }));
+                })(uniqueTitles[j]);
+            }
+
+            Promise.all(searchPromises).then(function(results) {
+                var bestOverallResult = null;
+                var maxTrackCount = 0;
+
+                for (var k = 0; k < results.length; k++) {
+                    var result = results[k];
+                    if (!result || !result.track_count) continue;
                     if (result.track_count > maxTrackCount) {
                         maxTrackCount = result.track_count;
                         bestOverallResult = result;
                     }
-                });
+                }
                 
-                if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG', `[${cardId}] Найкращий результат з усіх пошуків:`, bestOverallResult);
-                
-                callback(bestOverallResult); // Повертаємо фінальний найкращий результат
-                done(); // ❗ Сигнал черзі, що завдання завершено.
+                if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG', '[' + cardId + '] Найкращий результат з усіх пошуків:', bestOverallResult);
+                callback(bestOverallResult);
+                done();
             });
         });
     }
 
     // ===================== РОБОТА З КЕШЕМ =====================
-    /**
-     * Отримує дані з кешу за ключем.
-     * @param {string} key - Ключ кешу.
-     * @returns {object|null} - Об'єкт з даними, або null, якщо кеш недійсний.
-     */
     function getTracksCache(key) {
         var cache = Lampa.Storage.get(LTF_CONFIG.CACHE_KEY) || {};
         var item = cache[key];
-        // Перевіряємо, чи є запис І чи він не прострочений
         var isCacheValid = item && (Date.now() - item.timestamp < LTF_CONFIG.CACHE_VALID_TIME_MS);
         return isCacheValid ? item : null;
     }
 
-    /**
-     * Зберігає дані в кеш.
-     * @param {string} key - Ключ кешу.
-     * @param {object} data - Дані для збереження (тільки track_count).
-     */
     function saveTracksCache(key, data) {
         var cache = Lampa.Storage.get(LTF_CONFIG.CACHE_KEY) || {};
         cache[key] = {
             track_count: data.track_count,
-            timestamp: Date.now() // Зберігаємо поточний час
+            timestamp: Date.now()
         };
         Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, cache);
     }
 
-    /**
-     * Примусове очищення кешу (для налаштувань)
-     */
     function clearTracksCache() {
         Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, {});
         console.log('UA-Finder: Кеш повністю очищено користувачем.');
-        // Скидаємо версію кешу, щоб гарантувати перезапис
-        var cache = {}; 
-        Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, cache);
     }
     
-document.addEventListener('ltf:settings-changed', function(){
-  // проходимо видимі картки та оновлюємо без нових мережевих запитів
-  document.querySelectorAll('.card').forEach(function(card){
-    var view = card.querySelector('.card__view');
-    var data = card.card_data;
-    if (!view || !data) return;
+    document.addEventListener('ltf:settings-changed', function(){
+        var cards = document.querySelectorAll('.card');
+        for (var i = 0; i < cards.length; i++) {
+            var card = cards[i];
+            var view = card.querySelector('.card__view');
+            var data = card.card_data;
+            if (!view || !data) continue;
 
-    // якщо серіали вимкнено — просто прибираємо бейдж і далі нічого
-    var type = (data.media_type || data.type || (data.name || data.original_name ? 'tv' : 'movie'));
-    if (type === 'tv' && !LTF_CONFIG.SHOW_TRACKS_FOR_TV_SERIES){
-      var ex = view.querySelector('.card__tracks');
-      if (ex) ex.remove();
-      return;
+            var type = data.media_type || data.type || (data.name || data.original_name ? 'tv' : 'movie');
+            if (type === 'tv' && !LTF_CONFIG.SHOW_TRACKS_FOR_TV_SERIES) {
+                var ex = view.querySelector('.card__tracks');
+                if (ex) ex.remove();
+                continue;
+            }
+
+            var id = data.id || '';
+            var manual = LTF_CONFIG.MANUAL_OVERRIDES && LTF_CONFIG.MANUAL_OVERRIDES[id];
+            if (manual) {
+                updateCardListTracksElement(view, manual.track_count || 0);
+                continue;
+            }
+
+            var cacheKey = LTF_CONFIG.CACHE_VERSION + '_' + type + '_' + id;
+            var cached = getTracksCache(cacheKey);
+            var count = cached ? (cached.track_count || 0) : 0;
+            updateCardListTracksElement(view, count);
+        }
+    });
+
+    // ===================== ОНОВЛЕННЯ ІНТЕРФЕЙСУ =====================
+    function updateCardListTracksElement(cardView, trackCount) {
+        var displayLabel = formatTrackLabel(trackCount);
+        var wrapper = cardView.querySelector('.card__tracks');
+
+        function ensurePositionClass(el) {
+            var parentCard = cardView.closest('.card');
+            if (!parentCard) return;
+            var vote = parentCard.querySelector('.card__vote');
+            if (!vote) {
+                el.classList.remove('positioned-below-rating');
+                return;
+            }
+            var topStyle = getComputedStyle(vote).top;
+            if (topStyle !== 'auto' && parseInt(topStyle) < 100) {
+                el.classList.add('positioned-below-rating');
+            } else {
+                el.classList.remove('positioned-below-rating');
+            }
+        }
+
+        if (!displayLabel) {
+            if (wrapper) wrapper.remove();
+            return;
+        }
+
+        if (wrapper) {
+            var inner = wrapper.firstElementChild;
+            if (!inner) {
+                inner = document.createElement('div');
+                wrapper.appendChild(inner);
+            }
+
+            if (inner.innerHTML === displayLabel) {
+                ensurePositionClass(wrapper);
+                return;
+            }
+
+            inner.innerHTML = displayLabel;
+            ensurePositionClass(wrapper);
+            return;
+        }
+
+        var newWrapper = document.createElement('div');
+        newWrapper.className = 'card__tracks';
+        var inner = document.createElement('div');
+        inner.innerHTML = displayLabel;
+        newWrapper.appendChild(inner);
+        ensurePositionClass(newWrapper);
+        cardView.appendChild(newWrapper);
     }
 
-    var id = data.id || '';
-    // ручне перевизначення має пріоритет
-    var manual = LTF_CONFIG.MANUAL_OVERRIDES && LTF_CONFIG.MANUAL_OVERRIDES[id];
-    if (manual){
-      updateCardListTracksElement(view, manual.track_count || 0);
-      return;
-    }
-
-    var cacheKey = LTF_CONFIG.CACHE_VERSION + '_' + type + '_' + id;
-    var cached = getTracksCache(cacheKey);
-    var count = cached ? (cached.track_count || 0) : 0;
-
-    updateCardListTracksElement(view, count);
-  });
-});
-
-
-    
-// ===================== ОНОВЛЕННЯ ІНТЕРФЕЙСУ (UI) =====================
-/**
- * Малює, оновлює або видаляє мітку на картці.
- * @param {HTMLElement} cardView - DOM.eлемент .card__view.
- * @param {number} trackCount - Кількість доріжок (0, 1, 2...).
- */
-function updateCardListTracksElement(cardView, trackCount) {
-  // 1) готуємо мітку
-  const displayLabel = formatTrackLabel(trackCount);
-  const wrapper = cardView.querySelector('.card__tracks');
-
-  // допоміжна: правильно розмістити під рейтингом (RatingUp)
-  function ensurePositionClass(el){
-    const parentCard = cardView.closest('.card');
-    if (!parentCard) return;
-    const vote = parentCard.querySelector('.card__vote');
-    if (!vote) { el.classList.remove('positioned-below-rating'); return; }
-    const topStyle = getComputedStyle(vote).top;
-    if (topStyle !== 'auto' && parseInt(topStyle) < 100) el.classList.add('positioned-below-rating');
-    else el.classList.remove('positioned-below-rating');
-  }
-
-  // 2) якщо мітка не потрібна — прибираємо існуючу та виходимо
-  if (!displayLabel) {
-    if (wrapper) wrapper.remove();
-    return;
-  }
-
-  // 3) якщо контейнер уже є — оновлюємо тільки вміст (без видалення вузла)
-  if (wrapper) {
-    let inner = wrapper.firstElementChild;
-    if (!inner) {
-      inner = document.createElement('div');
-      wrapper.appendChild(inner);
-    }
-
-    // нічого не робимо, якщо текст/HTML збіглися
-    if (inner.innerHTML === displayLabel) {
-      ensurePositionClass(wrapper);
-      return;
-    }
-
-    inner.innerHTML = displayLabel;
-    ensurePositionClass(wrapper);
-    return;
-  }
-
-  // 4) інакше — створюємо новий контейнер
-  const newWrapper = document.createElement('div');
-  newWrapper.className = 'card__tracks';
-
-  const inner = document.createElement('div');
-  inner.innerHTML = displayLabel;
-
-  newWrapper.appendChild(inner);
-  ensurePositionClass(newWrapper);
-  cardView.appendChild(newWrapper);
-}
-
- // додай десь поруч із іншими утилітами
-function reprocessVisibleCardsChunked(){
-  const cards = Array.from(document.querySelectorAll('.card'))
-    .filter(c => c.isConnected && document.body.contains(c));
-  const BATCH = 20, DELAY = 25;
-  let i = 0;
-  (function tick(){
-    const part = cards.slice(i, i + BATCH);
-    part.forEach(card => processListCard(card));
-    i += BATCH;
-    if (i < cards.length) setTimeout(tick, DELAY);
-  })();
-}
-   
-   
-    
     // ===================== ГОЛОВНИЙ ОБРОБНИК КАРТОК =====================
-    /**
-     * 🟩 ІДЕМПОТЕНТНА ЛОГІКА
-     * Ця функція може викликатись для однієї картки багато разів (дякуючи MutationObserver).
-     * Вона сама вирішує, що робити, базуючись на стані кешу.
-     * 1. Немає кешу? -> Робимо пошук, малюємо, зберігаємо.
-     * 2. Кеш свіжий (0-6 годин)? -> Просто малюємо з кешу. (Це "автозцілення", якщо DOM оновився).
-     * 3. Кеш застарілий (6-12 годин)? -> Малюємо з кешу + запускаємо фоновий пошук. (Це виправлення "примар").
-     */
     function processListCard(cardElement) {
-        // --- Базові перевірки ---
-        // Картка ще існує в DOM?
         if (!cardElement || !cardElement.isConnected || !document.body.contains(cardElement)) {
             return;
         }
-        // У картки є необхідні дані?
+        
         var cardData = cardElement.card_data;
         var cardView = cardElement.querySelector('.card__view');
         if (!cardData || !cardView) return;
 
-        // Перевірка налаштування: чи показувати для серіалів
         var isTvSeries = (getCardType(cardData) === 'tv');
         if (isTvSeries && !LTF_CONFIG.SHOW_TRACKS_FOR_TV_SERIES) return;
 
-        // --- Нормалізація даних ---
-        // Збираємо дані в єдиний формат
         var normalizedCard = {
             id: cardData.id || '',
             title: cardData.title || cardData.name || '',
@@ -769,54 +567,37 @@ function reprocessVisibleCardsChunked(){
             release_date: cardData.release_date || cardData.first_air_date || ''
         };
         var cardId = normalizedCard.id;
-        var cacheKey = `${LTF_CONFIG.CACHE_VERSION}_${normalizedCard.type}_${cardId}`;
+        var cacheKey = LTF_CONFIG.CACHE_VERSION + '_' + normalizedCard.type + '_' + cardId;
 
-        // --- 1. Перевірка ручних перевизначень (мають найвищий пріоритет) ---
         var manualOverrideData = LTF_CONFIG.MANUAL_OVERRIDES[cardId];
         if (manualOverrideData) {
-            if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Використовується ручне перевизначення:`, manualOverrideData);
-            // Малюємо мітку згідно перевизначення
+            if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG [' + cardId + ']: Використовується ручне перевизначення:', manualOverrideData);
             updateCardListTracksElement(cardView, manualOverrideData.track_count);
-            return; // Не продовжуємо стандартну обробку
+            return;
         }
 
-        // --- 2. Отримуємо дані з кешу ---
         var cachedData = getTracksCache(cacheKey);
 
-        // --- 3. Вирішуємо, що робити (Основна логіка) ---
         if (cachedData) {
-            // --- КЕШ ІСНУЄ ---
-            
-            // 3a. Малюємо мітку з кешу.
-            // Це і є "автозцілення": якщо Lampa перемалювала картку і мітка зникла,
-            // цей код миттєво її відновить при наступному виклику.
             updateCardListTracksElement(cardView, cachedData.track_count);
             
-            // 3b. Перевіряємо, чи не час оновити кеш у фоні.
-            // Це виправлення "примар": якщо в кеші хибний '1', а насправді '0',
-            // цей код оновить кеш і прибере мітку.
             if (Date.now() - cachedData.timestamp > LTF_CONFIG.CACHE_REFRESH_THRESHOLD_MS) {
-                if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Кеш застарілий, фонове оновлення...`);
+                if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG [' + cardId + ']: Кеш застарілий, фонове оновлення...');
                 
                 getBestReleaseWithUkr(normalizedCard, cardId, function(liveResult) {
-                    let trackCount = liveResult ? liveResult.track_count : 0;
-                    // Оновлюємо кеш новими даними
+                    var trackCount = liveResult ? liveResult.track_count : 0;
                     saveTracksCache(cacheKey, { track_count: trackCount });
                     
-                    // Оновлюємо UI, лише якщо картка ще існує на екрані
                     if (document.body.contains(cardElement)) {
                         updateCardListTracksElement(cardView, trackCount);
                     }
                 });
             }
         } else {
-            // --- КЕШУ НЕМАЄ (або він прострочений > 12 годин) ---
-            if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Кеш відсутній, новий пошук...`);
+            if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG [' + cardId + ']: Кеш відсутній, новий пошук...');
             
-            // Запускаємо повний пошук
             getBestReleaseWithUkr(normalizedCard, cardId, function(liveResult) {
-                let trackCount = liveResult ? liveResult.track_count : 0;
-                // Зберігаємо новий результат в кеш
+                var trackCount = liveResult ? liveResult.track_count : 0;
                 saveTracksCache(cacheKey, { track_count: trackCount });
                 
                 if (document.body.contains(cardElement)) {
@@ -827,52 +608,48 @@ function reprocessVisibleCardsChunked(){
     }
     
     // ===================== ІНІЦІАЛІЗАЦІЯ ПЛАГІНА =====================
-    
-    // --- Логіка Дебаунсингу та Пакетної обробки ---
-    // Це потрібно, щоб не обробляти кожну картку окремо, 
-    // а збирати їх у "пачку" і обробляти разом.
-    
-    var observerDebounceTimer = null; // Таймер для затримки.
-    var cardsToProcess = []; // Масив для накопичення нових карток.
+    var observerDebounceTimer = null;
+    var cardsToProcess = [];
 
-    /**
-     * Запускає обробку накопичених карток із затримкою.
-     */
     function debouncedProcessCards() {
-        clearTimeout(observerDebounceTimer); // Скидаємо попередній таймер.
+        clearTimeout(observerDebounceTimer);
         
-        // Встановлюємо новий таймер. Обробка почнеться через 150 мс
-        // після ОСТАННЬОГО виявлення нової картки.
         observerDebounceTimer = setTimeout(function() {
-            // Використовуємо Set, щоб автоматично видалити дублікати карток,
-            // які могли бути додані кілька разів.
-            const batch = [...new Set(cardsToProcess)]; 
-            cardsToProcess = []; // Очищуємо для нових карток
+            var batch = [];
+            var seen = {};
+            
+            for (var i = 0; i < cardsToProcess.length; i++) {
+                var card = cardsToProcess[i];
+                if (!seen[card]) {
+                    seen[card] = true;
+                    batch.push(card);
+                }
+            }
+            
+            cardsToProcess = [];
             
             if (LTF_CONFIG.LOGGING_CARDLIST) console.log("LTF-LOG: Обробка пачки з", batch.length, "карток.");
 
-            // Розбиваємо велику пачку на маленькі "пакети" (chunks),
-            // щоб не блокувати інтерфейс Lampa.
-            var BATCH_SIZE = 12; // Обробляти по 12 карток за раз
-            var DELAY_MS = 30;   // Затримка 30ms між пакетами
+            var BATCH_SIZE = 12;
+            var DELAY_MS = 30;
 
-            /**
-             * Рекурсивна функція обробки пакетів карток
-             * @param {number} startIndex - Індекс початку поточного пакету
-             */
             function processBatch(startIndex) {
-                // Беремо "шматок" пачки
-                var currentBatch = batch.slice(startIndex, startIndex + BATCH_SIZE);
+                var currentBatch = [];
+                var endIndex = startIndex + BATCH_SIZE;
+                if (endIndex > batch.length) endIndex = batch.length;
                 
-                // Обробляємо кожну картку з поточного пакету
-                currentBatch.forEach(card => {
+                for (var i = startIndex; i < endIndex; i++) {
+                    currentBatch.push(batch[i]);
+                }
+
+                for (var j = 0; j < currentBatch.length; j++) {
+                    var card = currentBatch[j];
                     if (card.isConnected && document.body.contains(card)) {
                         processListCard(card);
                     }
-                });
+                }
                 
                 var nextIndex = startIndex + BATCH_SIZE;
-                // Якщо залишилися картки - плануємо наступний пакет
                 if (nextIndex < batch.length) {
                     setTimeout(function() {
                         processBatch(nextIndex);
@@ -880,236 +657,244 @@ function reprocessVisibleCardsChunked(){
                 }
             }
             
-            // Запускаємо пакетну обробку
             if (batch.length > 0) {
                 processBatch(0);
             }
-            
-        }, 150); // Затримка в 150 мілісекунд.
+        }, 150);
     }
 
-    // MutationObserver - "око", яке слідкує за появою нових карток на сторінці.
     var observer = new MutationObserver(function(mutations) {
-        let newCardsFound = false;
-        mutations.forEach(function(mutation) {
-            // Нас цікавлять тільки ДОДАНІ вузли
+        var newCardsFound = false;
+        for (var i = 0; i < mutations.length; i++) {
+            var mutation = mutations[i];
             if (mutation.addedNodes) {
-                mutation.addedNodes.forEach(function(node) {
-                    // Перевіряємо, чи це елемент (а не текст)
-                    if (node.nodeType === 1) { 
-                        // Якщо це сама картка
+                for (var j = 0; j < mutation.addedNodes.length; j++) {
+                    var node = mutation.addedNodes[j];
+                    if (node.nodeType === 1) {
                         if (node.classList && node.classList.contains('card')) {
-                            cardsToProcess.push(node); // Додаємо картку в масив для обробки.
+                            cardsToProcess.push(node);
                             newCardsFound = true;
                         }
-                        // Або якщо це контейнер, всередині якого є картки
-                        const nestedCards = node.querySelectorAll('.card');
-                        if (nestedCards.length) {
-                           nestedCards.forEach(card => cardsToProcess.push(card));
-                           newCardsFound = true;
+                        
+                        var nestedCards = node.querySelectorAll('.card');
+                        for (var k = 0; k < nestedCards.length; k++) {
+                            cardsToProcess.push(nestedCards[k]);
+                            newCardsFound = true;
                         }
                     }
-                });
+                }
             }
-        });
+        }
         
-        // Якщо були додані нові картки, запускаємо відкладену обробку.
         if (newCardsFound) {
             debouncedProcessCards();
         }
     });
 
-    /**
-     * Головна функція ініціалізації, яка запускає весь механізм.
-     */
     function initializeLampaTracksPlugin() {
-        // Запобігаємо повторній ініціалізації.
         if (window.lampaTrackFinderPlugin) return;
         window.lampaTrackFinderPlugin = true;
 
-        // Запускаємо спостерігач DOM.
-        // Ми слухаємо основні контейнери, де Lampa малює картки.
+        addStyles();
+        
         var containers = document.querySelectorAll('.cards, .card-list, .content, .main, .cards-list, .preview__list');
         if (containers.length) {
-            containers.forEach(container => observer.observe(container, { childList: true, subtree: true }));
+            for (var i = 0; i < containers.length; i++) {
+                observer.observe(containers[i], { childList: true, subtree: true });
+            }
         } else {
-            // Якщо контейнери ще не готові, слухаємо 'body'.
             observer.observe(document.body, { childList: true, subtree: true });
         }
 
-        // ===============================================================
-        // 🟩 Разова перевірка кешу при старті
-        // Миттєво відновлює мітки для карток, що ВЖЕ є на екрані при запуску Lampa,
-        // до того, як MutationObserver почав працювати.
-        // ===============================================================
-        setTimeout(function () {
-            const allCards = document.querySelectorAll('.card');
+        setTimeout(function() {
+            var allCards = document.querySelectorAll('.card');
             if (LTF_CONFIG.LOGGING_GENERAL && allCards.length > 0) {
-                 console.log(`UA-Finder: Разова перевірка кешу для ${allCards.length} карток...`);
+                console.log('UA-Finder: Разова перевірка кешу для ' + allCards.length + ' карток...');
             }
-            allCards.forEach(card => {
+            for (var i = 0; i < allCards.length; i++) {
+                var card = allCards[i];
                 if (card.card_data && card.querySelector('.card__view')) {
-                    // Використовуємо ту ж саму головну функцію.
-                    // Вона сама візьме дані з кешу і намалює мітку.
                     processListCard(card);
                 }
-            });
-        }, 1200); // Через 1.2 секунди після старту Lampa
+            }
+        }, 1200);
 
         if (LTF_CONFIG.LOGGING_GENERAL) console.log("LTF-LOG: Плагін пошуку українських доріжок (v3.3) успішно ініціалізовано!");
     }
 
-    // Запускаємо ініціалізацію, коли сторінка (DOM) буде готова.
     if (document.body) {
         initializeLampaTracksPlugin();
     } else {
         document.addEventListener('DOMContentLoaded', initializeLampaTracksPlugin);
     }
 
+    // ===================== НАЛАШТУВАННЯ =====================
+    (function(){
+        'use strict';
 
+        var SETTINGS_KEY = 'ltf_user_settings_v1';
+        var st;
 
-    
-    
-
-/* **=====** UA-Finder: Settings (Interface → "Мітки "UA" доріжок") **=====** */
-(function(){
-  'use strict';
-
-  var SETTINGS_KEY = 'ltf_user_settings_v1';
-  var st;
-
-  function ltfToast(msg){
-    try { if (Lampa && Lampa.Noty) return Lampa.Noty(msg); } catch(e){}
-    var id='ltf_toast', el=document.getElementById(id);
-    if(!el){
-      el=document.createElement('div');
-      el.id=id;
-      el.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:2rem;padding:.6rem 1rem;background:rgba(0,0,0,.85);color:#fff;border-radius:.5rem;z-index:9999;font-size:14px;transition:opacity .2s;opacity:0';
-      document.body.appendChild(el);
-    }
-    el.textContent=msg; el.style.opacity='1';
-    setTimeout(function(){ el.style.opacity='0'; },1300);
-  }
-
-  function toBool(v){ return v===true || String(v)==='true'; }
-
-  function load(){
-    var s = Lampa.Storage.get(SETTINGS_KEY) || {};
-    return {
-      badge_style: s.badge_style || 'text',     // text | flag_count | flag_only
-      show_tv: (typeof s.show_tv === 'boolean') ? s.show_tv : true
-    };
-  }
-
-  function apply(){
-    LTF_CONFIG.DISPLAY_MODE  = st.badge_style;
-    LTF_CONFIG.BADGE_STYLE   = st.badge_style;            // сумісність
-    LTF_CONFIG.SHOW_TRACKS_FOR_TV_SERIES = !!st.show_tv;
-    LTF_CONFIG.SHOW_FOR_TV               = !!st.show_tv;
-    try { document.dispatchEvent(new CustomEvent('ltf:settings-changed',{detail:{...st}})); } catch(e){}
-  }
-
-  function save(){ Lampa.Storage.set(SETTINGS_KEY, st); apply(); ltfToast('Збережено'); }
-
-function clearTracks(){
-    // 1. Очищуємо пам'ять
-    try {
-        if(typeof clearTracksCache === 'function') {
-            clearTracksCache();
-        } else {
-            Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, {}); 
+        function ltfToast(msg) {
+            try {
+                if (Lampa && Lampa.Noty) return Lampa.Noty(msg);
+            } catch(e) {}
+            
+            var id = 'ltf_toast';
+            var el = document.getElementById(id);
+            if(!el){
+                el = document.createElement('div');
+                el.id = id;
+                el.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:2rem;padding:.6rem 1rem;background:rgba(0,0,0,.85);color:#fff;border-radius:.5rem;z-index:9999;font-size:14px;transition:opacity .2s;opacity:0';
+                document.body.appendChild(el);
+            }
+            el.textContent = msg;
+            el.style.opacity = '1';
+            setTimeout(function() {
+                el.style.opacity = '0';
+            }, 1300);
         }
-    } catch(e) {}
 
-    // 2. Миттєво візуально прибираємо старі мітки (через подію)
-    try{ document.dispatchEvent(new CustomEvent('ltf:settings-changed',{detail:{...st}})); }catch(e){}
-    
-    ltfToast('Кеш очищено. Оновлюю дані...');
+        function toBool(v) {
+            return v === true || String(v) === 'true';
+        }
 
-    // 3. БЕЗПЕЧНЕ ОНОВЛЕННЯ: Запускаємо пересканування по черзі, щоб не "повісити" інтерфейс
-    var cards = Array.from(document.querySelectorAll('.card')); // Беремо всі картки
-    var index = 0;
+        function load() {
+            var s = Lampa.Storage.get(SETTINGS_KEY) || {};
+            return {
+                badge_style: s.badge_style || 'text',
+                show_tv: (typeof s.show_tv === 'boolean') ? s.show_tv : true
+            };
+        }
 
-    function processNext() {
-        if (index >= cards.length) return; // Кінець списку
+        function apply() {
+            LTF_CONFIG.DISPLAY_MODE = st.badge_style;
+            LTF_CONFIG.BADGE_STYLE = st.badge_style;
+            LTF_CONFIG.SHOW_TRACKS_FOR_TV_SERIES = !!st.show_tv;
+            LTF_CONFIG.SHOW_FOR_TV = !!st.show_tv;
+            try {
+                var event = new CustomEvent('ltf:settings-changed', {detail: st});
+                document.dispatchEvent(event);
+            } catch(e) {}
+        }
 
-        var card = cards[index];
-        // Перевіряємо, чи картка видима, щоб не витрачати ресурси даремно
-        if (card.isConnected && card.getBoundingClientRect().top < window.innerHeight) {
-            // Викликаємо головну функцію. Оскільки кеш пустий, вона сама піде в мережу шукати дані
-            if(typeof processListCard === 'function') {
-                processListCard(card);
+        function save() {
+            Lampa.Storage.set(SETTINGS_KEY, st);
+            apply();
+            ltfToast('Збережено');
+        }
+
+        function clearTracks() {
+            try {
+                clearTracksCache();
+            } catch(e) {
+                Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, {});
+            }
+
+            try {
+                var event = new CustomEvent('ltf:settings-changed', {detail: st});
+                document.dispatchEvent(event);
+            } catch(e) {}
+            
+            ltfToast('Кеш очищено. Оновлюю дані...');
+
+            var cards = document.querySelectorAll('.card');
+            var index = 0;
+
+            function processNext() {
+                if (index >= cards.length) return;
+
+                var card = cards[index];
+                if (card.isConnected && card.getBoundingClientRect().top < window.innerHeight) {
+                    processListCard(card);
+                }
+                
+                index++;
+                setTimeout(processNext, 250);
+            }
+
+            processNext();
+        }
+
+        if (typeof Lampa !== 'undefined' && Lampa.Template) {
+            Lampa.Template.add('settings_ltf', '<div></div>');
+        }
+
+        function registerUI() {
+            if (!Lampa || !Lampa.SettingsApi) return;
+
+            Lampa.SettingsApi.addParam({
+                component: 'interface',
+                param: { type: 'button', component: 'ltf' },
+                field: { name: 'Мітки "UA" доріжок', description: 'Керування відображенням міток українських доріжок' },
+                onChange: function() {
+                    Lampa.Settings.create('ltf', {
+                        template: 'settings_ltf',
+                        onBack: function() {
+                            Lampa.Settings.create('interface');
+                        }
+                    });
+                }
+            });
+
+            Lampa.SettingsApi.addParam({
+                component: 'ltf',
+                param: {
+                    name: 'ltf_badge_style',
+                    type: 'select',
+                    values: {
+                        text: 'Текстова мітка ("Ukr", "2xUkr")',
+                        flag_count: 'Прапорець із лічильником',
+                        flag_only: 'Лише прапорець'
+                    },
+                    default: st.badge_style
+                },
+                field: { name: 'Стиль мітки' },
+                onChange: function(v) {
+                    st.badge_style = v;
+                    save();
+                }
+            });
+
+            Lampa.SettingsApi.addParam({
+                component: 'ltf',
+                param: {
+                    name: 'ltf_show_tv',
+                    type: 'select',
+                    values: {'true': 'Увімкнено', 'false': 'Вимкнено'},
+                    default: String(st.show_tv)
+                },
+                field: { name: 'Показувати для серіалів' },
+                onChange: function(v) {
+                    st.show_tv = toBool(v);
+                    save();
+                }
+            });
+
+            Lampa.SettingsApi.addParam({
+                component: 'ltf',
+                param: { type: 'button', component: 'ltf_clear_cache' },
+                field: { name: 'Очистити кеш доріжок' },
+                onChange: clearTracks
+            });
+        }
+
+        function start() {
+            st = load();
+            apply();
+            
+            if (Lampa && Lampa.SettingsApi && Lampa.SettingsApi.addParam) {
+                setTimeout(registerUI, 0);
             }
         }
         
-        index++;
-        // ❗ ГОЛОВНЕ: Робимо паузу 250мс між картками. 
-        // Це дозволить інтерфейсу реагувати на натискання пульта.
-        setTimeout(processNext, 250); 
-    }
-
-    processNext(); // Запуск ланцюжка
-  }
-
-  // ❗ Порожній шаблон як у LQE — щоб не дублювати контейнер налаштувань
-  Lampa.Template.add('settings_ltf','<div></div>');
-
-  function registerUI(){
-    // Вхід у підменю в розділі «Інтерфейс»
-      Lampa.SettingsApi.addParam({
-      component:'interface',
-      param:{ type:'button', component:'ltf' },
-      field:{ name:'Мітки "UA" доріжок', description:'Керування відображенням міток українських доріжок' },
-      onChange:function(){
-        Lampa.Settings.create('ltf', {
-          template:'settings_ltf',
-          onBack:function(){ Lampa.Settings.create('interface'); }
-        });
-      }
-    });
-
-    // Пункти підменю ltf
-    Lampa.SettingsApi.addParam({
-      component:'ltf',
-      param:{ name:'ltf_badge_style', type:'select',
-        values:{ text:'Текстова мітка ("Ukr", "2xUkr")', flag_count:'Прапорець із лічильником', flag_only:'Лише прапорець' },
-        default: st.badge_style
-      },
-      field:{ name:'Стиль мітки' },
-      onChange:function(v){ st.badge_style=v; save(); }
-    });
-
-    Lampa.SettingsApi.addParam({
-      component:'ltf',
-      param:{ name:'ltf_show_tv', type:'select', values:{'true':'Увімкнено','false':'Вимкнено'}, default:String(st.show_tv) },
-      field:{ name:'Показувати для серіалів' },
-      onChange:function(v){ st.show_tv = toBool(v); save(); }
-    });
-
-    Lampa.SettingsApi.addParam({
-      component:'ltf',
-      param:{ type:'button', component:'ltf_clear_cache' },
-      field:{ name:'Очистити кеш доріжок' },
-      onChange: clearTracks
-    });
-  }
-
-  function start(){ 
-      st=load(); 
-      apply(); 
-      
-      if (Lampa?.SettingsApi?.addParam) {
-          // !!! ЗАСТОСУВАТИ ЗМІНУ ТУТ: обгортаємо виклик у setTimeout(..., 0)
-          setTimeout(registerUI, 0); 
-      }
-  }
-  
-  if (window.appready) start();
-  else if (Lampa?.Listener) Lampa.Listener.follow('app', e=>{ if(e.type==='ready') start(); });
-})();
-
-
-
-    
+        if (window.appready) {
+            start();
+        } else if (Lampa && Lampa.Listener) {
+            Lampa.Listener.follow('app', function(e) {
+                if (e.type === 'ready') start();
+            });
+        }
+    })();
 
 })();
