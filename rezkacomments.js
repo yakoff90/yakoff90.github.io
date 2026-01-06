@@ -1,6 +1,6 @@
 /**
  * Плагін для відображення коментарів з Rezka.ag
- * Спростена версія для Samsung TV та Lampa
+ * Спрощена версія без TMDB API
  */
 
 (function() {
@@ -21,56 +21,46 @@
     let namemovie;
     let isPluginActive = false;
 
-    // Альтернативні проксі сервери (вибираємо перший робочий)
+    // Альтернативні проксі сервери
     const proxyServers = [
         "https://corsproxy.io/?",
         "https://api.codetabs.com/v1/proxy?quest=",
-        "https://cors-anywhere.herokuapp.com/",
+        "https://api.allorigins.win/raw?url=",
         ""
     ];
 
-    // Отримуємо коментарі напряму або через проксі
+    // Отримуємо коментарі
     async function getCommentsDirectly(movieId) {
         try {
-            console.log('[Rezka Comments] Спроба прямого запиту для ID:', movieId);
+            console.log('[Rezka Comments] Спроба отримати коментарі для ID:', movieId);
             
             // Формуємо URL для коментарів
             const url = `https://rezka.ag/ajax/get_comments/?t=${Date.now()}&news_id=${movieId}&cstart=1&type=0&comment_id=0&skin=hdrezka`;
             
             console.log('[Rezka Comments] URL запиту:', url);
             
-            // Спроба прямого запиту
-            let response = await fetch(url, {
-                method: "GET",
-                headers: {
-                    "Accept": "application/json",
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-                },
-                mode: 'cors'
-            });
-
-            if (response.ok) {
-                let data = await response.json();
-                return data.comments;
-            }
-            
-            // Якщо прямий запит не працює, пробуємо через проксі
+            // Спроба через кожен проксі
             for (let proxy of proxyServers) {
                 try {
-                    console.log('[Rezka Comments] Спроба через проксі:', proxy);
+                    let requestUrl = proxy ? proxy + encodeURIComponent(url) : url;
                     
-                    const proxyUrl = proxy + encodeURIComponent(url);
-                    const proxyResponse = await fetch(proxyUrl, {
+                    console.log('[Rezka Comments] Спроба через:', proxy || 'Без проксі');
+                    
+                    let response = await fetch(requestUrl, {
                         method: "GET",
                         headers: {
                             "Accept": "application/json",
-                            "Origin": "https://hdrezka.ag"
-                        }
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                        },
+                        signal: AbortSignal.timeout(10000) // Таймаут 10 секунд
                     });
 
-                    if (proxyResponse.ok) {
-                        let data = await proxyResponse.json();
-                        return data.comments;
+                    if (response.ok) {
+                        let data = await response.json();
+                        if (data.comments) {
+                            console.log('[Rezka Comments] Коментарі отримані успішно');
+                            return data.comments;
+                        }
                     }
                 } catch (proxyError) {
                     console.log('[Rezka Comments] Проксі не працює:', proxy, proxyError);
@@ -78,7 +68,7 @@
                 }
             }
             
-            throw new Error("Не вдалося отримати коментарі");
+            throw new Error("Не вдалося отримати коментарі через жоден проксі");
             
         } catch (error) {
             console.error('[Rezka Comments] Помилка отримання коментарів:', error);
@@ -86,7 +76,7 @@
         }
     }
 
-    // Пошук фільму на Rezka за назвою
+    // Пошук фільму на Rezka
     async function searchRezka(title, year) {
         try {
             console.log('[Rezka Comments] Пошук фільму:', title, year);
@@ -97,90 +87,55 @@
             
             console.log('[Rezka Comments] Пошуковий URL:', searchUrl);
             
-            // Спроба прямого запиту
-            let response = await fetch(searchUrl, {
-                method: "GET",
-                headers: {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    "Accept": "text/html"
-                }
-            });
+            // Спроба через кожен проксі
+            for (let proxy of proxyServers) {
+                try {
+                    let requestUrl = proxy ? proxy + encodeURIComponent(searchUrl) : searchUrl;
+                    
+                    console.log('[Rezka Comments] Пошук через:', proxy || 'Без проксі');
+                    
+                    let response = await fetch(requestUrl, {
+                        method: "GET",
+                        headers: {
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                            "Accept": "text/html"
+                        },
+                        signal: AbortSignal.timeout(10000)
+                    });
 
-            let html = '';
-            
-            if (response.ok) {
-                html = await response.text();
-            } else {
-                // Пробуємо через проксі
-                for (let proxy of proxyServers) {
-                    try {
-                        const proxyUrl = proxy + encodeURIComponent(searchUrl);
-                        const proxyResponse = await fetch(proxyUrl);
+                    if (response.ok) {
+                        let html = await response.text();
                         
-                        if (proxyResponse.ok) {
-                            html = await proxyResponse.text();
-                            break;
+                        // Парсимо HTML
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        
+                        // Знаходимо перший результат
+                        const result = doc.querySelector('.b-content__inline_item');
+                        if (result) {
+                            // Отримуємо ID фільму
+                            const movieId = result.getAttribute('data-id');
+                            const movieTitle = result.querySelector('.b-content__inline_item-link')?.textContent || '';
+                            
+                            console.log('[Rezka Comments] Знайдено фільм:', movieTitle, 'ID:', movieId);
+                            
+                            return {
+                                id: movieId,
+                                title: movieTitle
+                            };
                         }
-                    } catch (e) {
-                        continue;
                     }
+                } catch (proxyError) {
+                    console.log('[Rezka Comments] Проксі не працює для пошуку:', proxy, proxyError);
+                    continue;
                 }
             }
             
-            if (!html) {
-                throw new Error("Не вдалося завантажити сторінку пошуку");
-            }
-            
-            // Парсимо HTML
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            
-            // Знаходимо перший результат
-            const result = doc.querySelector('.b-content__inline_item');
-            if (!result) {
-                console.log('[Rezka Comments] Фільм не знайдено в результатах пошуку');
-                return null;
-            }
-            
-            // Отримуємо ID фільму
-            const movieId = result.getAttribute('data-id');
-            const movieTitle = result.querySelector('.b-content__inline_item-link')?.textContent || '';
-            
-            console.log('[Rezka Comments] Знайдено фільм:', movieTitle, 'ID:', movieId);
-            
-            return {
-                id: movieId,
-                title: movieTitle
-            };
+            console.log('[Rezka Comments] Фільм не знайдено в результатах пошуку');
+            return null;
             
         } catch (error) {
             console.error('[Rezka Comments] Помилка пошуку:', error);
-            return null;
-        }
-    }
-
-    // Отримання оригінальної назви з TMDB
-    async function getOriginalTitle(tmdbId, type) {
-        try {
-            console.log('[Rezka Comments] Отримання оригінальної назви з TMDB:', tmdbId, type);
-            
-            const response = await fetch(
-                `https://api.themoviedb.org/3/${type}/${tmdbId}?api_key=6f6a7c8a4b4478c5c5f5d5e5f5g5h5i5&language=en-US`
-            );
-            
-            if (!response.ok) {
-                throw new Error(`TMDB API error: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            const originalTitle = type === 'movie' ? data.original_title : data.original_name;
-            
-            console.log('[Rezka Comments] Оригінальна назва:', originalTitle);
-            return originalTitle;
-            
-        } catch (error) {
-            console.error('[Rezka Comments] Помилка TMDB:', error);
-            // Якщо TMDB не працює, використовуємо локальну назву
             return null;
         }
     }
@@ -189,26 +144,61 @@
     function prepareSearchTitle(title) {
         if (!title) return '';
         
-        // Видаляємо спеціальні символи
-        let cleanTitle = title
-            .replace(/[^\w\sА-Яа-яЁёіїєґІЇЄҐ\-]/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
-        
         // Замінюємо українські літери на російські (для пошуку на Rezka)
         const ukrainianToRussian = {
             'і': 'и', 'І': 'И',
             'ї': 'и', 'Ї': 'И',
             'є': 'е', 'Є': 'Е',
-            'ґ': 'г', 'Ґ': 'Г'
+            'ґ': 'г', 'Ґ': 'Г',
+            '’': '', "'": ''
         };
         
+        let cleanTitle = title;
+        
+        // Видаляємо спеціальні символи
+        cleanTitle = cleanTitle.replace(/[^\w\sА-Яа-яЁё\-]/gi, ' ');
+        
+        // Замінюємо українські літери
         cleanTitle = cleanTitle.split('').map(char => {
             return ukrainianToRussian[char] || char;
         }).join('');
         
+        // Видаляємо зайві пробіли
+        cleanTitle = cleanTitle.replace(/\s+/g, ' ').trim();
+        
         console.log('[Rezka Comments] Підготовлена назва для пошуку:', cleanTitle);
         return cleanTitle;
+    }
+
+    // Отримуємо назву фільму з Lampa
+    function getMovieTitleFromLampa(e) {
+        try {
+            if (!e || !e.data || !e.data.movie) return null;
+            
+            // Спершу пробуємо оригінальну назву
+            if (e.data.movie.original_title) {
+                return e.data.movie.original_title;
+            }
+            
+            if (e.data.movie.original_name) {
+                return e.data.movie.original_name;
+            }
+            
+            // Потім локалізовану назву
+            if (e.data.movie.title) {
+                return e.data.movie.title;
+            }
+            
+            if (e.data.movie.name) {
+                return e.data.movie.name;
+            }
+            
+            return null;
+            
+        } catch (error) {
+            console.error('[Rezka Comments] Помилка отримання назви:', error);
+            return null;
+        }
     }
 
     // Створення розмітки коментаря
@@ -220,7 +210,12 @@
             const avatar = doc.querySelector('.ava img')?.src || '';
             const username = doc.querySelector('.name')?.textContent?.trim() || 'Користувач';
             const date = doc.querySelector('.date')?.textContent?.trim() || '';
-            const text = doc.querySelector('.text')?.innerHTML || '';
+            let text = doc.querySelector('.text')?.innerHTML || '';
+            
+            // Очищаємо текст від спойлерів
+            text = text.replace(/<div class="title_spoiler"[^>]*>.*?<\/div>/g, '[Спойлер]');
+            text = text.replace(/<script[^>]*>.*?<\/script>/gi, '');
+            text = text.replace(/<style[^>]*>.*?<\/style>/gi, '');
             
             return `
                 <div class="comment-item">
@@ -238,7 +233,7 @@
             `;
         } catch (error) {
             console.error('[Rezka Comments] Помилка парсингу коментаря:', error);
-            return '';
+            return '<div class="comment-error">Помилка завантаження коментаря</div>';
         }
     }
 
@@ -279,7 +274,7 @@
             let commentsHtmlString = '<div class="comments-container">';
             
             commentElements.forEach((comment, index) => {
-                if (index < 50) { // Обмежуємо кількість коментарів для продуктивності
+                if (index < 30) { // Обмежуємо кількість коментарів
                     commentsHtmlString += createCommentMarkup(comment.outerHTML);
                 }
             });
@@ -304,6 +299,7 @@
             html: $(`<div style="padding: 40px; text-align: center;">
                 <h3>Коментарі не знайдено</h3>
                 <p>Для цього фільму ще немає коментарів на Rezka.ag</p>
+                <p>Або фільм не знайдено на сайті</p>
             </div>`),
             size: "small",
             onBack: function() {
@@ -321,30 +317,32 @@
         
         const modalContent = $(`
             <div class="rezka-comments-wrapper">
+                <div class="comments-header">
+                    <h3>Коментарі з Rezka.ag</h3>
+                    <p class="movie-title">${title || 'Фільм'}</p>
+                </div>
                 <div class="comments-scroll-container">
                     ${commentsHtml}
                 </div>
-                <button class="modal-close-btn selector" style="
-                    display: block;
-                    margin: 20px auto;
-                    padding: 12px 24px;
-                    background: #2a2a2a;
-                    border: 1px solid #444;
-                    color: #fff;
-                    border-radius: 8px;
-                    font-size: 16px;
-                    cursor: pointer;
-                ">Закрити</button>
+                <div class="comments-footer">
+                    <button class="modal-close-btn selector" data-action="close">
+                        Закрити
+                    </button>
+                </div>
             </div>
         `);
         
         // Обробник кнопки закриття
-        modalContent.find('.modal-close-btn').on('hover:enter click', function() {
+        modalContent.find('.modal-close-btn').on('hover:enter', function() {
+            Lampa.Modal.close();
+        });
+        
+        modalContent.find('.modal-close-btn').on('click', function() {
             Lampa.Modal.close();
         });
         
         Lampa.Modal.open({
-            title: title || "Коментарі з Rezka",
+            title: "Коментарі з Rezka",
             html: modalContent,
             size: "large",
             width: "90%",
@@ -355,12 +353,12 @@
             },
             onReady: function() {
                 // Ініціалізуємо навігацію для TV
-                if (Lampa.Controller && typeof Lampa.Controller.collectionSet === 'function') {
-                    const selectors = modalContent.find('.selector').toArray();
-                    if (selectors.length > 0) {
-                        Lampa.Controller.collectionSet(selectors);
+                setTimeout(function() {
+                    const closeBtn = document.querySelector('.modal-close-btn');
+                    if (closeBtn && Lampa.Controller) {
+                        Lampa.Controller.collectionSet([closeBtn]);
                     }
-                }
+                }, 100);
             }
         });
     }
@@ -375,12 +373,33 @@
             .rezka-comments-wrapper {
                 font-family: Arial, sans-serif;
                 color: #e0e0e0;
+                padding: 10px;
+            }
+            
+            .comments-header {
+                text-align: center;
+                margin-bottom: 20px;
+                padding-bottom: 15px;
+                border-bottom: 1px solid #333;
+            }
+            
+            .comments-header h3 {
+                margin: 0 0 10px 0;
+                color: #fff;
+                font-size: 20px;
+            }
+            
+            .movie-title {
+                margin: 0;
+                color: #aaa;
+                font-size: 16px;
             }
             
             .comments-scroll-container {
-                max-height: 65vh;
+                max-height: 60vh;
                 overflow-y: auto;
                 padding-right: 10px;
+                margin-bottom: 20px;
             }
             
             .comments-scroll-container::-webkit-scrollbar {
@@ -417,6 +436,7 @@
                 border-radius: 50%;
                 margin-right: 12px;
                 border: 2px solid #444;
+                background: #333;
             }
             
             .comment-user-info {
@@ -448,24 +468,53 @@
                 text-decoration: underline;
             }
             
+            .comments-footer {
+                text-align: center;
+                padding-top: 15px;
+                border-top: 1px solid #333;
+            }
+            
+            .modal-close-btn {
+                background: #2a2a2a;
+                border: 1px solid #444;
+                color: #fff;
+                border-radius: 8px;
+                padding: 12px 24px;
+                font-size: 16px;
+                cursor: pointer;
+                min-width: 120px;
+                transition: background 0.2s;
+            }
+            
+            .modal-close-btn:hover,
             .modal-close-btn.focus {
-                background: #3a3a3a !important;
-                border-color: #555 !important;
+                background: #3a3a3a;
+                border-color: #555;
                 outline: 2px solid #00a8ff;
             }
             
-            @media (max-width: 768px) {
-                .comment-avatar {
-                    width: 32px;
-                    height: 32px;
-                }
-                
+            .comment-error {
+                padding: 10px;
+                background: #2a1a1a;
+                border: 1px solid #5a1a1a;
+                border-radius: 4px;
+                color: #ff6b6b;
+                text-align: center;
+            }
+            
+            /* Адаптація для TV */
+            @media (min-width: 1920px) {
                 .comment-username {
-                    font-size: 14px;
+                    font-size: 18px;
                 }
                 
                 .comment-text {
-                    font-size: 14px;
+                    font-size: 17px;
+                }
+                
+                .modal-close-btn {
+                    font-size: 18px;
+                    padding: 14px 28px;
                 }
             }
         `;
@@ -474,27 +523,42 @@
     }
 
     // Головна функція пошуку коментарів
-    async function searchComments(tmdbId, type, releaseYear) {
+    async function searchComments(e) {
         try {
-            console.log('[Rezka Comments] Пошук коментарів для:', tmdbId, type, releaseYear);
+            console.log('[Rezka Comments] Початок пошуку коментарів');
             
-            year = releaseYear;
+            // Отримуємо назву фільму з Lampa
+            const movieTitle = getMovieTitleFromLampa(e);
             
-            // Отримуємо оригінальну назву
-            const originalTitle = await getOriginalTitle(tmdbId, type);
+            if (!movieTitle) {
+                Lampa.Noty.show("Не вдалося отримати назву фільму");
+                return;
+            }
+            
+            // Отримуємо рік
+            let releaseYear = '';
+            if (e.data.movie.release_date) {
+                releaseYear = e.data.movie.release_date.substring(0, 4);
+            } else if (e.data.movie.first_air_date) {
+                releaseYear = e.data.movie.first_air_date.substring(0, 4);
+            }
+            
+            console.log('[Rezka Comments] Назва для пошуку:', movieTitle, 'Рік:', releaseYear);
             
             // Підготовлюємо назву для пошуку
-            const searchTitle = prepareSearchTitle(originalTitle);
+            const searchTitle = prepareSearchTitle(movieTitle);
             
             if (!searchTitle) {
-                Lampa.Noty.show("Не вдалося отримати назву для пошуку");
+                Lampa.Noty.show("Не вдалося підготувати назву для пошуку");
                 return;
             }
             
             // Шукаємо фільм на Rezka
-            const rezkaResult = await searchRezka(searchTitle, year);
+            Lampa.Loading.start();
+            const rezkaResult = await searchRezka(searchTitle, releaseYear);
             
             if (!rezkaResult || !rezkaResult.id) {
+                Lampa.Loading.stop();
                 Lampa.Noty.show("Фільм не знайдено на Rezka");
                 return;
             }
@@ -563,7 +627,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                     </svg>
-                    <span>Коментарі Rezka</span>
+                    <span>Коментарі</span>
                 </div>
             `);
             
@@ -574,40 +638,13 @@
                 
                 // Обробник кліку
                 button.on("hover:enter", function() {
-                    handleCommentButtonClick(e);
+                    searchComments(e);
                 });
                 
                 console.log('[Rezka Comments] Кнопка додана');
             }
         } catch (error) {
             console.error('[Rezka Comments] Помилка додавання кнопки:', error);
-        }
-    }
-
-    // Обробник кліку по кнопці коментарів
-    function handleCommentButtonClick(e) {
-        try {
-            let releaseYear = '';
-            
-            if (e.data && e.data.movie) {
-                if (e.data.movie.release_date) {
-                    releaseYear = e.data.movie.release_date.substring(0, 4);
-                } else if (e.data.movie.first_air_date) {
-                    releaseYear = e.data.movie.first_air_date.substring(0, 4);
-                }
-                
-                if (e.data.movie.id && e.object && e.object.method) {
-                    console.log('[Rezka Comments] Запуск пошуку для:', e.data.movie.id, e.object.method, releaseYear);
-                    searchComments(e.data.movie.id, e.object.method, releaseYear);
-                } else {
-                    Lampa.Noty.show("Недостатньо даних для пошуку");
-                }
-            } else {
-                Lampa.Noty.show("Дані фільму не знайдено");
-            }
-        } catch (error) {
-            console.error('[Rezka Comments] Помилка обробки кліку:', error);
-            Lampa.Noty.show("Помилка запуску пошуку");
         }
     }
 
