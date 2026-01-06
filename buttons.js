@@ -1,5 +1,3 @@
-[file name]: buttons.js
-[file content begin]
 /**
  * Плагін управління кнопками Lampa
  * Версія: 1.0.2
@@ -32,6 +30,12 @@
 
 (function() {
     'use strict';
+
+    // Спочатку перевіримо наявність необхідних об'єктів
+    if (typeof Lampa === 'undefined') {
+        console.error('Lampa is not defined');
+        return;
+    }
 
     var LAMPAC_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M20.331 14.644l-13.794-13.831 17.55 10.075zM2.938 0c-0.813 0.425-1.356 1.2-1.356 2.206v27.581c0 1.006 0.544 1.781 1.356 2.206l16.038-16zM29.512 14.1l-3.681-2.131-4.106 4.031 4.106 4.031 3.756-2.131c1.125-0.893 1.125-2.906-0.075-3.8zM6.538 31.188l17.55-10.075-3.756-3.756z" fill="currentColor"></path></svg>';
     
@@ -1604,6 +1608,12 @@
     }
 
     function init() {
+        // Чекаємо, поки jQuery буде доступний
+        if (typeof $ === 'undefined') {
+            setTimeout(init, 100);
+            return;
+        }
+
         var style = $('<style>' +
             '@keyframes button-fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }' +
             '.full-start__button { opacity: 0; }' +
@@ -1630,6 +1640,12 @@
         '</style>');
         $('body').append(style);
 
+        // Перевіряємо наявність Listener
+        if (!Lampa.Listener || typeof Lampa.Listener.follow !== 'function') {
+            setTimeout(init, 100);
+            return;
+        }
+
         Lampa.Listener.follow('full', function(e) {
             if (e.type !== 'complite') return;
 
@@ -1651,12 +1667,15 @@
                         }
                     }
                 } catch(err) {
+                    console.error('Buttons plugin error:', err);
                     if (targetContainer.length) {
                         targetContainer.removeClass('buttons-loading');
                     }
                 }
             }, 400);
         });
+        
+        console.log('Buttons plugin initialized');
     }
 
     // Додаємо налаштування в розділ "Інтерфейс"
@@ -1694,10 +1713,14 @@
         });
     }
 
-    init();
+    // Запускаємо ініціалізацію після завантаження сторінки
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        setTimeout(init, 100);
+    }
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {};
     }
 })();
-[file content end]
