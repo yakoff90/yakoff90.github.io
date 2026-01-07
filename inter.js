@@ -1,3 +1,5 @@
+[file name]: inter.js
+[file content begin]
 (function () {
   'use strict';
 
@@ -151,27 +153,8 @@
       uk: 'Підсвічувати віковий рейтинг в повній картці'
     },
 
-    interface_mod_new_theme_select_title: {
-      en: 'Interface theme',
-      uk: 'Тема інтерфейсу'
-    },
-    interface_mod_new_theme_default: {
-      en: 'Default',
-      uk: 'За замовчуванням'
-    },
-    interface_mod_new_theme_emerald_v1: {
-      en: 'Emerald V1',
-      uk: 'Emerald V1'
-    },
-    interface_mod_new_theme_emerald_v2: {
-      en: 'Emerald V2',
-      uk: 'Emerald V2'
-    },
-    interface_mod_new_theme_aurora: {
-      en: 'Aurora',
-      uk: 'Aurora'
-    },
-
+    // Теми вилучені (замінюються на themes_ua_loader.js)
+    
     // ОРИГІНАЛЬНА НАЗВА
     interface_mod_new_en_data: {
       en: 'Original title',
@@ -281,7 +264,6 @@
     colored_ratings: getBool('interface_mod_new_colored_ratings', false),
     colored_status: getBool('interface_mod_new_colored_status', false),
     colored_age: getBool('interface_mod_new_colored_age', false),
-    theme: (Lampa.Storage.get('interface_mod_new_theme_select', 'default') || 'default'),
 
     en_data: getOriginalTitleEnabled(),
     all_buttons: getBool('interface_mod_new_all_buttons', false),
@@ -401,66 +383,10 @@
   /* ============================================================
    * ТЕМИ
    * ============================================================ */
+  // Видаляємо оригінальну функцію applyTheme та замінюємо її на версію з themes_ua_loader.js
   function applyTheme(theme) {
-    var old = document.getElementById('interface_mod_theme');
-    if (old) old.remove();
-    if (theme === 'default') return;
-
-    var themeCss = {
-      emerald_v1: `
-        body { background: linear-gradient(135deg, #0c1619 0%, #132730 50%, #18332a 100%) !important; color: #dfdfdf !important; }
-        .menu__item, .settings-folder, .settings-param, .selectbox-item,
-        .full-start__button, .full-descr__tag, .player-panel .button,
-        .custom-online-btn, .custom-torrent-btn, .main2-more-btn,
-        .simple-button, .menu__version { border-radius: 1.0em !important; }
-        .menu__item.focus, .menu__item.traverse, .menu__item.hover,
-        .settings-folder.focus, .settings-param.focus, .selectbox-item.focus,
-        .full-start__button.focus, .full-descr__tag.focus, .player-panel .button.focus,
-        .custom-online-btn.focus, .custom-torrent-btn.focus, .main2-more-btn.focus,
-        .simple-button.focus, .menu__version.focus {
-          background: linear-gradient(to right, #1a594d, #0e3652) !important; color: #fff !important;
-          box-shadow: 0 2px 8px rgba(26,89,77,.25) !important; border-radius: 1.0em !important;
-        }
-        .card.focus .card__view::after, .card.hover .card__view::after { border: 2px solid #1a594d !important; box-shadow: 0 0 10px rgba(26,89,77,.35) !important; border-radius: 1.0em !important; }
-        .settings__content, .settings-input__content, .selectbox__content, .modal__content { background: rgba(12,22,25,.97) !important; border: 1px solid rgba(26,89,77,.12) !important; border-radius: 1.0em !important; }
-      `,
-      emerald_v2: `
-        body { background: radial-gradient(1200px 600px at 70% 10%, #214a57 0%, transparent 60%), linear-gradient(135deg, #112229 0%, #15303a 45%, #0f1c22 100%) !important; color:#e6f2ef !important; }
-        .menu__item.focus, .menu__item.traverse, .menu__item.hover,
-        .settings-folder.focus, .settings-param.focus, .selectbox-item.focus,
-        .full-start__button.focus, .full-descr__tag.focus, .player-panel .button.focus,
-        .custom-online-btn.focus, .custom-torrent-btn.focus, .main2-more-btn.focus,
-        .simple-button.focus, .menu__version.focus {
-          background: linear-gradient(90deg, rgba(38,164,131,0.95), rgba(18,94,138,0.95)) !important; color:#fff !important;
-          backdrop-filter: blur(2px) !important; border-radius:.85em !important; box-shadow:0 6px 18px rgba(18,94,138,.35) !important;
-        }
-        .card.focus .card__view::after, .card.hover .card__view::after { border: 3px solid rgba(38,164,131,0.9) !important; box-shadow: 0 0 20px rgba(38,164,131,.45) !important; border-radius: .9em !important; }
-        .settings__content, .settings-input__content, .selectbox__content, .modal__content { background: rgba(10,24,29,0.98) !important; border: 1px solid rgba(38,164,131,.15) !important; border-radius: .9em !important; }
-      `,
-      aurora: `
-        body { background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%) !important; color: #ffffff !important; }
-        .menu__item.focus, .menu__item.traverse, .menu__item.hover,
-        .settings-folder.focus, .settings-param.focus, .selectbox-item.focus,
-        .full-start__button.focus, .full-descr__tag.focus, .player-panel .button.focus,
-        .custom-online-btn.focus, .custom-torrent-btn.focus, .main2-more-btn.focus,
-        .simple-button.focus, .menu__version.focus {
-          background: linear-gradient(90deg, #aa4b6b, #6b6b83, #3b8d99) !important; color:#fff !important;
-          box-shadow: 0 0 20px rgba(170,75,107,.35) !important; transform: scale(1.02) !important; border-radius: .85em !important;
-        }
-        .card.focus .card__view::after, .card.hover .card__view::after { border: 2px solid #aa4b6b !important; box-shadow: 0 0 22px rgba(170,75,107,.45) !important; border-radius: .9em !important; }
-        .settings__content, .settings-input__content, .selectbox__content, .modal__content { background: rgba(20, 32, 39, 0.98) !important; border: 1px solid rgba(59,141,153,.18) !important; border-radius: .9em !important; }
-      `
-    };
-
-    var id = theme === 'emerald_v1' ? 'emerald_v1' :
-      theme === 'emerald_v2' ? 'emerald_v2' :
-      'aurora';
-
-    var st = document.createElement('style');
-    st.id = 'interface_mod_theme';
-    st.textContent = themeCss[id];
-    document.head.appendChild(st);
-    ensureStylesPriority(['interface_mod_theme']);
+    // Ця функція більше не використовується, тому що теми тепер обробляються через themes_ua_loader.js
+    console.log('Теми тепер обробляються через themes_ua_loader.js');
   }
 
   /* ============================================================
@@ -544,23 +470,7 @@
       }
     });
 
-    add({
-      component: 'interface_mod_new',
-      param: {
-        name: 'interface_mod_new_theme_select',
-        type: 'select',
-        values: {
-          'default': Lampa.Lang.translate('interface_mod_new_theme_default'),
-          'emerald_v1': Lampa.Lang.translate('interface_mod_new_theme_emerald_v1'),
-          'emerald_v2': Lampa.Lang.translate('interface_mod_new_theme_emerald_v2'),
-          'aurora': Lampa.Lang.translate('interface_mod_new_theme_aurora')
-        },
-        default: 'default'
-      },
-      field: {
-        name: Lampa.Lang.translate('interface_mod_new_theme_select_title')
-      }
-    });
+    // Видаляємо блок тем з налаштувань, оскільки тепер вони з themes_ua_loader.js
 
     // Оригінальна назва
     add({
@@ -764,12 +674,6 @@
               else disableAgeColoring(true);
               break;
               
-            case 'interface_mod_new_theme_select':
-              settings.theme = (val || 'default'); // Use 'val' directly from arguments
-              applyTheme(settings.theme);
-              //closeOpenSelects(); // This is the only one that needs this
-              break;
-              
             case 'interface_mod_new_en_data':
             case 'interface_mod_new_english_data': // Handle fallback
               settings.en_data = getOriginalTitleEnabled(); // This function already checks both keys
@@ -822,7 +726,7 @@
   }
 
   /* ============================================================
-   * РОЗМІР КНОПОК
+   * РОЗМІР КНОПОК (оновлена версія з масштабуванням іконок)
    * ============================================================ */
   function applyButtonSize() {
     var styleId = 'interface_mod_button_size';
@@ -841,6 +745,10 @@
           .full-start__button svg, .full-start-new__button svg {
             width: 1.4em !important;
             height: 1.4em !important;
+            min-width: 1.4em !important;
+            min-height: 1.4em !important;
+            max-width: 1.4em !important;
+            max-height: 1.4em !important;
           }
         `;
         break;
@@ -852,8 +760,12 @@
             font-size: 1.2em !important;
           }
           .full-start__button svg, .full-start-new__button svg {
-            width: 2em !important;
-            height: 2em !important;
+            width: 2.2em !important;
+            height: 2.2em !important;
+            min-width: 2.2em !important;
+            min-height: 2.2em !important;
+            max-width: 2.2em !important;
+            max-height: 2.2em !important;
           }
         `;
         break;
@@ -865,8 +777,12 @@
             font-size: 1em !important;
           }
           .full-start__button svg, .full-start-new__button svg {
-            width: 1.6em !important;
-            height: 1.6em !important;
+            width: 1.8em !important;
+            height: 1.8em !important;
+            min-width: 1.8em !important;
+            min-height: 1.8em !important;
+            max-width: 1.8em !important;
+            max-height: 1.8em !important;
           }
         `;
     }
@@ -875,6 +791,32 @@
     style.id = styleId;
     style.textContent = css;
     document.head.appendChild(style);
+    
+    // Також оновлюємо розміри іконок для кольорових кнопок
+    if (settings.colored_buttons) {
+      updateColoredButtonsIconSizes();
+    }
+  }
+
+  function updateColoredButtonsIconSizes() {
+    var iconSize;
+    switch (settings.button_size) {
+      case 'small':
+        iconSize = { width: '18', height: '18' };
+        break;
+      case 'large':
+        iconSize = { width: '32', height: '32' };
+        break;
+      default:
+        iconSize = { width: '24', height: '24' };
+    }
+    
+    // Оновлюємо розміри для всіх кастомних SVG
+    var customSvgs = document.querySelectorAll('.custom-svg-replaced, .reyohoho-custom-icon, .online-mod-custom-icon');
+    customSvgs.forEach(function(svg) {
+      svg.setAttribute('width', iconSize.width);
+      svg.setAttribute('height', iconSize.height);
+    });
   }
 
   /* ============================================================
@@ -1820,34 +1762,6 @@
   var lastActiveButton = null;
   var isColoredButtonsInitialized = false;
 
-  // Розміри іконок для різних пристроїв
-  var ICON_SIZES = {
-    mobile: {
-      width: '20',
-      height: '20'
-    },
-    tablet: {
-      width: '20', 
-      height: '20'
-    },
-    desktop: {
-      width: '30',
-      height: '30'
-    }
-  };
-
-  // Функція для визначення типу пристрою та розміру іконки
-  function getIconSize() {
-    var screenWidth = window.innerWidth;
-    if (screenWidth <= 768) {
-      return ICON_SIZES.mobile; // Mobile
-    } else if (screenWidth <= 1024) {
-      return ICON_SIZES.tablet; // Tablet
-    } else {
-      return ICON_SIZES.desktop; // Desktop
-    }
-  }
-
   // Стратегії завантаження останнім
   function loadAsLast() {
     // Стратегія 1: Чекаємо повного завантаження сторінки
@@ -1939,8 +1853,8 @@
         if (v != null && v !== '') fresh.setAttribute(a, v);
       });
 
-      // Отримуємо розміри для поточного пристрою
-      var iconSize = getIconSize();
+      // Отримуємо розміри іконок відповідно до розміру кнопок
+      var iconSize = getIconSizeForButtonSize();
 
       // Застосовуємо кастомні налаштування якщо є
       if (options) {
@@ -1948,7 +1862,7 @@
         if (options.height) fresh.setAttribute('height', options.height);
         if (options.className) fresh.classList.add(options.className);
       } else {
-        // Встановлюємо розміри за замовчуванням для пристрою
+        // Встановлюємо розміри за замовчуванням
         fresh.setAttribute('width', iconSize.width);
         fresh.setAttribute('height', iconSize.height);
       }
@@ -1958,6 +1872,17 @@
     } catch (error) {
       console.error('Помилка при заміні іконки:', error);
       return false;
+    }
+  }
+
+  function getIconSizeForButtonSize() {
+    switch (settings.button_size) {
+      case 'small':
+        return { width: '18', height: '18' };
+      case 'large':
+        return { width: '32', height: '32' };
+      default: // normal
+        return { width: '24', height: '24' };
     }
   }
 
@@ -2062,6 +1987,10 @@
     
     var style = document.createElement('style');
     style.id = 'custom-button-styles';
+    
+    // Отримуємо розміри іконок відповідно до розміру кнопок
+    var iconSize = getIconSizeForButtonSize();
+    
     style.textContent = `
       /* Прибираємо анімацію трансформації для reyohoho кнопок */
       .full-start__button.view--reyohoho_mod.selector {
@@ -2072,42 +2001,14 @@
         transform: none !important;
       }
       
-      /* Адаптивні розміри для іконок на різних пристроях */
-      /* Мобільні пристрої (до 768px) */
-      @media (max-width: 768px) {
-        .full-start__button.selector svg {
-          width: 20px !important;
-          height: 20px !important;
-          min-width: 20px !important;
-          min-height: 20px !important;
-        }
-      }
-      
-      /* Планшети (769px - 1024px) */
-      @media (min-width: 769px) and (max-width: 1024px) {
-        .full-start__button.selector svg {
-          width: 20px !important;
-          height: 20px !important;
-          min-width: 20px !important;
-          min-height: 20px !important;
-        }
-      }
-      
-      /* Десктоп (1025px і вище) */
-      @media (min-width: 1025px) {
-        .full-start__button.selector svg {
-          width: 30px !important;
-          height: 30px !important;
-          min-width: 30px !important;
-          min-height: 30px !important;
-        }
-      }
-      
       /* Специфічні стилі для кастомних іконок */
       .reyohoho-custom-icon,
       .online-mod-custom-icon,
       .custom-svg-replaced {
-        /* Розміри керуються медіа-запитами вище */
+        width: ${iconSize.width}px !important;
+        height: ${iconSize.height}px !important;
+        min-width: ${iconSize.width}px !important;
+        min-height: ${iconSize.height}px !important;
       }
     `;
     document.head.appendChild(style);
@@ -2117,7 +2018,7 @@
     if (!isColoredButtonsInitialized || !settings.colored_buttons) return;
     
     var count = 0;
-    var iconSize = getIconSize();
+    var iconSize = getIconSizeForButtonSize();
 
     // Торрент-кнопки - обробляємо всі
     var torrentButtons = document.querySelectorAll('.full-start__button.view--torrent.selector');
@@ -2399,7 +2300,7 @@
     if (settings.colored_age) enableAgeColoring();
     else disableAgeColoring(true);
 
-    if (settings.theme) applyTheme(settings.theme);
+    // Видаляємо виклик applyTheme, оскільки теми тепер з themes_ua_loader.js
 
     wireFullCardEnhancers();
 
@@ -3846,3 +3747,4 @@ function injectAll($scope){
   
 
 })();
+[file content end]
