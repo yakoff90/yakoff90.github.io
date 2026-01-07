@@ -381,12 +381,161 @@
   })();
 
   /* ============================================================
-   * ТЕМИ
+   * ІНТЕГРАЦІЯ З THEMES_UA_LOADER.JS
    * ============================================================ */
-  // Видаляємо оригінальну функцію applyTheme та замінюємо її на версію з themes_ua_loader.js
+  
+  // Функція для перевірки наявності themes_ua_loader.js
+  function isThemesUALoaderAvailable() {
+    return typeof window.maxsm_themes !== 'undefined';
+  }
+  
+  // Функція для отримання поточної теми з themes_ua_loader.js
+  function getCurrentThemeFromUALoader() {
+    if (isThemesUALoaderAvailable()) {
+      return Lampa.Storage.get('maxsm_themes_selected', 'mint_dark');
+    }
+    return 'default';
+  }
+  
+  // Функція для застосування теми (делегуємо themes_ua_loader.js)
   function applyTheme(theme) {
-    // Ця функція більше не використовується, тому що теми тепер обробляються через themes_ua_loader.js
-    console.log('Теми тепер обробляються через themes_ua_loader.js');
+    // Якщо themes_ua_loader.js доступний, не робимо нічого - він сам обробить тему
+    if (isThemesUALoaderAvailable()) {
+      console.log('Теми обробляються через themes_ua_loader.js');
+      
+      // Якщо це перше застосування теми, переконаємося, що тема встановлена
+      if (window.__ifx_first_theme_apply !== false) {
+        window.__ifx_first_theme_apply = false;
+        
+        // Перевіряємо, чи є стилі завантажувача
+        setTimeout(function() {
+          if (!document.getElementById('maxsm_themes_theme')) {
+            console.log('Тема не застосована, перезавантажуємо сторінку');
+            window.location.reload();
+          }
+        }, 500);
+      }
+      return;
+    }
+    
+    // Резервна реалізація, якщо themes_ua_loader.js не завантажено
+    console.warn('themes_ua_loader.js не знайдено, використовуються резервні стилі');
+    
+    // Видаляємо попередні стилі тем
+    $('#maxsm_themes_theme').remove();
+    
+    if (theme === 'default') {
+      return;
+    }
+    
+    // Прості резервні стилі для кожної теми
+    var themes = {
+      mint_dark: `
+        .card__quality, .card__type::after {
+          background: linear-gradient(to right, #1e6262dd, #3da18ddd);
+        }
+        .full-start__button.focus,
+        .simple-button.focus,
+        .menu__item.focus {
+          background: linear-gradient(to right, #1e6262, #3da18d);
+        }
+        .card.focus .card__view::after,
+        .torrent-item.focus::after {
+          border: 0.2em solid #3da18d;
+        }
+      `,
+      crystal_cyan: `
+        .card__quality, .card__type::after {
+          background: linear-gradient(to right, #00d2ffdd, #3a8ee6dd);
+        }
+        .full-start__button.focus,
+        .simple-button.focus,
+        .menu__item.focus {
+          background: linear-gradient(to right, #00d2ff, #3a8ee6);
+        }
+        .card.focus .card__view::after,
+        .torrent-item.focus::after {
+          border: 0.2em solid #00d2ff;
+        }
+      `,
+      deep_aurora: `
+        .card__quality, .card__type::after {
+          background: linear-gradient(to right, #2c6fc1dd, #7e7ed9dd);
+        }
+        .full-start__button.focus,
+        .simple-button.focus,
+        .menu__item.focus {
+          background: linear-gradient(to right, #2c6fc1, #7e7ed9);
+        }
+        .card.focus .card__view::after,
+        .torrent-item.focus::after {
+          border: 0.2em solid #7e7ed9;
+        }
+      `,
+      amber_noir: `
+        .card__quality, .card__type::after {
+          background: linear-gradient(to right, #f4a261dd, #e76f51dd);
+        }
+        .full-start__button.focus,
+        .simple-button.focus,
+        .menu__item.focus {
+          background: linear-gradient(to right, #f4a261, #e76f51);
+        }
+        .card.focus .card__view::after,
+        .torrent-item.focus::after {
+          border: 0.2em solid #f4a261;
+        }
+      `,
+      velvet_sakura: `
+        .card__quality, .card__type::after {
+          background: linear-gradient(to right, #f6a5b0dd, #f9b8d3dd);
+        }
+        .full-start__button.focus,
+        .simple-button.focus,
+        .menu__item.focus {
+          background: linear-gradient(to right, #f6a5b0, #f9b8d3);
+        }
+        .card.focus .card__view::after,
+        .torrent-item.focus::after {
+          border: 0.2em solid #f6a5b0;
+        }
+      `
+    };
+    
+    if (themes[theme]) {
+      var style = document.createElement('style');
+      style.id = 'maxsm_themes_theme';
+      style.textContent = themes[theme];
+      document.head.appendChild(style);
+    }
+  }
+  
+  // Ініціалізація тем при старті
+  function initThemes() {
+    window.__ifx_first_theme_apply = true;
+    
+    // Якщо themes_ua_loader.js доступний, отримуємо тему з нього
+    if (isThemesUALoaderAvailable()) {
+      var currentTheme = getCurrentThemeFromUALoader();
+      console.log('Поточна тема з themes_ua_loader.js:', currentTheme);
+      
+      // Слухаємо зміни теми
+      var originalSet = Lampa.Storage.set;
+      Lampa.Storage.set = function(key, value) {
+        var result = originalSet.apply(this, arguments);
+        
+        if (key === 'maxsm_themes_selected') {
+          console.log('Тема змінена на:', value);
+          // Застосовуємо тему через themes_ua_loader.js
+          applyTheme(value);
+        }
+        
+        return result;
+      };
+    } else {
+      // Застосовуємо тему за замовчуванням
+      applyTheme('mint_dark');
+    }
   }
 
   /* ============================================================
@@ -702,6 +851,8 @@
             case 'interface_mod_new_button_size':
               settings.button_size = (val || 'normal');
               applyButtonSize();
+              // Оновлюємо розміри іконок для всіх кнопок
+              updateAllButtonIconsSize();
               break;
               
             case 'interface_mod_new_tor_frame':
@@ -726,12 +877,42 @@
   }
 
   /* ============================================================
-   * РОЗМІР КНОПОК (оновлена версія з масштабуванням іконок)
+   * РОЗМІР КНОПОК ТА ІКОНОК (оновлена версія з масштабуванням іконок)
    * ============================================================ */
+  
+  // Функція для отримання розмірів іконок відповідно до розміру кнопок
+  function getIconSizeForButtonSize() {
+    switch (settings.button_size) {
+      case 'small':
+        return { 
+          width: '18', 
+          height: '18',
+          svgWidth: '1.4em',
+          svgHeight: '1.4em'
+        };
+      case 'large':
+        return { 
+          width: '32', 
+          height: '32',
+          svgWidth: '2.2em',
+          svgHeight: '2.2em'
+        };
+      default: // normal
+        return { 
+          width: '24', 
+          height: '24',
+          svgWidth: '1.8em',
+          svgHeight: '1.8em'
+        };
+    }
+  }
+  
   function applyButtonSize() {
     var styleId = 'interface_mod_button_size';
     var oldStyle = document.getElementById(styleId);
     if (oldStyle) oldStyle.remove();
+    
+    var iconSize = getIconSizeForButtonSize();
     
     var css = '';
     switch (settings.button_size) {
@@ -743,12 +924,12 @@
             font-size: 0.9em !important;
           }
           .full-start__button svg, .full-start-new__button svg {
-            width: 1.4em !important;
-            height: 1.4em !important;
-            min-width: 1.4em !important;
-            min-height: 1.4em !important;
-            max-width: 1.4em !important;
-            max-height: 1.4em !important;
+            width: ${iconSize.svgWidth} !important;
+            height: ${iconSize.svgHeight} !important;
+            min-width: ${iconSize.svgWidth} !important;
+            min-height: ${iconSize.svgHeight} !important;
+            max-width: ${iconSize.svgWidth} !important;
+            max-height: ${iconSize.svgHeight} !important;
           }
         `;
         break;
@@ -760,12 +941,12 @@
             font-size: 1.2em !important;
           }
           .full-start__button svg, .full-start-new__button svg {
-            width: 2.2em !important;
-            height: 2.2em !important;
-            min-width: 2.2em !important;
-            min-height: 2.2em !important;
-            max-width: 2.2em !important;
-            max-height: 2.2em !important;
+            width: ${iconSize.svgWidth} !important;
+            height: ${iconSize.svgHeight} !important;
+            min-width: ${iconSize.svgWidth} !important;
+            min-height: ${iconSize.svgHeight} !important;
+            max-width: ${iconSize.svgWidth} !important;
+            max-height: ${iconSize.svgHeight} !important;
           }
         `;
         break;
@@ -777,12 +958,12 @@
             font-size: 1em !important;
           }
           .full-start__button svg, .full-start-new__button svg {
-            width: 1.8em !important;
-            height: 1.8em !important;
-            min-width: 1.8em !important;
-            min-height: 1.8em !important;
-            max-width: 1.8em !important;
-            max-height: 1.8em !important;
+            width: ${iconSize.svgWidth} !important;
+            height: ${iconSize.svgHeight} !important;
+            min-width: ${iconSize.svgWidth} !important;
+            min-height: ${iconSize.svgHeight} !important;
+            max-width: ${iconSize.svgWidth} !important;
+            max-height: ${iconSize.svgHeight} !important;
           }
         `;
     }
@@ -792,30 +973,48 @@
     style.textContent = css;
     document.head.appendChild(style);
     
-    // Також оновлюємо розміри іконок для кольорових кнопок
-    if (settings.colored_buttons) {
-      updateColoredButtonsIconSizes();
-    }
+    // Оновлюємо розміри для кастомних SVG
+    updateAllButtonIconsSize();
   }
-
-  function updateColoredButtonsIconSizes() {
-    var iconSize;
-    switch (settings.button_size) {
-      case 'small':
-        iconSize = { width: '18', height: '18' };
-        break;
-      case 'large':
-        iconSize = { width: '32', height: '32' };
-        break;
-      default:
-        iconSize = { width: '24', height: '24' };
-    }
+  
+  // Функція для оновлення розмірів всіх іконок кнопок
+  function updateAllButtonIconsSize() {
+    var iconSize = getIconSizeForButtonSize();
+    
+    // Оновлюємо розміри для всіх SVG у кнопках
+    var allButtonSvgs = document.querySelectorAll('.full-start__button svg, .full-start-new__button svg');
+    allButtonSvgs.forEach(function(svg) {
+      svg.setAttribute('width', iconSize.width);
+      svg.setAttribute('height', iconSize.height);
+      svg.style.width = iconSize.svgWidth;
+      svg.style.height = iconSize.svgHeight;
+    });
     
     // Оновлюємо розміри для всіх кастомних SVG
     var customSvgs = document.querySelectorAll('.custom-svg-replaced, .reyohoho-custom-icon, .online-mod-custom-icon');
     customSvgs.forEach(function(svg) {
       svg.setAttribute('width', iconSize.width);
       svg.setAttribute('height', iconSize.height);
+      svg.style.width = iconSize.svgWidth;
+      svg.style.height = iconSize.svgHeight;
+    });
+    
+    // Оновлюємо розміри для всіх SVG в кольорових кнопках
+    if (settings.colored_buttons) {
+      updateColoredButtonsIconSizes();
+    }
+  }
+
+  function updateColoredButtonsIconSizes() {
+    var iconSize = getIconSizeForButtonSize();
+    
+    // Оновлюємо розміри для всіх кастомних SVG
+    var customSvgs = document.querySelectorAll('.custom-svg-replaced, .reyohoho-custom-icon, .online-mod-custom-icon');
+    customSvgs.forEach(function(svg) {
+      svg.setAttribute('width', iconSize.width);
+      svg.setAttribute('height', iconSize.height);
+      svg.style.width = iconSize.svgWidth;
+      svg.style.height = iconSize.svgHeight;
     });
   }
 
@@ -1113,9 +1312,9 @@
 
     var obs = new MutationObserver(function () {
       if (getBool('interface_mod_new_colored_ratings', false)) {
-        // OPTIMIZATION: Debounce heavy DOM scan
+        // OPTIMIZATION: Debounce
         if (__voteObserverDebounce) clearTimeout(__voteObserverDebounce);
-        __voteObserverDebounce = setTimeout(updateVoteColors, 200); // Was 80ms
+        __voteObserverDebounce = setTimeout(updateVoteColors, 200);
       }
     });
     obs.observe(document.body, {
@@ -1190,7 +1389,6 @@
         'padding:0.3em!important;' +
         'margin-right:0.3em!important;' +
         'margin-left:0!important;' +
-        /* БЕЗ display тут (щоб можна було ховати пусті) */
         '}';
     } else {
       st.id = idDis;
@@ -1202,7 +1400,6 @@
         'padding:0.3em!important;' +
         'margin-right:0.3em!important;' +
         'margin-left:0!important;' +
-        /* БЕЗ display тут! */
         '}';
     }
     document.head.appendChild(st);
@@ -1399,7 +1596,7 @@
       var n = parseInt(mm[2], 10);
       if (n >= 18) return 'adult';
       if (n >= 17) return 'almostAdult';
-      if (n >= 13) return 'teens';      // ← тут 14+ автоматично піде в teens (жовтий)
+      if (n >= 13) return 'teens';
       if (n >= 6)  return 'children';
       return 'kids';
     }
@@ -1459,7 +1656,7 @@
           color: c.text,
           'border-color': 'transparent'
         });
-        el.style.display = 'inline-block'; // без !important — .hide завжди переможе
+        el.style.display = 'inline-block';
       } else {
         // невідома категорія — «fallback», але тільки коли є текст
         el.classList.add('ifx-age-fallback');
@@ -1808,6 +2005,9 @@
     setTimeout(processButtons, 1000);
     setTimeout(processButtons, 2000);
     setTimeout(processButtons, 3000);
+    
+    // Застосовуємо поточний розмір іконок
+    updateColoredButtonsIconSizes();
   }
 
   function loadOnlineSVG() {
@@ -1865,6 +2065,8 @@
         // Встановлюємо розміри за замовчуванням
         fresh.setAttribute('width', iconSize.width);
         fresh.setAttribute('height', iconSize.height);
+        fresh.style.width = iconSize.svgWidth;
+        fresh.style.height = iconSize.svgHeight;
       }
 
       origSvg.replaceWith(fresh);
@@ -1872,17 +2074,6 @@
     } catch (error) {
       console.error('Помилка при заміні іконки:', error);
       return false;
-    }
-  }
-
-  function getIconSizeForButtonSize() {
-    switch (settings.button_size) {
-      case 'small':
-        return { width: '18', height: '18' };
-      case 'large':
-        return { width: '32', height: '32' };
-      default: // normal
-        return { width: '24', height: '24' };
     }
   }
 
@@ -2269,7 +2460,7 @@
           try {
             window.runTorrentStyleRefresh();
           } catch (e) {}
-        }, 200); // OPTIMIZATION: Was 60ms
+        }, 200);
       }
     });
     try {
@@ -2300,7 +2491,8 @@
     if (settings.colored_age) enableAgeColoring();
     else disableAgeColoring(true);
 
-    // Видаляємо виклик applyTheme, оскільки теми тепер з themes_ua_loader.js
+    // Ініціалізуємо теми (інтеграція з themes_ua_loader.js)
+    initThemes();
 
     wireFullCardEnhancers();
 
@@ -2706,7 +2898,7 @@
 
           if (hasImportantChanges) {
             clearTimeout(updateTimeout);
-            updateTimeout = setTimeout(updateAll, 250); // OPTIMIZATION: Was 150ms
+            updateTimeout = setTimeout(updateAll, 250);
           }
         });
 
@@ -3656,7 +3848,7 @@ function injectAll($scope){
         if (muts[i].addedNodes && muts[i].addedNodes.length){
           // OPTIMIZATION: Debounce
           if (moDebounce) clearTimeout(moDebounce);
-          moDebounce = setTimeout(function(){ injectAll($(document.body)); }, 200); // Was 30ms
+          moDebounce = setTimeout(function(){ injectAll($(document.body)); }, 200);
           break;
         }
       }
@@ -3726,7 +3918,7 @@ function injectAll($scope){
     // [!!!] ВИПРАВЛЕНО:
     // Обсервер (MutationObserver) тепер вмикається ЗАВЖДИ,
     // а не тільки коли S.year_on === true.
-    enableObserver(); // <--- ЗАМІНЕНО (було: if (S.year_on) ... else ...)
+    enableObserver();
     
     injectAll($(document.body));
    
