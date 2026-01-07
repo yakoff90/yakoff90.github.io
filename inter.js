@@ -210,6 +210,28 @@
       uk: 'Оновлює іконки та кольори кнопок онлайн, торенти, трейлери'
     },
 
+    // НОВЕ: Розмір кнопок
+    interface_mod_new_button_size: {
+      en: 'Button size',
+      uk: 'Розмір кнопок'
+    },
+    interface_mod_new_button_size_desc: {
+      en: 'Adjust button size (applied after restart)',
+      uk: 'Змінити розмір кнопок (застосовується після перезапуску)'
+    },
+    interface_mod_new_button_size_small: {
+      en: 'Small',
+      uk: 'Маленькі'
+    },
+    interface_mod_new_button_size_normal: {
+      en: 'Normal',
+      uk: 'Нормальні'
+    },
+    interface_mod_new_button_size_large: {
+      en: 'Large',
+      uk: 'Великі'
+    },
+
     // ТОРЕНТИ (з torrents+mod)
     torr_mod_frame: {
       uk: 'Кольорова рамка блоку торентів',
@@ -265,6 +287,7 @@
     all_buttons: getBool('interface_mod_new_all_buttons', false),
     icon_only: getBool('interface_mod_new_icon_only', false),
     colored_buttons: getBool('interface_mod_new_colored_buttons', false),
+    button_size: (Lampa.Storage.get('interface_mod_new_button_size', 'normal') || 'normal'),
 
     // Налаштування для torrents+mod
     tor_frame: getBool('interface_mod_new_tor_frame', true),
@@ -598,6 +621,25 @@
       }
     });
 
+    // НОВЕ: Розмір кнопок
+    add({
+      component: 'interface_mod_new',
+      param: {
+        name: 'interface_mod_new_button_size',
+        type: 'select',
+        values: {
+          'small': Lampa.Lang.translate('interface_mod_new_button_size_small'),
+          'normal': Lampa.Lang.translate('interface_mod_new_button_size_normal'),
+          'large': Lampa.Lang.translate('interface_mod_new_button_size_large')
+        },
+        default: 'normal'
+      },
+      field: {
+        name: Lampa.Lang.translate('interface_mod_new_button_size'),
+        description: Lampa.Lang.translate('interface_mod_new_button_size_desc')
+      }
+    });
+
     // Торенти: три тумблери
     add({
       component: 'interface_mod_new',
@@ -753,6 +795,11 @@
               }
               break;
               
+            case 'interface_mod_new_button_size':
+              settings.button_size = (val || 'normal');
+              applyButtonSize();
+              break;
+              
             case 'interface_mod_new_tor_frame':
               settings.tor_frame = getBool(key, true);
               if (window.runTorrentStyleRefresh) window.runTorrentStyleRefresh();
@@ -775,6 +822,62 @@
   }
 
   /* ============================================================
+   * РОЗМІР КНОПОК
+   * ============================================================ */
+  function applyButtonSize() {
+    var styleId = 'interface_mod_button_size';
+    var oldStyle = document.getElementById(styleId);
+    if (oldStyle) oldStyle.remove();
+    
+    var css = '';
+    switch (settings.button_size) {
+      case 'small':
+        css = `
+          .full-start__button, .full-start-new__button {
+            min-height: 2.8em !important;
+            padding: 0.4em 1em !important;
+            font-size: 0.9em !important;
+          }
+          .full-start__button svg, .full-start-new__button svg {
+            width: 1.4em !important;
+            height: 1.4em !important;
+          }
+        `;
+        break;
+      case 'large':
+        css = `
+          .full-start__button, .full-start-new__button {
+            min-height: 3.8em !important;
+            padding: 0.6em 1.4em !important;
+            font-size: 1.2em !important;
+          }
+          .full-start__button svg, .full-start-new__button svg {
+            width: 2em !important;
+            height: 2em !important;
+          }
+        `;
+        break;
+      default: // normal
+        css = `
+          .full-start__button, .full-start-new__button {
+            min-height: 3.2em !important;
+            padding: 0.5em 1.2em !important;
+            font-size: 1em !important;
+          }
+          .full-start__button svg, .full-start-new__button svg {
+            width: 1.6em !important;
+            height: 1.6em !important;
+          }
+        `;
+    }
+    
+    var style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = css;
+    document.head.appendChild(style);
+  }
+
+  /* ============================================================
    * ІНФО-ПАНЕЛЬ (4 ряди + кольорові жанри)
    * ============================================================ */
 
@@ -786,7 +889,7 @@
       display: 'flex',
       'flex-direction': 'column',
       width: '100%',
-      gap: '0em', // '0em'.replace('ем','em') - дивний хак, замінив на '0em'
+      gap: '0em',
       margin: '-1.0em 0 0.2em 0.45em'
     });
 
@@ -2172,7 +2275,7 @@
     var mo = new MutationObserver(function (muts) {
       var needsUpdate = false;
       for (var i = 0; i < muts.length; i++) {
-        if (muts[i].type === 'childList' && muts[i].addedNodes.length) {
+        if (muts[i].addedNodes && muts[i].addedNodes.length) {
           needsUpdate = true;
           break;
         }
@@ -2237,6 +2340,9 @@
             processButtons();
           }, 100);
         }
+        
+        // 5. Розмір кнопок
+        applyButtonSize();
       }, 120);
     });
   }
@@ -2301,6 +2407,9 @@
       // Запускаємо стратегію завантаження останнім
       loadAsLast();
     }
+    
+    // Застосовуємо розмір кнопок
+    applyButtonSize();
     
     // Перший запуск стилів торентів
     try {
@@ -2718,6 +2827,360 @@
     }
   })();
   /* END torrents+mod ==== */
+
+  /* ============================================================
+   * СТИЛІ ТОРРЕНТІВ ЯК У TORRENT_STYLES.JS (без рамок)
+   * ============================================================ */
+  (function () {
+    try {
+      // Thresholds
+      var TH = {
+        seeds: {
+          danger_below: 5,
+          good_from: 10,
+          top_from: 20
+        },
+        bitrate: {
+          warn_from: 50,
+          danger_from: 100
+        },
+        size: {
+          mid_from_gb: 50,
+          high_from_gb: 100,
+          top_from_gb: 200
+        },
+        debounce_ms: 60
+      };
+
+      var styles = {
+        '.torrent-item__details': {
+          'font-size': '0.9em'
+        },
+        // Base badge look (emerald theme)
+        '.torrent-item__bitrate > span.ts-bitrate, .torrent-item__seeds > span.ts-seeds, .torrent-item__grabs > span.ts-grabs, .torrent-item__size.ts-size': {
+          'display': 'inline-flex',
+          '-webkit-box-align': 'center',
+          '-webkit-align-items': 'center',
+          '-moz-box-align': 'center',
+          '-ms-flex-align': 'center',
+          'align-items': 'center',
+          '-webkit-box-pack': 'center',
+          '-webkit-justify-content': 'center',
+          '-moz-box-pack': 'center',
+          '-ms-flex-pack': 'center',
+          'justify-content': 'center',
+          'box-sizing': 'border-box',
+          'min-height': '1.7em',
+          'padding': '0.15em 0.45em',
+          'border-radius': '0.5em',
+          'font-weight': '700',
+          'font-size': '0.9em',
+          'line-height': '1',
+          'white-space': 'nowrap',
+          'vertical-align': 'middle',
+          'font-variant-numeric': 'tabular-nums'
+        },
+
+        // Tighten spacing so everything fits on one row
+        '.torrent-item__bitrate, .torrent-item__grabs, .torrent-item__seeds': {
+          'margin-right': '0.55em'
+        },
+
+        // Seeds
+        '.torrent-item__seeds > span.ts-seeds': {
+          color: '#5cd4b0',
+          'background-color': 'rgba(92, 212, 176, 0.14)',
+          border: '0.15em solid rgba(92, 212, 176, 0.90)',
+          'box-shadow': '0 0 0.75em rgba(92, 212, 176, 0.28)'
+        },
+        // Low seeds (danger) — soft red (emerald palette)
+        '.torrent-item__seeds > span.ts-seeds.low-seeds': {
+          color: '#ff5f6d',
+          'background-color': 'rgba(255, 95, 109, 0.14)',
+          border: '0.15em solid rgba(255, 95, 109, 0.82)',
+          'box-shadow': '0 0 0.65em rgba(255, 95, 109, 0.26)',
+          'text-shadow': '0 0 0.25em rgba(255, 95, 109, 0.25)'
+        },
+        // 10..19 (good) — emerald
+        '.torrent-item__seeds > span.ts-seeds.good-seeds': {
+          color: '#43cea2',
+          'background-color': 'rgba(67, 206, 162, 0.16)',
+          border: '0.15em solid rgba(67, 206, 162, 0.92)',
+          'box-shadow': '0 0 0.9em rgba(67, 206, 162, 0.34)'
+        },
+        '.torrent-item__seeds > span.ts-seeds.high-seeds': {
+          color: '#ffc371',
+          background: 'linear-gradient(135deg, rgba(255, 195, 113, 0.28), rgba(67, 206, 162, 0.10))',
+          border: '0.15em solid rgba(255, 195, 113, 0.92)',
+          'box-shadow': '0 0 0.95em rgba(255, 195, 113, 0.38)',
+          'text-shadow': '0 0 0.25em rgba(255, 195, 113, 0.25)'
+        },
+
+        // Grabs/Peers (download) — theme blue
+        '.torrent-item__grabs > span.ts-grabs': {
+          color: '#4db6ff',
+          'background-color': 'rgba(77, 182, 255, 0.12)',
+          border: '0.15em solid rgba(77, 182, 255, 0.82)',
+          'box-shadow': '0 0 0.35em rgba(77, 182, 255, 0.16)'
+        },
+        '.torrent-item__grabs > span.ts-grabs.high-grabs': {
+          color: '#4db6ff',
+          background: 'linear-gradient(135deg, rgba(77, 182, 255, 0.18), rgba(52, 152, 219, 0.10))',
+          border: '0.15em solid rgba(77, 182, 255, 0.92)',
+          'box-shadow': '0 0 0.55em rgba(77, 182, 255, 0.22)'
+        },
+
+        // Bitrate — light emerald accent
+        '.torrent-item__bitrate > span.ts-bitrate': {
+          color: '#5cd4b0',
+          'background-color': 'rgba(67, 206, 162, 0.10)',
+          border: '0.15em solid rgba(92, 212, 176, 0.78)',
+          'box-shadow': '0 0 0.45em rgba(92, 212, 176, 0.20)'
+        },
+        // 50..100 Mbps (gold)
+        '.torrent-item__bitrate > span.ts-bitrate.high-bitrate': {
+          color: '#ffc371',
+          background: 'linear-gradient(135deg, rgba(255, 195, 113, 0.28), rgba(67, 206, 162, 0.10))',
+          border: '0.15em solid rgba(255, 195, 113, 0.92)',
+          'box-shadow': '0 0 0.95em rgba(255, 195, 113, 0.38)',
+          'text-shadow': '0 0 0.25em rgba(255, 195, 113, 0.25)'
+        },
+        // >100 Mbps (danger)
+        '.torrent-item__bitrate > span.ts-bitrate.very-high-bitrate': {
+          color: '#ff5f6d',
+          background: 'linear-gradient(135deg, rgba(255, 95, 109, 0.28), rgba(67, 206, 162, 0.08))',
+          border: '0.15em solid rgba(255, 95, 109, 0.92)',
+          'box-shadow': '0 0 1.05em rgba(255, 95, 109, 0.40)',
+          'text-shadow': '0 0 0.25em rgba(255, 95, 109, 0.25)'
+        },
+
+        // Size — tiered
+        '.torrent-item__size.ts-size': {
+          color: '#5cd4b0',
+          'background-color': 'rgba(92, 212, 176, 0.12)',
+          border: '0.15em solid rgba(92, 212, 176, 0.82)',
+          'box-shadow': '0 0 0.7em rgba(92, 212, 176, 0.26)',
+          'font-weight': '700'
+        },
+        // 50..100GB: emerald
+        '.torrent-item__size.ts-size.mid-size': {
+          color: '#43cea2',
+          'background-color': 'rgba(67, 206, 162, 0.16)',
+          border: '0.15em solid rgba(67, 206, 162, 0.92)',
+          'box-shadow': '0 0 0.9em rgba(67, 206, 162, 0.34)'
+        },
+        // 100..200GB: gold
+        '.torrent-item__size.ts-size.high-size': {
+          color: '#ffc371',
+          background: 'linear-gradient(135deg, rgba(255, 195, 113, 0.28), rgba(67, 206, 162, 0.10))',
+          border: '0.15em solid rgba(255, 195, 113, 0.95)',
+          'box-shadow': '0 0 1.05em rgba(255, 195, 113, 0.40)',
+          'text-shadow': '0 0 0.25em rgba(255, 195, 113, 0.22)'
+        },
+        // >200GB: red (danger)
+        '.torrent-item__size.ts-size.top-size': {
+          color: '#ff5f6d',
+          background: 'linear-gradient(135deg, rgba(255, 95, 109, 0.28), rgba(67, 206, 162, 0.08))',
+          border: '0.15em solid rgba(255, 95, 109, 0.95)',
+          'box-shadow': '0 0 1.1em rgba(255, 95, 109, 0.42)',
+          'text-shadow': '0 0 0.25em rgba(255, 95, 109, 0.22)'
+        },
+
+        '.torrent-item.selector.focus': {
+          'box-shadow': '0 0 0 0.3em rgba(67, 206, 162, 0.4)'
+        },
+        '.torrent-serial.selector.focus': {
+          'box-shadow': '0 0 0 0.25em rgba(67, 206, 162, 0.4)'
+        },
+        '.torrent-file.selector.focus': {
+          'box-shadow': '0 0 0 0.25em rgba(67, 206, 162, 0.4)'
+        },
+        '.torrent-item.focus::after': {
+          border: '0.24em solid #5cd4b0',
+          'box-shadow': '0 0 0.6em rgba(92, 212, 176, 0.18)',
+          'border-radius': '0.9em'
+        },
+        '.scroll__body': {
+          margin: '5px'
+        }
+      };
+
+      function injectTorrentStyles() {
+        var styleId = 'interface_mod_torrent_styles';
+        var oldStyle = document.getElementById(styleId);
+        if (oldStyle) oldStyle.remove();
+        
+        var css = Object.keys(styles)
+          .map(function (selector) {
+            var props = styles[selector];
+            var rules = Object.keys(props)
+              .map(function (prop) {
+                return prop + ': ' + props[prop] + ' !important';
+              })
+              .join('; ');
+            return selector + ' { ' + rules + ' }';
+          })
+          .join('\n');
+        
+        var style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = css;
+        document.head.appendChild(style);
+      }
+
+      function tsParseFloat(text) {
+        var t = ((text || '') + '').trim();
+        var m = t.match(/(\d+(?:[.,]\d+)?)/);
+        return m ? (parseFloat(m[1].replace(',', '.')) || 0) : 0;
+      }
+
+      function tsParseInt(text) {
+        var t = ((text || '') + '').trim();
+        var v = parseInt(t, 10);
+        return isNaN(v) ? 0 : v;
+      }
+
+      function tsApplyTier(el, classesToClear, classToAdd) {
+        try {
+          for (var i = 0; i < classesToClear.length; i++) el.classList.remove(classesToClear[i]);
+          if (classToAdd) el.classList.add(classToAdd);
+        } catch (e) { }
+      }
+
+      function tsParseSizeToGb(text) {
+        try {
+          var t = ((text || '') + '').replace(/\u00A0/g, ' ').trim();
+          var m = t.match(/(\d+(?:[.,]\d+)?)\s*(kb|mb|gb|tb|кб|мб|гб|тб)/i);
+          if (!m) return null;
+
+          var num = parseFloat((m[1] || '0').replace(',', '.')) || 0;
+          var unit = (m[2] || '').toLowerCase();
+          var gb = 0;
+
+          if (unit === 'tb' || unit === 'тб') gb = num * 1024;
+          else if (unit === 'gb' || unit === 'гб') gb = num;
+          else if (unit === 'mb' || unit === 'мб') gb = num / 1024;
+          else if (unit === 'kb' || unit === 'кб') gb = num / (1024 * 1024);
+          else gb = 0;
+
+          return gb;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function updateTorrentStylesInternal() {
+        try {
+          document.querySelectorAll('.torrent-item__seeds span').forEach(function (span) {
+            var value = tsParseInt(span.textContent);
+            span.classList.add('ts-seeds');
+
+            var seedTier = '';
+            if (value < TH.seeds.danger_below) seedTier = 'low-seeds';
+            else if (value >= TH.seeds.top_from) seedTier = 'high-seeds';
+            else if (value >= TH.seeds.good_from) seedTier = 'good-seeds';
+            tsApplyTier(span, ['low-seeds', 'good-seeds', 'high-seeds'], seedTier);
+          });
+
+          document.querySelectorAll('.torrent-item__bitrate span').forEach(function (span) {
+            var value = tsParseFloat(span.textContent);
+            span.classList.add('ts-bitrate');
+
+            var brTier = '';
+            if (value > TH.bitrate.danger_from) brTier = 'very-high-bitrate';
+            else if (value >= TH.bitrate.warn_from) brTier = 'high-bitrate';
+            tsApplyTier(span, ['high-bitrate', 'very-high-bitrate'], brTier);
+          });
+
+          document.querySelectorAll('.torrent-item__grabs span').forEach(function (span) {
+            var value = tsParseInt(span.textContent);
+            span.classList.add('ts-grabs');
+            tsApplyTier(span, ['high-grabs'], value > 10 ? 'high-grabs' : '');
+          });
+
+          document.querySelectorAll('.torrent-item__size').forEach(function (el) {
+            var text = (el.textContent || '');
+            el.classList.add('ts-size');
+
+            var gb = tsParseSizeToGb(text);
+            if (gb === null) {
+              tsApplyTier(el, ['mid-size', 'high-size', 'top-size'], '');
+              return;
+            }
+
+            var szTier = '';
+            if (gb > TH.size.top_from_gb) szTier = 'top-size';
+            else if (gb >= TH.size.high_from_gb) szTier = 'high-size';
+            else if (gb >= TH.size.mid_from_gb) szTier = 'mid-size';
+            tsApplyTier(el, ['mid-size', 'high-size', 'top-size'], szTier);
+          });
+        } catch (e) {
+          console.error('Torrent styles update error:', e);
+        }
+      }
+
+      var tsUpdateTimer = null;
+      function scheduleUpdate(delayMs) {
+        try {
+          if (tsUpdateTimer) clearTimeout(tsUpdateTimer);
+        } catch (e) { }
+
+        var ms = typeof delayMs === 'number' ? delayMs : TH.debounce_ms;
+        tsUpdateTimer = setTimeout(function () {
+          tsUpdateTimer = null;
+          updateTorrentStylesInternal();
+        }, ms);
+      }
+
+      function observeTorrentsDom() {
+        try {
+          var observer = new MutationObserver(function (mutations) {
+            var needsUpdate = false;
+            for (var i = 0; i < mutations.length; i++) {
+              var mutation = mutations[i];
+              if (mutation.addedNodes && mutation.addedNodes.length) {
+                needsUpdate = true;
+                break;
+              }
+              if (mutation.type === 'characterData' ||
+                (mutation.type === 'childList' && mutation.target &&
+                  (mutation.target.classList &&
+                    (mutation.target.classList.contains('torrent-item__bitrate') ||
+                      mutation.target.classList.contains('torrent-item__seeds') ||
+                      mutation.target.classList.contains('torrent-item__grabs') ||
+                      mutation.target.classList.contains('torrent-item__size'))))) {
+                needsUpdate = true;
+                break;
+              }
+            }
+            if (needsUpdate) scheduleUpdate();
+          });
+
+          observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            characterData: true
+          });
+          scheduleUpdate(0);
+        } catch (e) {
+          console.error('Torrent styles observer error:', e);
+          scheduleUpdate(0);
+        }
+      }
+
+      // Ініціалізація стилів торентів
+      injectTorrentStyles();
+      observeTorrentsDom();
+      
+      // Перше оновлення
+      setTimeout(function() {
+        updateTorrentStylesInternal();
+      }, 500);
+      
+    } catch (e) {
+      console.error('Torrent styles initialization error:', e);
+    }
+  })();
 
   /* Torrent toggles overrides */
   // Цей блок динамічно вмикає/вимикає стилі з torrents+mod
