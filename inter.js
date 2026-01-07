@@ -385,7 +385,7 @@
 
     var themeCss = {
       emerald_v1: `
-        body { background: linear-gradient(135deg, #0c1619 0%, #132730 50%, #18323a 100%) !important; color: #dfdfdf !important; }
+        body { background: linear-gradient(135deg, #0c1619 0%, #132730 50%, #18332a 100%) !important; color: #dfdfdf !important; }
         .menu__item, .settings-folder, .settings-param, .selectbox-item,
         .full-start__button, .full-descr__tag, .player-panel .button,
         .custom-online-btn, .custom-torrent-btn, .main2-more-btn,
@@ -1708,16 +1708,16 @@
   }
 
   /* ============================================================
-   * КОЛЬОРОВІ КНОПКИ (ЗАМІНЕНО НА КОД З ColoredButtons.js)
+   * КОЛЬОРОВІ КНОПКИ (ПОВНИЙ КОД З ColoredButtons.js)
    * ============================================================ */
   var TORRENT_SVG_SOURCE = "\n<svg xmlns=\"http://www.w3.org/2000/svg\" x=\"0\" y=\"0\" viewBox=\"0 0 48 48\">\n  <path fill=\"#4caf50\" fill-rule=\"evenodd\" d=\"M23.501,44.125c11.016,0,20-8.984,20-20 c0-11.015-8.984-20-20-20c-11.016,0-20,8.985-20,20C3.501,35.141,12.485,44.125,23.501,44.125z\" clip-rule=\"evenodd\"></path>\n  <path fill=\"#fff\" fill-rule=\"evenodd\" d=\"M43.252,27.114C39.718,25.992,38.055,19.625,34,11l-7,1.077 c1.615,4.905,8.781,16.872,0.728,18.853C20.825,32.722,17.573,20.519,15,14l-8,2l10.178,27.081c1.991,0.67,4.112,1.044,6.323,1.044 c0.982,0,1.941-0.094,2.885-0.232l-4.443-8.376c6.868,1.552,12.308-0.869,12.962-6.203c1.727,2.29,4.089,3.183,6.734,3.172 C42.419,30.807,42.965,29.006,43.252,27.114z\" clip-rule=\"evenodd\"></path>\n</svg>";
 
   var ONLINE_SVG_SOURCE = null;
   var REYOHOHO_SVG_SOURCE = null;
   var lastActiveButton = null;
-  var isInitialized = false;
+  var isColoredButtonsInitialized = false;
 
-  // Размеры иконок для разных устройств
+  // Розміри іконок для різних пристроїв
   var ICON_SIZES = {
     mobile: {
       width: '20',
@@ -1733,7 +1733,7 @@
     }
   };
 
-  // Функция для определения типа устройства и размера иконки
+  // Функція для визначення типу пристрою та розміру іконки
   function getIconSize() {
     var screenWidth = window.innerWidth;
     if (screenWidth <= 768) {
@@ -1745,25 +1745,47 @@
     }
   }
 
-  // Основная функция инициализации
+  // Стратегії завантаження останнім
+  function loadAsLast() {
+    // Стратегія 1: Чекаємо повного завантаження сторінки
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
+        // Стратегія 2: Чекаємо ще трохи після DOMContentLoaded
+        setTimeout(initializeColoredButtons, 1000);
+      });
+    } else {
+      // Стратегія 3: Якщо DOM вже завантажений, чекаємо поки все заспокоїться
+      setTimeout(initializeColoredButtons, 2000);
+    }
+
+    // Стратегія 4: Чекаємо поки всі ресурси завантажаться
+    window.addEventListener('load', function() {
+      setTimeout(initializeColoredButtons, 500);
+    });
+
+    // Стратегія 5: Останній шанс - максимальна затримка
+    setTimeout(initializeColoredButtons, 5000);
+  }
+
+  // Основна функція ініціалізації
   function initializeColoredButtons() {
-    if (isInitialized) return;
-    isInitialized = true;
+    if (isColoredButtonsInitialized || !settings.colored_buttons) return;
+    isColoredButtonsInitialized = true;
     
     console.log('🚀 Кольорові кнопки запускаються (з плагіну ColoredButtons)');
     
-    // Добавляем кастомные стили
+    // Додаємо кастомні стилі
     addCustomStyles();
 
-    // Загружаем SVG
+    // Завантажуємо SVG
     loadOnlineSVG();
     loadReyohohoSVG();
     
-    // Запускаем наблюдение
+    // Запускаємо спостереження
     observeButtons();
     watchTitle();
     
-    // Множественные попытки обработки с увеличивающимися задержками
+    // Множинні спроби обробки зі зростаючими затримками
     setTimeout(processButtons, 100);
     setTimeout(processButtons, 500);
     setTimeout(processButtons, 1000);
@@ -1778,10 +1800,10 @@
       return response.text();
     }).then(function (svg) {
       ONLINE_SVG_SOURCE = svg;
-      console.log('✅ SVG для онлайн загружен');
-      processButtons();
+      console.log('✅ SVG для онлайн завантажено');
+      if (settings.colored_buttons) processButtons();
     })["catch"](function (error) {
-      console.error('❌ Ошибка загрузки SVG:', error);
+      console.error('❌ Помилка завантаження SVG:', error);
     });
   }
 
@@ -1792,10 +1814,10 @@
       return response.text();
     }).then(function (svg) {
       REYOHOHO_SVG_SOURCE = svg;
-      console.log('✅ SVG для reyohoho загружен');
-      processButtons();
+      console.log('✅ SVG для reyohoho завантажено');
+      if (settings.colored_buttons) processButtons();
     })["catch"](function (error) {
-      console.error('❌ Ошибка загрузки SVG reyohoho:', error);
+      console.error('❌ Помилка завантаження SVG reyohoho:', error);
     });
   }
 
@@ -1814,16 +1836,16 @@
         if (v != null && v !== '') fresh.setAttribute(a, v);
       });
 
-      // Получаем размеры для текущего устройства
+      // Отримуємо розміри для поточного пристрою
       var iconSize = getIconSize();
 
-      // Применяем кастомные настройки если есть
+      // Застосовуємо кастомні налаштування якщо є
       if (options) {
         if (options.width) fresh.setAttribute('width', options.width);
         if (options.height) fresh.setAttribute('height', options.height);
         if (options.className) fresh.classList.add(options.className);
       } else {
-        // Устанавливаем размеры по умолчанию для устройства
+        // Встановлюємо розміри за замовчуванням для пристрою
         fresh.setAttribute('width', iconSize.width);
         fresh.setAttribute('height', iconSize.height);
       }
@@ -1831,7 +1853,7 @@
       origSvg.replaceWith(fresh);
       return true;
     } catch (error) {
-      console.error('Ошибка при замене иконки:', error);
+      console.error('Помилка при заміні іконки:', error);
       return false;
     }
   }
@@ -1853,17 +1875,17 @@
     if (btn.classList.contains('hover-enter-attached')) return;
     btn.addEventListener('hover:enter', function (e) {
       lastActiveButton = btn;
-      console.log('🎯 hover:enter на кнопке:', getPluginName(btn));
+      console.log('🎯 hover:enter на кнопці:', getPluginName(btn));
     });
     btn.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.keyCode === 13) {
         lastActiveButton = btn;
-        console.log('🎯 Enter на кнопке:', getPluginName(btn));
+        console.log('🎯 Enter на кнопці:', getPluginName(btn));
       }
     });
     btn.addEventListener('click', function (e) {
       lastActiveButton = btn;
-      console.log('🎯 Click на кнопке:', getPluginName(btn));
+      console.log('🎯 Click на кнопці:', getPluginName(btn));
     });
     btn.classList.add('hover-enter-attached');
   }
@@ -1880,7 +1902,7 @@
             var pluginName = getPluginName(lastActiveButton);
             requestAnimationFrame(function () {
               titleElement.textContent = pluginName + " - Online";
-              console.log("✅ Заголовок изменён на: " + pluginName + " - Online");
+              console.log("✅ Заголовок змінено на: " + pluginName + " - Online");
             });
           }
         }
@@ -1930,15 +1952,15 @@
     });
   }
 
-  // Функция для добавления CSS стилей
+  // Функція для додавання CSS стилів
   function addCustomStyles() {
-    // Проверяем, не добавлены ли стили уже
+    // Перевіряємо, чи не додані стилі вже
     if (document.getElementById('custom-button-styles')) return;
     
     var style = document.createElement('style');
     style.id = 'custom-button-styles';
     style.textContent = `
-      /* Убираем анимацию трансформации для reyohoho кнопок */
+      /* Прибираємо анімацію трансформації для reyohoho кнопок */
       .full-start__button.view--reyohoho_mod.selector {
         transition: opacity 0.3s ease !important;
       }
@@ -1947,8 +1969,8 @@
         transform: none !important;
       }
       
-      /* Адаптивные размеры для иконок на разных устройствах */
-      /* Мобильные устройства (до 768px) */
+      /* Адаптивні розміри для іконок на різних пристроях */
+      /* Мобільні пристрої (до 768px) */
       @media (max-width: 768px) {
         .full-start__button.selector svg {
           width: 20px !important;
@@ -1958,7 +1980,7 @@
         }
       }
       
-      /* Планшеты (769px - 1024px) */
+      /* Планшети (769px - 1024px) */
       @media (min-width: 769px) and (max-width: 1024px) {
         .full-start__button.selector svg {
           width: 20px !important;
@@ -1968,7 +1990,7 @@
         }
       }
       
-      /* Десктоп (1025px и выше) */
+      /* Десктоп (1025px і вище) */
       @media (min-width: 1025px) {
         .full-start__button.selector svg {
           width: 30px !important;
@@ -1978,23 +2000,23 @@
         }
       }
       
-      /* Специфичные стили для кастомных иконок */
+      /* Специфічні стилі для кастомних іконок */
       .reyohoho-custom-icon,
       .online-mod-custom-icon,
       .custom-svg-replaced {
-        /* Размеры управляются медиа-запросами выше */
+        /* Розміри керуються медіа-запитами вище */
       }
     `;
     document.head.appendChild(style);
   }
 
   function processButtons() {
-    if (!isInitialized) return;
+    if (!isColoredButtonsInitialized || !settings.colored_buttons) return;
     
     var count = 0;
     var iconSize = getIconSize();
 
-    // Торрент-кнопки - обрабатываем все
+    // Торрент-кнопки - обробляємо всі
     var torrentButtons = document.querySelectorAll('.full-start__button.view--torrent.selector');
     torrentButtons.forEach(function (btn) {
       if (btn.classList.contains('utorrent-svg-applied')) return;
@@ -2010,24 +2032,24 @@
       }
     });
 
-    // Онлайн-кнопки - обрабатываем только BwaRC и Cinema
+    // Онлайн-кнопки - обробляємо тільки BwaRC і Cinema
     if (ONLINE_SVG_SOURCE) {
       var onlineButtons = document.querySelectorAll('.full-start__button.view--online.selector');
       onlineButtons.forEach(function (btn) {
-        // Всегда добавляем обработчики hover
+        // Завжди додаємо обробники hover
         attachHoverEnter(btn);
 
-        // Пропускаем если уже обработана
+        // Пропускаємо якщо вже оброблена
         if (btn.classList.contains('online-svg-applied')) return;
 
         var pluginName = getPluginName(btn);
-        console.log('Проверяем плагин:', pluginName, btn);
+        console.log('Перевіряємо плагін:', pluginName, btn);
 
-        // Меняем иконку и текст для BwaRC
+        // Міняємо іконку та текст для BwaRC
         if (pluginName.toLowerCase().includes('bwa')) {
           setTimeout(function() {
             if (!btn.parentNode) {
-              console.log('❌ Кнопка BwaRC больше не существует, пропускаем');
+              console.log('❌ Кнопка BwaRC більше не існує, пропускаємо');
               return;
             }
 
@@ -2049,10 +2071,10 @@
             }
 
             btn.classList.add('online-svg-applied');
-            console.log('✅ Применены изменения для плагина BwaRC');
+            console.log('✅ Застосовано зміни для плагіна BwaRC');
           }, 50);
         } 
-        // Меняем только текст для Cinema
+        // Міняємо тільки текст для Cinema
         else if (pluginName.toLowerCase().includes('cinema')) {
           setTimeout(function() {
             if (!btn.parentNode) return;
@@ -2062,25 +2084,25 @@
               span.textContent = 'Cinema';
             }
             btn.classList.add('online-svg-applied');
-            console.log('✅ Текст изменен на Cinema для плагина cinema');
+            console.log('✅ Текст змінено на Cinema для плагіна cinema');
           }, 50);
         } 
-        // Для других плагинов просто отмечаем как обработанные, чтобы не трогать в будущем
+        // Для інших плагінів просто позначаємо як оброблені, щоб не чіпати в майбутньому
         else {
           btn.classList.add('online-svg-applied');
-          console.log('⚠️ Плагин ' + pluginName + ' отмечен как обработанный (без изменений)');
+          console.log('⚠️ Плагін ' + pluginName + ' позначено як оброблений (без змін)');
         }
       });
     }
 
-    // Обрабатываем кнопки reyohoho_mod
+    // Обробляємо кнопки reyohoho_mod
     if (REYOHOHO_SVG_SOURCE) {
       var reyohohoButtons = document.querySelectorAll('.full-start__button.view--reyohoho_mod.selector');
       reyohohoButtons.forEach(function (btn) {
-        // Всегда добавляем обработчики hover
+        // Завжди додаємо обробники hover
         attachHoverEnter(btn);
 
-        // Пропускаем если уже обработана
+        // Пропускаємо якщо вже оброблена
         if (btn.classList.contains('reyohoho-svg-applied')) return;
 
         var svg = btn.querySelector('svg');
@@ -2095,36 +2117,36 @@
             })) {
               btn.classList.add('reyohoho-svg-applied');
               count++;
-              console.log('✅ Иконка заменена для reyohoho_mod');
+              console.log('✅ Іконка замінена для reyohoho_mod');
             }
           }, 50);
         }
       });
     }
 
-    // Обрабатываем кнопки online_mod - используем ту же иконку что и для reyohoho
+    // Обробляємо кнопки online_mod - використовуємо ту ж іконку що і для reyohoho
     if (REYOHOHO_SVG_SOURCE) {
       var onlineModButtons = document.querySelectorAll('.full-start__button.view--online_mod.selector');
       onlineModButtons.forEach(function (btn) {
-        // Всегда добавляем обработчики hover
+        // Завжди додаємо обробники hover
         attachHoverEnter(btn);
 
-        // Пропускаем если уже обработана
+        // Пропускаємо якщо вже оброблена
         if (btn.classList.contains('online-mod-svg-applied')) return;
 
         var pluginName = getPluginName(btn);
-        console.log('🔧 Обрабатываем online_mod кнопку:', pluginName, btn);
+        console.log('🔧 Обробляємо online_mod кнопку:', pluginName, btn);
 
         setTimeout(function() {
           if (!btn.parentNode) {
-            console.log('❌ Кнопка online_mod больше не существует, пропускаем');
+            console.log('❌ Кнопка online_mod більше не існує, пропускаємо');
             return;
           }
 
           var svg = btn.querySelector('svg');
           var span = btn.querySelector('span');
 
-          // Заменяем иконку на ту же, что и для reyohoho_mod
+          // Замінюємо іконку на ту ж, що і для reyohoho_mod
           if (svg && !svg.classList.contains('online-mod-svg-replaced')) {
             if (replaceIconPreservingAttrs(svg, REYOHOHO_SVG_SOURCE, {
               width: iconSize.width,
@@ -2133,17 +2155,17 @@
             })) {
               svg.classList.add('online-mod-svg-replaced');
               count++;
-              console.log('✅ Иконка заменена для online_mod (на иконку reyohoho)');
+              console.log('✅ Іконка замінена для online_mod (на іконку reyohoho)');
             }
           }
 
           btn.classList.add('online-mod-svg-applied');
-          console.log('✅ Применены изменения для плагина online_mod');
+          console.log('✅ Застосовано зміни для плагіна online_mod');
         }, 50);
       });
     }
 
-    if (count) console.log('✅ Иконки заменены:', count);
+    if (count) console.log('✅ Іконки замінено:', count);
   }
 
   function observeButtons() {
@@ -2156,7 +2178,7 @@
         }
       }
       if (needsUpdate) {
-        // Используем несколько попыток с задержками для надежности
+        // Використовуємо кілька спроб із затримками для надійності
         setTimeout(processButtons, 100);
         setTimeout(processButtons, 500);
         setTimeout(processButtons, 1000);
@@ -2169,8 +2191,8 @@
   }
 
   function disableColoredButtons() {
-    isInitialized = false;
-    // Удаляем кастомные стили
+    isColoredButtonsInitialized = false;
+    // Видаляємо кастомні стилі
     var style = document.getElementById('custom-button-styles');
     if (style) style.remove();
     console.log('❌ Кольорові кнопки вимкнено');
@@ -2276,7 +2298,8 @@
     wireFullCardEnhancers();
 
     if (settings.colored_buttons) {
-      initializeColoredButtons();
+      // Запускаємо стратегію завантаження останнім
+      loadAsLast();
     }
     
     // Перший запуск стилів торентів
