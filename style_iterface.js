@@ -1,10 +1,8 @@
 (function () {
     "use strict";
     
-    // Використовуємо TV платформу для телевізора
     Lampa.Platform.tv();
     
-    // Перевіряємо наявність Lampa
     if (typeof Lampa === "undefined") return;
     if (!Lampa.Maker || !Lampa.Maker.map || !Lampa.Utils) return;
     if (window.plugin_interface_ready_v3) return;
@@ -13,26 +11,19 @@
     
     var globalInfoCache = {};
     
-    // Встановлюємо базові налаштування
     Lampa.Storage.set("interface_size", "small");
     Lampa.Storage.set("background", "false");
     
-    // Додаємо стилі
     addStyles();
-    
-    // Ініціалізуємо налаштування
     initializeSettings();
     
-    // Налаштовуємо спостерігачі
     siStyleSetupVoteColorsObserver();
     siStyleSetupVoteColorsForDetailPage();
     setupPreloadObserver();
     
-    // Отримуємо головний Maker
     var mainMaker = Lampa.Maker.map("Main");
     if (!mainMaker || !mainMaker.Items || !mainMaker.Create) return;
     
-    // Обгортка методу onInit
     wrapMethod(mainMaker.Items, "onInit", function (originalMethod, args) {
         this.__newInterfaceEnabled = shouldEnableInterface(this && this.object);
         
@@ -44,7 +35,6 @@
         if (originalMethod) originalMethod.apply(this, args);
     });
     
-    // Обгортка методу onCreate
     wrapMethod(mainMaker.Create, "onCreate", function (originalMethod, args) {
         if (originalMethod) originalMethod.apply(this, args);
         if (!this.__newInterfaceEnabled) return;
@@ -53,7 +43,6 @@
         state.attach();
     });
     
-    // Обгортка методу onCreateAndAppend
     wrapMethod(mainMaker.Create, "onCreateAndAppend", function (originalMethod, args) {
         var data = args && args[0];
         if (this.__newInterfaceEnabled && data) {
@@ -70,7 +59,6 @@
         return originalMethod ? originalMethod.apply(this, args) : undefined;
     });
     
-    // Обгортка методу onAppend
     wrapMethod(mainMaker.Items, "onAppend", function (originalMethod, args) {
         if (originalMethod) originalMethod.apply(this, args);
         if (!this.__newInterfaceEnabled) return;
@@ -83,7 +71,6 @@
         }
     });
     
-    // Обгортка методу onDestroy
     wrapMethod(mainMaker.Items, "onDestroy", function (originalMethod, args) {
         if (this.__newInterfaceState) {
             this.__newInterfaceState.destroy();
@@ -93,15 +80,9 @@
         if (originalMethod) originalMethod.apply(this, args);
     });
     
-    // Функція перевірки, чи потрібно активувати новий інтерфейс
     function shouldEnableInterface(object) {
         if (!object) return false;
         
-        // Видаляємо перевірку на мобільні пристрої для телевізора
-        if (object.title === "Вибране") return false;
-        if (object.title === "Favorites") return false; // для сумісності
-        
-        // Додаємо перевірку на TV платформу
         var isTV = Lampa.Platform.is('tizen') || 
                    Lampa.Platform.is('webos') || 
                    Lampa.Platform.is('tv') ||
@@ -109,17 +90,16 @@
                    navigator.userAgent.toLowerCase().indexOf('tizen') > -1 ||
                    navigator.userAgent.toLowerCase().indexOf('webos') > -1;
         
-        // Для телевізорів завжди активуємо новий інтерфейс
         if (isTV) return true;
         
-        // Для інших пристроїв - тільки при ширині екрану > 767
         if (window.innerWidth < 767) return false;
         if (Lampa.Platform.screen("mobile")) return false;
+        if (object.title === "Вибране") return false;
+        if (object.title === "Favorites") return false;
         
         return true;
     }
     
-    // Функція створення або отримання стану
     function getOrCreateState(createInstance) {
         if (createInstance.__newInterfaceState) {
             return createInstance.__newInterfaceState;
@@ -129,7 +109,6 @@
         return state;
     }
     
-    // Функція створення стану
     function createState(mainInstance) {
         var infoPanel = new InfoPanel();
         infoPanel.create();
@@ -260,13 +239,12 @@
                 }
                 
                 this.attached = false;
-            },
+            }
         };
         
         return state;
     }
     
-    // Функція для дитячого режиму
     function initChildModeApiHook() {
         if (!Lampa.TMDB || !Lampa.TMDB.api) return;
         
@@ -291,7 +269,6 @@
     
     initChildModeApiHook();
     
-    // Функція для стилізації результатів
     function extendResultsWithStyle(data) {
         if (!data) return;
         
@@ -310,7 +287,6 @@
         }
     }
     
-    // Функція обробки картки
     function handleCard(state, card) {
         if (!card || card.__newInterfaceCard) return;
         if (typeof card.use !== "function" || !card.data) return;
@@ -354,7 +330,6 @@
         });
     }
     
-    // Функція отримання даних картки
     function getCardData(card, results, index) {
         index = index || 0;
         
@@ -366,7 +341,6 @@
         return null;
     }
     
-    // Функція пошуку даних картки
     function findCardData(element) {
         if (!element) return null;
         
@@ -379,7 +353,6 @@
         return node && node.card_data ? node.card_data : null;
     }
     
-    // Функція отримання активної картки
     function getFocusedCard(items) {
         var container = items && typeof items.render === "function" ? items.render(true) : null;
         if (!container || !container.querySelector) return null;
@@ -388,7 +361,6 @@
         return findCardData(focusedElement);
     }
     
-    // Функція обробки лінії
     function handleLineAppend(items, line, data) {
         if (line.__newInterfaceLine) return;
         line.__newInterfaceLine = true;
@@ -439,7 +411,6 @@
         }
     }
     
-    // Функція обгортки методів
     function wrapMethod(object, methodName, wrapper) {
         if (!object) return;
         
@@ -451,7 +422,6 @@
         };
     }
     
-    // Функція додавання стилів
     function addStyles() {
         if (addStyles.added) return;
         addStyles.added = true;
@@ -462,300 +432,297 @@
         $("body").append(Lampa.Template.get("new_interface_style_v3", {}, true));
     }
     
-    // Функція отримання стилів для широких постерів
     function getWideStyles() {
-        return `<style>
-                    .items-line__title .full-person__photo {
-                        width: 1.8em !important;
-                        height: 1.8em !important;
-                    }
-                    .items-line__title .full-person--svg .full-person__photo {
-                        padding: 0.5em !important;
-                        margin-right: 0.5em !important;
-                    }
-                    .items-line__title .full-person__photo {
-                        margin-right: 0.5em !important;
-                    }
-                    .items-line {
-                        padding-bottom: 4em !important;
-                    }
-                    .new-interface-info__head, .new-interface-info__details{ opacity: 0; transition: opacity 0.5s ease; min-height: 2.2em !important;}
-                    .new-interface-info__head.visible, .new-interface-info__details.visible{ opacity: 1; }
-                    .new-interface .card.card--wide {
-                        width: 18.3em;
-                    }
-                    .new-interface .card.card--small {
-                        width: 18.3em;
-                    }
-                    .new-interface-info {
-                        position: relative;
-                        padding: 1.5em;
-                        height: 27.5em;
-                    }
-                    .new-interface-info__body {
-                        position: absolute;
-                        z-index: 9999999;
-                        width: 80%;
-                        padding-top: 1.1em;
-                    }
-                    .new-interface-info__head {
-                        color: rgba(255, 255, 255, 0.6);
-                        font-size: 1.3em;
-                        min-height: 1em;
-                    }
-                    .new-interface-info__head span {
-                        color: #fff;
-                    }
-                    .new-interface-info__title {
-                        font-size: 4em;
-                        font-weight: 600;
-                        margin-bottom: 0.3em;
-                        overflow: hidden;
-                        -o-text-overflow: '.';
-                        text-overflow: '.';
-                        display: -webkit-box;
-                        -webkit-line-clamp: 1;
-                        line-clamp: 1;
-                        -webkit-box-orient: vertical;
-                        margin-left: -0.03em;
-                        line-height: 1.3;
-                    }
-                    .new-interface-info__details {
-                        margin-top: 1.2em;
-                        margin-bottom: 1.6em;
-                        display: flex;
-                        align-items: center;
-                        flex-wrap: wrap;
-                        min-height: 1.9em;
-                        font-size: 1.3em;
-                    }
-                    .new-interface-info__split {
-                        margin: 0 1em;
-                        font-size: 0.7em;
-                    }
-                    .new-interface-info__description {
-                        font-size: 1.4em;
-                        font-weight: 310;
-                        line-height: 1.3;
-                        overflow: hidden;
-                        -o-text-overflow: '.';
-                        text-overflow: '.';
-                        display: -webkit-box;
-                        -webkit-line-clamp: 3;
-                        line-clamp: 3;
-                        -webkit-box-orient: vertical;
-                        width: 65%;
-                    }
-                    .new-interface .card-more__box {
-                        padding-bottom: 95%;
-                    }
-                    .new-interface .full-start__background-wrapper {
-                        position: absolute;
-                        top: 0;
-                        left: 0;
-                        width: 100%;
-                        height: 100%;
-                        z-index: -1;
-                        pointer-events: none;
-                    }
-                    .new-interface .full-start__background {
-                        position: absolute;
-                        height: 108%;
-                        width: 100%;
-                        top: -5em;
-                        left: 0;
-                        opacity: 0;
-                        object-fit: cover;
-                        transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-                    }
-                    .new-interface .full-start__background.active {
-                        opacity: 0.5;
-                    }
-                    .new-interface .full-start__rate {
-                        font-size: 1.3em;
-                        margin-right: 0;
-                    }
-                    .new-interface .card__promo {
-                        display: none;
-                    }
-                    .new-interface .card.card--wide + .card-more .card-more__box {
-                        padding-bottom: 95%;
-                    }
-                    .new-interface .card.card--wide .card-watched {
-                        display: none !important;
-                    }
-                    body.light--version .new-interface-info__body {
-                        position: absolute;
-                        z-index: 9999999;
-                        width: 69%;
-                        padding-top: 1.5em;
-                    }
-                    body.light--version .new-interface-info {
-                        height: 25.3em;
-                    }
-                    body.advanced--animation:not(.no--animation) .new-interface .card.card--wide.focus .card__view {
-                        animation: animation-card-focus 0.2s;
-                    }
-                    body.advanced--animation:not(.no--animation) .new-interface .card.card--wide.animate-trigger-enter .card__view {
-                        animation: animation-trigger-enter 0.2s forwards;
-                    }
-                    body.advanced--animation:not(.no--animation) .new-interface .card.card--small.focus .card__view {
-                        animation: animation-card-focus 0.2s;
-                    }
-                    body.advanced--animation:not(.no--animation) .new-interface .card.card--small.animate-trigger-enter .card__view {
-                        animation: animation-trigger-enter 0.2s forwards;
-                    }
-                    .logo-moved-head { transition: opacity 0.4s ease; }
-                    .logo-moved-separator { transition: opacity 0.4s ease; }
-                    ${Lampa.Storage.get("hide_captions", true) ? ".card:not(.card--collection) .card__age, .card:not(.card--collection) .card__title { display: none !important; }" : ""}
-                </style>`;
+        return '<style>' +
+                    '.items-line__title .full-person__photo {' +
+                        'width: 1.8em !important;' +
+                        'height: 1.8em !important;' +
+                    '}' +
+                    '.items-line__title .full-person--svg .full-person__photo {' +
+                        'padding: 0.5em !important;' +
+                        'margin-right: 0.5em !important;' +
+                    '}' +
+                    '.items-line__title .full-person__photo {' +
+                        'margin-right: 0.5em !important;' +
+                    '}' +
+                    '.items-line {' +
+                        'padding-bottom: 4em !important;' +
+                    '}' +
+                    '.new-interface-info__head, .new-interface-info__details{ opacity: 0; transition: opacity 0.5s ease; min-height: 2.2em !important;}' +
+                    '.new-interface-info__head.visible, .new-interface-info__details.visible{ opacity: 1; }' +
+                    '.new-interface .card.card--wide {' +
+                        'width: 18.3em;' +
+                    '}' +
+                    '.new-interface .card.card--small {' +
+                        'width: 18.3em;' +
+                    '}' +
+                    '.new-interface-info {' +
+                        'position: relative;' +
+                        'padding: 1.5em;' +
+                        'height: 27.5em;' +
+                    '}' +
+                    '.new-interface-info__body {' +
+                        'position: absolute;' +
+                        'z-index: 9999999;' +
+                        'width: 80%;' +
+                        'padding-top: 1.1em;' +
+                    '}' +
+                    '.new-interface-info__head {' +
+                        'color: rgba(255, 255, 255, 0.6);' +
+                        'font-size: 1.3em;' +
+                        'min-height: 1em;' +
+                    '}' +
+                    '.new-interface-info__head span {' +
+                        'color: #fff;' +
+                    '}' +
+                    '.new-interface-info__title {' +
+                        'font-size: 4em;' +
+                        'font-weight: 600;' +
+                        'margin-bottom: 0.3em;' +
+                        'overflow: hidden;' +
+                        '-o-text-overflow: \'.\';' +
+                        'text-overflow: \'.\';' +
+                        'display: -webkit-box;' +
+                        '-webkit-line-clamp: 1;' +
+                        'line-clamp: 1;' +
+                        '-webkit-box-orient: vertical;' +
+                        'margin-left: -0.03em;' +
+                        'line-height: 1.3;' +
+                    '}' +
+                    '.new-interface-info__details {' +
+                        'margin-top: 1.2em;' +
+                        'margin-bottom: 1.6em;' +
+                        'display: flex;' +
+                        'align-items: center;' +
+                        'flex-wrap: wrap;' +
+                        'min-height: 1.9em;' +
+                        'font-size: 1.3em;' +
+                    '}' +
+                    '.new-interface-info__split {' +
+                        'margin: 0 1em;' +
+                        'font-size: 0.7em;' +
+                    '}' +
+                    '.new-interface-info__description {' +
+                        'font-size: 1.4em;' +
+                        'font-weight: 310;' +
+                        'line-height: 1.3;' +
+                        'overflow: hidden;' +
+                        '-o-text-overflow: \'.\';' +
+                        'text-overflow: \'.\';' +
+                        'display: -webkit-box;' +
+                        '-webkit-line-clamp: 3;' +
+                        'line-clamp: 3;' +
+                        '-webkit-box-orient: vertical;' +
+                        'width: 65%;' +
+                    '}' +
+                    '.new-interface .card-more__box {' +
+                        'padding-bottom: 95%;' +
+                    '}' +
+                    '.new-interface .full-start__background-wrapper {' +
+                        'position: absolute;' +
+                        'top: 0;' +
+                        'left: 0;' +
+                        'width: 100%;' +
+                        'height: 100%;' +
+                        'z-index: -1;' +
+                        'pointer-events: none;' +
+                    '}' +
+                    '.new-interface .full-start__background {' +
+                        'position: absolute;' +
+                        'height: 108%;' +
+                        'width: 100%;' +
+                        'top: -5em;' +
+                        'left: 0;' +
+                        'opacity: 0;' +
+                        'object-fit: cover;' +
+                        'transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);' +
+                    '}' +
+                    '.new-interface .full-start__background.active {' +
+                        'opacity: 0.5;' +
+                    '}' +
+                    '.new-interface .full-start__rate {' +
+                        'font-size: 1.3em;' +
+                        'margin-right: 0;' +
+                    '}' +
+                    '.new-interface .card__promo {' +
+                        'display: none;' +
+                    '}' +
+                    '.new-interface .card.card--wide + .card-more .card-more__box {' +
+                        'padding-bottom: 95%;' +
+                    '}' +
+                    '.new-interface .card.card--wide .card-watched {' +
+                        'display: none !important;' +
+                    '}' +
+                    'body.light--version .new-interface-info__body {' +
+                        'position: absolute;' +
+                        'z-index: 9999999;' +
+                        'width: 69%;' +
+                        'padding-top: 1.5em;' +
+                    '}' +
+                    'body.light--version .new-interface-info {' +
+                        'height: 25.3em;' +
+                    '}' +
+                    'body.advanced--animation:not(.no--animation) .new-interface .card.card--wide.focus .card__view {' +
+                        'animation: animation-card-focus 0.2s;' +
+                    '}' +
+                    'body.advanced--animation:not(.no--animation) .new-interface .card.card--wide.animate-trigger-enter .card__view {' +
+                        'animation: animation-trigger-enter 0.2s forwards;' +
+                    '}' +
+                    'body.advanced--animation:not(.no--animation) .new-interface .card.card--small.focus .card__view {' +
+                        'animation: animation-card-focus 0.2s;' +
+                    '}' +
+                    'body.advanced--animation:not(.no--animation) .new-interface .card.card--small.animate-trigger-enter .card__view {' +
+                        'animation: animation-trigger-enter 0.2s forwards;' +
+                    '}' +
+                    '.logo-moved-head { transition: opacity 0.4s ease; }' +
+                    '.logo-moved-separator { transition: opacity 0.4s ease; }' +
+                    (Lampa.Storage.get("hide_captions", true) ? ".card:not(.card--collection) .card__age, .card:not(.card--collection) .card__title { display: none !important; }" : "") +
+                '</style>';
     }
     
-    // Функція отримання стилів для маленьких постерів
     function getSmallStyles() {
-        return `<style>
-                    .new-interface-info__head, .new-interface-info__details{ opacity: 0; transition: opacity 0.5s ease; min-height: 2.2em !important;}
-                    .new-interface-info__head.visible, .new-interface-info__details.visible{ opacity: 1; }
-                    .new-interface .card.card--wide{
-                        width: 18.3em;
-                    }
-                    .items-line__title .full-person__photo {
-                        width: 1.8em !important;
-                        height: 1.8em !important;
-                    }
-                    .items-line__title .full-person--svg .full-person__photo {
-                        padding: 0.5em !important;
-                        margin-right: 0.5em !important;
-                    }
-                    .items-line__title .full-person__photo {
-                        margin-right: 0.5em !important;
-                    }
-                    .new-interface-info {
-                        position: relative;
-                        padding: 1.5em;
-                        height: 19.8em;
-                    }
-                    .new-interface-info__body {
-                        position: absolute;
-                        z-index: 9999999;
-                        width: 80%;
-                        padding-top: 0.2em;
-                    }
-                    .new-interface-info__head {
-                        color: rgba(255, 255, 255, 0.6);
-                        margin-bottom: 0.3em;
-                        font-size: 1.2em;
-                        min-height: 1em;
-                    }
-                    .new-interface-info__head span {
-                        color: #fff;
-                    }
-                    .new-interface-info__title {
-                        font-size: 3em;
-                        font-weight: 600;
-                        margin-bottom: 0.2em;
-                        overflow: hidden;
-                        -o-text-overflow: '.';
-                        text-overflow: '.';
-                        display: -webkit-box;
-                        -webkit-line-clamp: 1;
-                        line-clamp: 1;
-                        -webkit-box-orient: vertical;
-                        margin-left: -0.03em;
-                        line-height: 1.3;
-                    }
-                    .new-interface-info__details {
-                        margin-top: 1.2em;
-                        margin-bottom: 1.6em;
-                        display: flex;
-                        align-items: center;
-                        flex-wrap: wrap;
-                        min-height: 1.9em;
-                        font-size: 1.2em;
-                    }
-                    .new-interface-info__split {
-                        margin: 0 1em;
-                        font-size: 0.7em;
-                    }
-                    .new-interface-info__description {
-                        font-size: 1.3em;
-                        font-weight: 310;
-                        line-height: 1.3;
-                        overflow: hidden;
-                        -o-text-overflow: '.';
-                        text-overflow: '.';
-                        display: -webkit-box;
-                        -webkit-line-clamp: 2;
-                        line-clamp: 2;
-                        -webkit-box-orient: vertical;
-                        width: 70%;
-                    }
-                    .new-interface .card-more__box {
-                        padding-bottom: 150%;
-                    }
-                    .new-interface .full-start__background-wrapper {
-                        position: absolute;
-                        top: 0;
-                        left: 0;
-                        width: 100%;
-                        height: 100%;
-                        z-index: -1;
-                        pointer-events: none;
-                    }
-                    .new-interface .full-start__background {
-                        position: absolute;
-                        height: 108%;
-                        width: 100%;
-                        top: -5em;
-                        left: 0;
-                        opacity: 0;
-                        object-fit: cover;
-                        transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-                    }
-                    .new-interface .full-start__background.active {
-                        opacity: 0.5;
-                    }
-                    .new-interface .full-start__rate {
-                        font-size: 1.2em;
-                        margin-right: 0;
-                    }
-                    .new-interface .card__promo {
-                        display: none;
-                    }
-                    .new-interface .card.card--wide + .card-more .card-more__box {
-                        padding-bottom: 95%;
-                    }
-                    .new-interface .card.card--wide .card-watched {
-                        display: none !important;
-                    }
-                    body.light--version .new-interface-info__body {
-                        position: absolute;
-                        z-index: 9999999;
-                        width: 69%;
-                        padding-top: 1.5em;
-                    }
-                    body.light--version .new-interface-info {
-                        height: 25.3em;
-                    }
-                    body.advanced--animation:not(.no--animation) .new-interface .card.card--wide.focus .card__view {
-                        animation: animation-card-focus 0.2s;
-                    }
-                    body.advanced--animation:not(.no--animation) .new-interface .card.card--wide.animate-trigger-enter .card__view {
-                        animation: animation-trigger-enter 0.2s forwards;
-                    }
-                    body.advanced--animation:not(.no--animation) .new-interface .card.card--small.focus .card__view {
-                        animation: animation-card-focus 0.2s;
-                    }
-                    body.advanced--animation:not(.no--animation) .new-interface .card.card--small.animate-trigger-enter .card__view {
-                        animation: animation-trigger-enter 0.2s forwards;
-                    }
-                    .logo-moved-head { transition: opacity 0.4s ease; }
-                    .logo-moved-separator { transition: opacity 0.4s ease; }
-                    ${Lampa.Storage.get("hide_captions", true) ? ".card:not(.card--collection) .card__age, .card:not(.card--collection) .card__title { display: none !important; }" : ""}
-                </style>`;
+        return '<style>' +
+                    '.new-interface-info__head, .new-interface-info__details{ opacity: 0; transition: opacity 0.5s ease; min-height: 2.2em !important;}' +
+                    '.new-interface-info__head.visible, .new-interface-info__details.visible{ opacity: 1; }' +
+                    '.new-interface .card.card--wide{' +
+                        'width: 18.3em;' +
+                    '}' +
+                    '.items-line__title .full-person__photo {' +
+                        'width: 1.8em !important;' +
+                        'height: 1.8em !important;' +
+                    '}' +
+                    '.items-line__title .full-person--svg .full-person__photo {' +
+                        'padding: 0.5em !important;' +
+                        'margin-right: 0.5em !important;' +
+                    '}' +
+                    '.items-line__title .full-person__photo {' +
+                        'margin-right: 0.5em !important;' +
+                    '}' +
+                    '.new-interface-info {' +
+                        'position: relative;' +
+                        'padding: 1.5em;' +
+                        'height: 19.8em;' +
+                    '}' +
+                    '.new-interface-info__body {' +
+                        'position: absolute;' +
+                        'z-index: 9999999;' +
+                        'width: 80%;' +
+                        'padding-top: 0.2em;' +
+                    '}' +
+                    '.new-interface-info__head {' +
+                        'color: rgba(255, 255, 255, 0.6);' +
+                        'margin-bottom: 0.3em;' +
+                        'font-size: 1.2em;' +
+                        'min-height: 1em;' +
+                    '}' +
+                    '.new-interface-info__head span {' +
+                        'color: #fff;' +
+                    '}' +
+                    '.new-interface-info__title {' +
+                        'font-size: 3em;' +
+                        'font-weight: 600;' +
+                        'margin-bottom: 0.2em;' +
+                        'overflow: hidden;' +
+                        '-o-text-overflow: \'.\';' +
+                        'text-overflow: \'.\';' +
+                        'display: -webkit-box;' +
+                        '-webkit-line-clamp: 1;' +
+                        'line-clamp: 1;' +
+                        '-webkit-box-orient: vertical;' +
+                        'margin-left: -0.03em;' +
+                        'line-height: 1.3;' +
+                    '}' +
+                    '.new-interface-info__details {' +
+                        'margin-top: 1.2em;' +
+                        'margin-bottom: 1.6em;' +
+                        'display: flex;' +
+                        'align-items: center;' +
+                        'flex-wrap: wrap;' +
+                        'min-height: 1.9em;' +
+                        'font-size: 1.2em;' +
+                    '}' +
+                    '.new-interface-info__split {' +
+                        'margin: 0 1em;' +
+                        'font-size: 0.7em;' +
+                    '}' +
+                    '.new-interface-info__description {' +
+                        'font-size: 1.3em;' +
+                        'font-weight: 310;' +
+                        'line-height: 1.3;' +
+                        'overflow: hidden;' +
+                        '-o-text-overflow: \'.\';' +
+                        'text-overflow: \'.\';' +
+                        'display: -webkit-box;' +
+                        '-webkit-line-clamp: 2;' +
+                        'line-clamp: 2;' +
+                        '-webkit-box-orient: vertical;' +
+                        'width: 70%;' +
+                    '}' +
+                    '.new-interface .card-more__box {' +
+                        'padding-bottom: 150%;' +
+                    '}' +
+                    '.new-interface .full-start__background-wrapper {' +
+                        'position: absolute;' +
+                        'top: 0;' +
+                        'left: 0;' +
+                        'width: 100%;' +
+                        'height: 100%;' +
+                        'z-index: -1;' +
+                        'pointer-events: none;' +
+                    '}' +
+                    '.new-interface .full-start__background {' +
+                        'position: absolute;' +
+                        'height: 108%;' +
+                        'width: 100%;' +
+                        'top: -5em;' +
+                        'left: 0;' +
+                        'opacity: 0;' +
+                        'object-fit: cover;' +
+                        'transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);' +
+                    '}' +
+                    '.new-interface .full-start__background.active {' +
+                        'opacity: 0.5;' +
+                    '}' +
+                    '.new-interface .full-start__rate {' +
+                        'font-size: 1.2em;' +
+                        'margin-right: 0;' +
+                    '}' +
+                    '.new-interface .card__promo {' +
+                        'display: none;' +
+                    '}' +
+                    '.new-interface .card.card--wide + .card-more .card-more__box {' +
+                        'padding-bottom: 95%;' +
+                    '}' +
+                    '.new-interface .card.card--wide .card-watched {' +
+                        'display: none !important;' +
+                    '}' +
+                    'body.light--version .new-interface-info__body {' +
+                        'position: absolute;' +
+                        'z-index: 9999999;' +
+                        'width: 69%;' +
+                        'padding-top: 1.5em;' +
+                    '}' +
+                    'body.light--version .new-interface-info {' +
+                        'height: 25.3em;' +
+                    '}' +
+                    'body.advanced--animation:not(.no--animation) .new-interface .card.card--wide.focus .card__view {' +
+                        'animation: animation-card-focus 0.2s;' +
+                    '}' +
+                    'body.advanced--animation:not(.no--animation) .new-interface .card.card--wide.animate-trigger-enter .card__view {' +
+                        'animation: animation-trigger-enter 0.2s forwards;' +
+                    '}' +
+                    'body.advanced--animation:not(.no--animation) .new-interface .card.card--small.focus .card__view {' +
+                        'animation: animation-card-focus 0.2s;' +
+                    '}' +
+                    'body.advanced--animation:not(.no--animation) .new-interface .card.card--small.animate-trigger-enter .card__view {' +
+                        'animation: animation-trigger-enter 0.2s forwards;' +
+                    '}' +
+                    '.logo-moved-head { transition: opacity 0.4s ease; }' +
+                    '.logo-moved-separator { transition: opacity 0.4s ease; }' +
+                    (Lampa.Storage.get("hide_captions", true) ? ".card:not(.card--collection) .card__age, .card:not(.card--collection) .card__title { display: none !important; }" : "") +
+                '</style>';
     }
     
-    // Функція попереднього завантаження даних
     function preloadData(data, silent) {
         if (!data || !data.id) return;
         var source = data.source || "tmdb";
@@ -774,8 +741,6 @@
     }
     
     var preloadTimer = null;
-    
-    // Функція попереднього завантаження всіх видимих карток
     function preloadAllVisibleCards() {
         if (!Lampa.Storage.get("async_load", true)) return;
         
@@ -797,7 +762,6 @@
         }, 800);
     }
     
-    // Функція налаштування спостерігача для попереднього завантаження
     function setupPreloadObserver() {
         var observer = new MutationObserver(function (mutations) {
             if (!Lampa.Storage.get("async_load", true)) return;
@@ -828,7 +792,6 @@
         });
     }
     
-    // Клас інформаційної панелі
     function InfoPanel() {
         this.html = null;
         this.timer = null;
@@ -839,14 +802,14 @@
     }
     
     InfoPanel.prototype.create = function () {
-        this.html = $(`<div class="new-interface-info">
-                            <div class="new-interface-info__body">
-                                <div class="new-interface-info__head"></div>
-                                <div class="new-interface-info__title"></div>
-                                <div class="new-interface-info__details"></div>
-                                <div class="new-interface-info__description"></div>
-                            </div>
-                        </div>`);
+        this.html = $('<div class="new-interface-info">' +
+                            '<div class="new-interface-info__body">' +
+                                '<div class="new-interface-info__head"></div>' +
+                                '<div class="new-interface-info__title"></div>' +
+                                '<div class="new-interface-info__details"></div>' +
+                                '<div class="new-interface-info__description"></div>' +
+                            '</div>' +
+                        '</div>');
     };
     
     InfoPanel.prototype.render = function (asElement) {
@@ -1328,7 +1291,6 @@
         }
     };
     
-    // Функції для кольорових рейтингів
     function siStyleGetColorByRating(vote) {
         if (isNaN(vote)) return "";
         if (vote >= 0 && vote <= 3) return "red";
@@ -1456,7 +1418,6 @@
         });
     }
     
-    // Функція ініціалізації налаштувань
     function initializeSettings() {
         Lampa.Settings.listener.follow("open", function (event) {
             if (event.name == "main") {
@@ -1472,7 +1433,6 @@
             }
         });
         
-        // Головний параметр для стильного інтерфейсу
         Lampa.SettingsApi.addParam({
             component: "interface",
             param: {
@@ -1500,7 +1460,6 @@
             },
         });
         
-        // Налаштування для стильного інтерфейсу
         Lampa.SettingsApi.addParam({
             component: "style_interface",
             param: { name: "logo_show", type: "trigger", default: true },
