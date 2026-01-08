@@ -1413,32 +1413,32 @@ border: 0.2em solid #f6a5b0;
   }
 
   /* ============================================================
-   * РОЗМІР КНОПОК ТА ІКОНОК (ЗБІЛЬШЕНІ РОЗМІРИ)
+   * РОЗМІР КНОПОК ТА ІКОНОК (ОНОВЛЕНІ РОЗМІРИ)
    * ============================================================ */
   
-  // Функція для отримання розмірів іконок відповідно до розміру кнопок (збільшені значення)
+  // Функція для отримання розмірів іконок відповідно до розміру кнопок (оновлені значення)
   function getIconSizeForButtonSize() {
     switch (settings.button_size) {
       case 'small':
         return { 
-          width: '22',      // збільшено з 18
-          height: '22',     // збільшено з 18
-          svgWidth: '1.6em', // збільшено з 1.4em
-          svgHeight: '1.6em' // збільшено з 1.4em
+          width: '24',      // збільшено до 24px (замість 22)
+          height: '24',     // збільшено до 24px (замість 22)
+          svgWidth: '1.6em', // залишено
+          svgHeight: '1.6em' // залишено
         };
       case 'large':
         return { 
-          width: '34',      // збільшено з 32
-          height: '34',     // збільшено з 32
-          svgWidth: '2.4em', // збільшено з 2.2em
-          svgHeight: '2.4em' // збільшено з 2.2em
+          width: '34',      // залишено без змін
+          height: '34',     // залишено без змін
+          svgWidth: '2.4em', // залишено
+          svgHeight: '2.4em' // залишено
         };
       default: // normal
         return { 
-          width: '28',      // збільшено з 24
-          height: '28',     // збільшено з 24
-          svgWidth: '2.0em', // збільшено з 1.8em
-          svgHeight: '2.0em' // збільшено з 1.8em
+          width: '32',      // збільшено до 32px (замість 28)
+          height: '32',     // збільшено до 32px (замість 28)
+          svgWidth: '2.0em', // залишено
+          svgHeight: '2.0em' // залишено
         };
     }
   }
@@ -1455,9 +1455,9 @@ border: 0.2em solid #f6a5b0;
       case 'small':
         css = `
           .full-start__button, .full-start-new__button {
-            min-height: 3.0em !important;  /* збільшено з 2.8em */
-            padding: 0.5em 1.2em !important;  /* збільшено з 0.4em 1em */
-            font-size: 1.0em !important;  /* збільшено з 0.9em */
+            min-height: 3.3em !important;  /* збільшено до 3.3em (замість 3.0em) */
+            padding: 0.5em 1.2em !important;
+            font-size: 1.0em !important;
           }
           .full-start__button svg, .full-start-new__button svg {
             width: ${iconSize.svgWidth} !important;
@@ -1472,9 +1472,9 @@ border: 0.2em solid #f6a5b0;
       case 'large':
         css = `
           .full-start__button, .full-start-new__button {
-            min-height: 4.0em !important;  /* збільшено з 3.8em */
-            padding: 0.7em 1.6em !important;  /* збільшено з 0.6em 1.4em */
-            font-size: 1.3em !important;  /* збільшено з 1.2em */
+            min-height: 4.0em !important;
+            padding: 0.7em 1.6em !important;
+            font-size: 1.3em !important;
           }
           .full-start__button svg, .full-start-new__button svg {
             width: ${iconSize.svgWidth} !important;
@@ -1489,9 +1489,9 @@ border: 0.2em solid #f6a5b0;
       default: // normal
         css = `
           .full-start__button, .full-start-new__button {
-            min-height: 3.5em !important;  /* збільшено з 3.2em */
-            padding: 0.6em 1.4em !important;  /* збільшено з 0.5em 1.2em */
-            font-size: 1.1em !important;  /* збільшено з 1.0em */
+            min-height: 3.8em !important;  /* збільшено до 3.8em (замість 3.5em) */
+            padding: 0.6em 1.4em !important;
+            font-size: 1.1em !important;
           }
           .full-start__button svg, .full-start-new__button svg {
             width: ${iconSize.svgWidth} !important;
