@@ -1,1095 +1,1639 @@
-// Samsung Tizen Interface Plugin v1.0
-// Повна адаптація оригінального плагіна для Samsung Tizen
+(function () {
+    "use strict";
+    Lampa.Platform.tv();
 
-(function() {
-    console.log('Завантаження Samsung Tizen Interface Plugin...');
-    
-    // 1. Перевірка на Tizen телевізор
-    var isSamsungTizen = (function() {
-        var ua = navigator.userAgent.toLowerCase();
-        var isTizen = ua.indexOf('tizen') > -1;
-        var isSamsung = ua.indexOf('samsung') > -1 && ua.indexOf('smarttv') > -1;
-        var isTizenTV = /smart-tv|tizen|samsungbrowser/i.test(ua);
-        
-        console.log('User Agent:', navigator.userAgent);
-        console.log('isTizen:', isTizen, 'isSamsung:', isSamsung, 'isTizenTV:', isTizenTV);
-        
-        return isTizen || isSamsung || isTizenTV;
-    })();
-    
-    if (!isSamsungTizen) {
-        console.log('Цей плагін тільки для Samsung Tizen телевізорів');
-        return;
-    }
-    
-    // 2. Чекаємо на завантаження Lampa
-    var initAttempts = 0;
-    var maxAttempts = 30; // 15 секунд
-    
-    var checkLampa = setInterval(function() {
-        initAttempts++;
-        
-        if (typeof Lampa !== 'undefined' && 
-            typeof Lampa.Storage !== 'undefined' && 
-            typeof Lampa.Utils !== 'undefined') {
-            
-            clearInterval(checkLampa);
-            console.log('Lampa завантажена, запуск плагіна...');
-            initializePlugin();
-            
-        } else if (initAttempts >= maxAttempts) {
-            clearInterval(checkLampa);
-            console.error('Не вдалося завантажити Lampa API');
+    if (typeof Lampa === "undefined") return;
+
+    if (!Lampa.Maker || !Lampa.Maker.map || !Lampa.Utils) return;
+    if (window.plugin_interface_ready_v3) return;
+
+    window.plugin_interface_ready_v3 = true;
+
+    var globalInfoCache = {};
+
+    Lampa.Storage.set("interface_size", "small");
+    Lampa.Storage.set("background", "false");
+
+    addStyles();
+    initializeSettings();
+
+    siStyleSetupVoteColorsObserver();
+    siStyleSetupVoteColorsForDetailPage();
+    setupPreloadObserver();
+
+    var mainMaker = Lampa.Maker.map("Main");
+    if (!mainMaker || !mainMaker.Items || !mainMaker.Create) return;
+
+    wrapMethod(mainMaker.Items, "onInit", function (originalMethod, args) {
+        this.__newInterfaceEnabled = shouldEnableInterface(this && this.object);
+
+        if (this.__newInterfaceEnabled) {
+            if (this.object) this.object.wide = false;
+            this.wide = false;
         }
-    }, 500);
-    
-    function initializePlugin() {
-        try {
-            // Запобігаємо повторному запуску
-            if (window.samsungPluginActive) {
-                console.log('Плагін вже активний');
+
+        if (originalMethod) originalMethod.apply(this, args);
+    });
+
+    wrapMethod(mainMaker.Create, "onCreate", function (originalMethod, args) {
+        if (originalMethod) originalMethod.apply(this, args);
+        if (!this.__newInterfaceEnabled) return;
+
+        var state = getOrCreateState(this);
+        state.attach();
+    });
+
+    wrapMethod(mainMaker.Create, "onCreateAndAppend", function (originalMethod, args) {
+        var data = args && args[0];
+        if (this.__newInterfaceEnabled && data) {
+            data.wide = false;
+
+            if (!data.params) data.params = {};
+            if (!data.params.items) data.params.items = {};
+            data.params.items.view = 12;
+            data.params.items_per_row = 12;
+            data.items_per_row = 12;
+
+            extendResultsWithStyle(data);
+        }
+        return originalMethod ? originalMethod.apply(this, args) : undefined;
+    });
+
+    wrapMethod(mainMaker.Items, "onAppend", function (originalMethod, args) {
+        if (originalMethod) originalMethod.apply(this, args);
+        if (!this.__newInterfaceEnabled) return;
+
+        var element = args && args[0];
+        var data = args && args[1];
+
+        if (element && data) {
+            handleLineAppend(this, element, data);
+        }
+    });
+
+    wrapMethod(mainMaker.Items, "onDestroy", function (originalMethod, args) {
+        if (this.__newInterfaceState) {
+            this.__newInterfaceState.destroy();
+            delete this.__newInterfaceState;
+        }
+        delete this.__newInterfaceEnabled;
+        if (originalMethod) originalMethod.apply(this, args);
+    });
+
+    function shouldEnableInterface(object) {
+        if (!object) return false;
+        if (window.innerWidth < 767) return false;
+        if (Lampa.Platform.screen("mobile")) return false;
+        if (object.title === "Обране" || object.title === "Избранное") return false;
+        return true;
+    }
+
+    function getOrCreateState(createInstance) {
+        if (createInstance.__newInterfaceState) {
+            return createInstance.__newInterfaceState;
+        }
+        var state = createState(createInstance);
+        createInstance.__newInterfaceState = state;
+        return state;
+    }
+
+    function createState(mainInstance) {
+        var infoPanel = new InfoPanel();
+        infoPanel.create();
+
+        var backgroundWrapper = document.createElement("div");
+        backgroundWrapper.className = "full-start__background-wrapper";
+
+        var bg1 = document.createElement("img");
+        bg1.className = "full-start__background";
+        var bg2 = document.createElement("img");
+        bg2.className = "full-start__background";
+
+        backgroundWrapper.appendChild(bg1);
+        backgroundWrapper.appendChild(bg2);
+
+        var state = {
+            main: mainInstance,
+            info: infoPanel,
+            background: backgroundWrapper,
+            infoElement: null,
+            backgroundTimer: null,
+            backgroundLast: "",
+            attached: false,
+
+            attach: function () {
+                if (this.attached) return;
+
+                var container = mainInstance.render(true);
+                if (!container) return;
+
+                container.classList.add("new-interface");
+
+                if (!backgroundWrapper.parentElement) {
+                    container.insertBefore(backgroundWrapper, container.firstChild || null);
+                }
+
+                var infoElement = infoPanel.render(true);
+                this.infoElement = infoElement;
+
+                if (infoElement && infoElement.parentNode !== container) {
+                    if (backgroundWrapper.parentElement === container) {
+                        container.insertBefore(infoElement, backgroundWrapper.nextSibling);
+                    } else {
+                        container.insertBefore(infoElement, container.firstChild || null);
+                    }
+                }
+
+                mainInstance.scroll.minus(infoElement);
+                this.attached = true;
+            },
+
+            update: function (data) {
+                if (!data) return;
+                infoPanel.update(data);
+                this.updateBackground(data);
+            },
+
+            updateBackground: function (data) {
+                var BACKGROUND_DEBOUNCE_DELAY = 300;
+                var self = this;
+
+                clearTimeout(this.backgroundTimer);
+
+                if (this._pendingImg) {
+                    this._pendingImg.onload = null;
+                    this._pendingImg.onerror = null;
+                    this._pendingImg = null;
+                }
+
+                var show_bg = Lampa.Storage.get("show_background", true);
+                var bg_resolution = Lampa.Storage.get("background_resolution", "original");
+                var backdropUrl = data && data.backdrop_path && show_bg ? Lampa.Api.img(data.backdrop_path, bg_resolution) : "";
+
+                if (backdropUrl === this.backgroundLast) return;
+
+                this.backgroundTimer = setTimeout(function () {
+                    if (!backdropUrl) {
+                        bg1.classList.remove("active");
+                        bg2.classList.remove("active");
+                        self.backgroundLast = "";
+                        return;
+                    }
+
+                    var nextLayer = bg1.classList.contains("active") ? bg2 : bg1;
+                    var prevLayer = bg1.classList.contains("active") ? bg1 : bg2;
+
+                    var img = new Image();
+                    self._pendingImg = img;
+
+                    img.onload = function () {
+                        if (self._pendingImg !== img) return;
+                        if (backdropUrl !== self.backgroundLast) return;
+
+                        self._pendingImg = null;
+                        nextLayer.src = backdropUrl;
+                        nextLayer.classList.add("active");
+
+                        setTimeout(function () {
+                            if (backdropUrl !== self.backgroundLast) return;
+                            prevLayer.classList.remove("active");
+                        }, 100);
+                    };
+
+                    self.backgroundLast = backdropUrl;
+                    img.src = backdropUrl;
+                }, BACKGROUND_DEBOUNCE_DELAY);
+            },
+
+            reset: function () {
+                infoPanel.empty();
+            },
+
+            destroy: function () {
+                clearTimeout(this.backgroundTimer);
+                infoPanel.destroy();
+
+                var container = mainInstance.render(true);
+                if (container) {
+                    container.classList.remove("new-interface");
+                }
+
+                if (this.infoElement && this.infoElement.parentNode) {
+                    this.infoElement.parentNode.removeChild(this.infoElement);
+                }
+
+                if (backgroundWrapper && backgroundWrapper.parentNode) {
+                    backgroundWrapper.parentNode.removeChild(backgroundWrapper);
+                }
+
+                this.attached = false;
+            },
+        };
+
+        return state;
+    }
+
+    function initChildModeApiHook() {
+        if (!Lampa.TMDB || !Lampa.TMDB.api) return;
+
+        var originalApi = Lampa.TMDB.api;
+
+        Lampa.TMDB.api = function (url) {
+            if (Lampa.Storage.get("child_mode", false)) {
+                if (url.indexOf("discover/") !== -1 || url.indexOf("trending/") !== -1 || url.indexOf("movie/popular") !== -1 || url.indexOf("movie/top_rated") !== -1 || url.indexOf("movie/now_playing") !== -1 || url.indexOf("movie/upcoming") !== -1 || url.indexOf("tv/popular") !== -1 || url.indexOf("tv/top_rated") !== -1 || url.indexOf("tv/on_the_air") !== -1 || url.indexOf("tv/airing_today") !== -1) {
+                    if (url.indexOf("certification") === -1) {
+                        var separator = url.indexOf("?") !== -1 ? "&" : "?";
+                        url = url + separator + "certification_country=UA&certification.lte=16&include_adult=false";
+                    }
+                }
+                if (url.indexOf("include_adult") === -1 && url.indexOf("search/") !== -1) {
+                    var separator = url.indexOf("?") !== -1 ? "&" : "?";
+                    url = url + separator + "include_adult=false";
+                }
+            }
+            return originalApi(url);
+        };
+    }
+
+    initChildModeApiHook();
+
+    function extendResultsWithStyle(data) {
+        if (!data) return;
+
+        if (Array.isArray(data.results)) {
+            data.results.forEach(function (card) {
+                if (card.wide !== false) {
+                    card.wide = false;
+                }
+            });
+
+            Lampa.Utils.extendItemsParams(data.results, {
+                style: {
+                    name: Lampa.Storage.get("wide_post") !== false ? "wide" : "small",
+                },
+            });
+        }
+    }
+
+    function handleCard(state, card) {
+        if (!card || card.__newInterfaceCard) return;
+        if (typeof card.use !== "function" || !card.data) return;
+
+        card.__newInterfaceCard = true;
+        card.params = card.params || {};
+        card.params.style = card.params.style || {};
+
+        var targetStyle = Lampa.Storage.get("wide_post") !== false ? "wide" : "small";
+        card.params.style.name = targetStyle;
+
+        if (card.render && typeof card.render === "function") {
+            var element = card.render(true);
+            if (element) {
+                var node = element.jquery ? element[0] : element;
+                if (node && node.classList) {
+                    if (targetStyle === "wide") {
+                        node.classList.add("card--wide");
+                        node.classList.remove("card--small");
+                    } else {
+                        node.classList.add("card--small");
+                        node.classList.remove("card--wide");
+                    }
+                }
+            }
+        }
+
+        card.use({
+            onFocus: function () {
+                state.update(card.data);
+            },
+            onHover: function () {
+                state.update(card.data);
+            },
+            onTouch: function () {
+                state.update(card.data);
+            },
+            onDestroy: function () {
+                delete card.__newInterfaceCard;
+            },
+        });
+    }
+
+    function getCardData(card, results, index) {
+        index = index || 0;
+
+        if (card && card.data) return card.data;
+        if (results && Array.isArray(results.results)) {
+            return results.results[index] || results.results[0];
+        }
+
+        return null;
+    }
+
+    function findCardData(element) {
+        if (!element) return null;
+
+        var node = element && element.jquery ? element[0] : element;
+
+        while (node && !node.card_data) {
+            node = node.parentNode;
+        }
+
+        return node && node.card_data ? node.card_data : null;
+    }
+
+    function getFocusedCard(items) {
+        var container = items && typeof items.render === "function" ? items.render(true) : null;
+        if (!container || !container.querySelector) return null;
+
+        var focusedElement = container.querySelector(".selector.focus") || container.querySelector(".focus");
+        return findCardData(focusedElement);
+    }
+
+    function handleLineAppend(items, line, data) {
+        if (line.__newInterfaceLine) return;
+        line.__newInterfaceLine = true;
+
+        var state = getOrCreateState(items);
+
+        line.items_per_row = 12;
+        line.view = 12;
+        if (line.params) {
+            line.params.items_per_row = 12;
+            if (line.params.items) line.params.items.view = 12;
+        }
+
+        var processCard = function (card) {
+            handleCard(state, card);
+        };
+
+        line.use({
+            onInstance: function (instance) {
+                processCard(instance);
+            },
+            onActive: function (card, results) {
+                var cardData = getCardData(card, results);
+                if (cardData) state.update(cardData);
+            },
+            onToggle: function () {
+                setTimeout(function () {
+                    var focusedCard = getFocusedCard(line);
+                    if (focusedCard) state.update(focusedCard);
+                }, 32);
+            },
+            onMore: function () {
+                state.reset();
+            },
+            onDestroy: function () {
+                state.reset();
+                delete line.__newInterfaceLine;
+            },
+        });
+
+        if (Array.isArray(line.items) && line.items.length) {
+            line.items.forEach(processCard);
+        }
+
+        if (line.last) {
+            var lastCardData = findCardData(line.last);
+            if (lastCardData) state.update(lastCardData);
+        }
+    }
+
+    function wrapMethod(object, methodName, wrapper) {
+        if (!object) return;
+
+        var originalMethod = typeof object[methodName] === "function" ? object[methodName] : null;
+
+        object[methodName] = function () {
+            var args = Array.prototype.slice.call(arguments);
+            return wrapper.call(this, originalMethod, args);
+        };
+    }
+
+    function addStyles() {
+        if (addStyles.added) return;
+        addStyles.added = true;
+
+        var styles = Lampa.Storage.get("wide_post") !== false ? getWideStyles() : getSmallStyles();
+
+        Lampa.Template.add("new_interface_style_v3", styles);
+        $("body").append(Lampa.Template.get("new_interface_style_v3", {}, true));
+    }
+
+    function getWideStyles() {
+        return `<style>
+                    .items-line__title .full-person__photo {
+                        width: 1.8em !important;
+                        height: 1.8em !important;
+                    }
+                    .items-line__title .full-person--svg .full-person__photo {
+                        padding: 0.5em !important;
+                        margin-right: 0.5em !important;
+                    }
+                    .items-line__title .full-person__photo {
+                        margin-right: 0.5em !important;
+                    }
+                    .items-line {
+                        padding-bottom: 4em !important;
+                    }
+                    .new-interface-info__head, .new-interface-info__details{ opacity: 0; transition: opacity 0.5s ease; min-height: 2.2em !important;}
+                    .new-interface-info__head.visible, .new-interface-info__details.visible{ opacity: 1; }
+                    .new-interface .card.card--wide {
+                        width: 18.3em;
+                    }
+                    .new-interface .card.card--small {
+                        width: 18.3em;
+                    }
+                    .new-interface-info {
+                        position: relative;
+                        padding: 1.5em;
+                        height: 27.5em;
+                    }
+                    .new-interface-info__body {
+                        position: absolute;
+                        z-index: 9999999;
+                        width: 80%;
+                        padding-top: 1.1em;
+                    }
+                    .new-interface-info__head {
+                        color: rgba(255, 255, 255, 0.6);
+                        font-size: 1.3em;
+                        min-height: 1em;
+                    }
+                    .new-interface-info__head span {
+                        color: #fff;
+                    }
+                    .new-interface-info__title {
+                        font-size: 4em;
+                        font-weight: 600;
+                        margin-bottom: 0.3em;
+                        overflow: hidden;
+                        -o-text-overflow: '.';
+                        text-overflow: '.';
+                        display: -webkit-box;
+                        -webkit-line-clamp: 1;
+                        line-clamp: 1;
+                        -webkit-box-orient: vertical;
+                        margin-left: -0.03em;
+                        line-height: 1.3;
+                    }
+                    .new-interface-info__details {
+                        margin-top: 1.2em;
+                        margin-bottom: 1.6em;
+                        display: flex;
+                        align-items: center;
+                        flex-wrap: wrap;
+                        min-height: 1.9em;
+                        font-size: 1.3em;
+                    }
+                    .new-interface-info__split {
+                        margin: 0 1em;
+                        font-size: 0.7em;
+                    }
+                    .new-interface-info__description {
+                        font-size: 1.4em;
+                        font-weight: 310;
+                        line-height: 1.3;
+                        overflow: hidden;
+                        -o-text-overflow: '.';
+                        text-overflow: '.';
+                        display: -webkit-box;
+                        -webkit-line-clamp: 3;
+                        line-clamp: 3;
+                        -webkit-box-orient: vertical;
+                        width: 65%;
+                    }
+                    .new-interface .card-more__box {
+                        padding-bottom: 95%;
+                    }
+                    .new-interface .full-start__background-wrapper {
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        z-index: -1;
+                        pointer-events: none;
+                    }
+                    .new-interface .full-start__background {
+                        position: absolute;
+                        height: 108%;
+                        width: 100%;
+                        top: -5em;
+                        left: 0;
+                        opacity: 0;
+                        object-fit: cover;
+                        transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+                    }
+                    .new-interface .full-start__background.active {
+                        opacity: 0.5;
+                    }
+                    .new-interface .full-start__rate {
+                        font-size: 1.3em;
+                        margin-right: 0;
+                    }
+                    .new-interface .card__promo {
+                        display: none;
+                    }
+                    .new-interface .card.card--wide + .card-more .card-more__box {
+                        padding-bottom: 95%;
+                    }
+                    .new-interface .card.card--wide .card-watched {
+                        display: none !important;
+                    }
+                    body.light--version .new-interface-info__body {
+                        position: absolute;
+                        z-index: 9999999;
+                        width: 69%;
+                        padding-top: 1.5em;
+                    }
+                    body.light--version .new-interface-info {
+                        height: 25.3em;
+                    }
+                    body.advanced--animation:not(.no--animation) .new-interface .card.card--wide.focus .card__view {
+                        animation: animation-card-focus 0.2s;
+                    }
+                    body.advanced--animation:not(.no--animation) .new-interface .card.card--wide.animate-trigger-enter .card__view {
+                        animation: animation-trigger-enter 0.2s forwards;
+                    }
+                    body.advanced--animation:not(.no--animation) .new-interface .card.card--small.focus .card__view {
+                        animation: animation-card-focus 0.2s;
+                    }
+                    body.advanced--animation:not(.no--animation) .new-interface .card.card--small.animate-trigger-enter .card__view {
+                        animation: animation-trigger-enter 0.2s forwards;
+                    }
+                    .logo-moved-head { transition: opacity 0.4s ease; }
+                    .logo-moved-separator { transition: opacity 0.4s ease; }
+                    ${Lampa.Storage.get("hide_captions", true) ? ".card:not(.card--collection) .card__age, .card:not(.card--collection) .card__title { display: none !important; }" : ""}
+                </style>`;
+    }
+
+    function getSmallStyles() {
+        return `<style>
+                    .new-interface-info__head, .new-interface-info__details{ opacity: 0; transition: opacity 0.5s ease; min-height: 2.2em !important;}
+                    .new-interface-info__head.visible, .new-interface-info__details.visible{ opacity: 1; }
+                    .new-interface .card.card--wide{
+                        width: 18.3em;
+                    }
+                    .items-line__title .full-person__photo {
+                        width: 1.8em !important;
+                        height: 1.8em !important;
+                    }
+                    .items-line__title .full-person--svg .full-person__photo {
+                        padding: 0.5em !important;
+                        margin-right: 0.5em !important;
+                    }
+                    .items-line__title .full-person__photo {
+                        margin-right: 0.5em !important;
+                    }
+                    .new-interface-info {
+                        position: relative;
+                        padding: 1.5em;
+                        height: 19.8em;
+                    }
+                    .new-interface-info__body {
+                        position: absolute;
+                        z-index: 9999999;
+                        width: 80%;
+                        padding-top: 0.2em;
+                    }
+                    .new-interface-info__head {
+                        color: rgba(255, 255, 255, 0.6);
+                        margin-bottom: 0.3em;
+                        font-size: 1.2em;
+                        min-height: 1em;
+                    }
+                    .new-interface-info__head span {
+                        color: #fff;
+                    }
+                    .new-interface-info__title {
+                        font-size: 3em;
+                        font-weight: 600;
+                        margin-bottom: 0.2em;
+                        overflow: hidden;
+                        -o-text-overflow: '.';
+                        text-overflow: '.';
+                        display: -webkit-box;
+                        -webkit-line-clamp: 1;
+                        line-clamp: 1;
+                        -webkit-box-orient: vertical;
+                        margin-left: -0.03em;
+                        line-height: 1.3;
+                    }
+                    .new-interface-info__details {
+                        margin-top: 1.2em;
+                        margin-bottom: 1.6em;
+                        display: flex;
+                        align-items: center;
+                        flex-wrap: wrap;
+                        min-height: 1.9em;
+                        font-size: 1.2em;
+                    }
+                    .new-interface-info__split {
+                        margin: 0 1em;
+                        font-size: 0.7em;
+                    }
+                    .new-interface-info__description {
+                        font-size: 1.3em;
+                        font-weight: 310;
+                        line-height: 1.3;
+                        overflow: hidden;
+                        -o-text-overflow: '.';
+                        text-overflow: '.';
+                        display: -webkit-box;
+                        -webkit-line-clamp: 2;
+                        line-clamp: 2;
+                        -webkit-box-orient: vertical;
+                        width: 70%;
+                    }
+                    .new-interface .card-more__box {
+                        padding-bottom: 150%;
+                    }
+                    .new-interface .full-start__background-wrapper {
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        z-index: -1;
+                        pointer-events: none;
+                    }
+                    .new-interface .full-start__background {
+                        position: absolute;
+                        height: 108%;
+                        width: 100%;
+                        top: -5em;
+                        left: 0;
+                        opacity: 0;
+                        object-fit: cover;
+                        transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+                    }
+                    .new-interface .full-start__background.active {
+                        opacity: 0.5;
+                    }
+                    .new-interface .full-start__rate {
+                        font-size: 1.2em;
+                        margin-right: 0;
+                    }
+                    .new-interface .card__promo {
+                        display: none;
+                    }
+                    .new-interface .card.card--wide + .card-more .card-more__box {
+                        padding-bottom: 95%;
+                    }
+                    .new-interface .card.card--wide .card-watched {
+                        display: none !important;
+                    }
+                    body.light--version .new-interface-info__body {
+                        position: absolute;
+                        z-index: 9999999;
+                        width: 69%;
+                        padding-top: 1.5em;
+                    }
+                    body.light--version .new-interface-info {
+                        height: 25.3em;
+                    }
+                    body.advanced--animation:not(.no--animation) .new-interface .card.card--wide.focus .card__view {
+                        animation: animation-card-focus 0.2s;
+                    }
+                    body.advanced--animation:not(.no--animation) .new-interface .card.card--wide.animate-trigger-enter .card__view {
+                        animation: animation-trigger-enter 0.2s forwards;
+                    }
+                    body.advanced--animation:not(.no--animation) .new-interface .card.card--small.focus .card__view {
+                        animation: animation-card-focus 0.2s;
+                    }
+                    body.advanced--animation:not(.no--animation) .new-interface .card.card--small.animate-trigger-enter .card__view {
+                        animation: animation-trigger-enter 0.2s forwards;
+                    }
+                    .logo-moved-head { transition: opacity 0.4s ease; }
+                    .logo-moved-separator { transition: opacity 0.4s ease; }
+                    ${Lampa.Storage.get("hide_captions", true) ? ".card:not(.card--collection) .card__age, .card:not(.card--collection) .card__title { display: none !important; }" : ""}
+                </style>`;
+    }
+
+    function preloadData(data, silent) {
+        if (!data || !data.id) return;
+        var source = data.source || "tmdb";
+        if (source !== "tmdb" && source !== "cub") return;
+
+        var mediaType = data.media_type === "tv" || data.name ? "tv" : "movie";
+        var language = Lampa.Storage.get("language") || "uk";
+        var apiUrl = Lampa.TMDB.api(mediaType + "/" + data.id + "?api_key=" + Lampa.TMDB.key() + "&append_to_response=content_ratings,release_dates&language=" + language);
+
+        if (!globalInfoCache[apiUrl]) {
+            var network = new Lampa.Reguest();
+            network.silent(apiUrl, function (response) {
+                globalInfoCache[apiUrl] = response;
+            });
+        }
+    }
+
+    var preloadTimer = null;
+    function preloadAllVisibleCards() {
+        if (!Lampa.Storage.get("async_load", true)) return;
+
+        clearTimeout(preloadTimer);
+        preloadTimer = setTimeout(function () {
+            var layer = $(".layer--visible");
+            if (!layer.length) return;
+
+            var cards = layer.find(".card");
+            var count = 0;
+
+            cards.each(function () {
+                var data = findCardData(this);
+                if (data) {
+                    preloadData(data, true);
+                    count++;
+                }
+            });
+        }, 800);
+    }
+
+    function setupPreloadObserver() {
+        var observer = new MutationObserver(function (mutations) {
+            if (!Lampa.Storage.get("async_load", true)) return;
+
+            var hasNewCards = false;
+            for (var i = 0; i < mutations.length; i++) {
+                var added = mutations[i].addedNodes;
+                for (var j = 0; j < added.length; j++) {
+                    var node = added[j];
+                    if (node.nodeType === 1) {
+                        if (node.classList.contains("card") || node.querySelector(".card")) {
+                            hasNewCards = true;
+                            break;
+                        }
+                    }
+                }
+                if (hasNewCards) break;
+            }
+
+            if (hasNewCards) {
+                preloadAllVisibleCards();
+            }
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+        });
+    }
+    function InfoPanel() {
+        this.html = null;
+        this.timer = null;
+        this.fadeTimer = null;
+        this.network = new Lampa.Reguest();
+        this.loaded = globalInfoCache;
+        this.currentUrl = null;
+    }
+
+    InfoPanel.prototype.create = function () {
+        this.html = $(`<div class="new-interface-info">
+                            <div class="new-interface-info__body">
+                                <div class="new-interface-info__head"></div>
+                                <div class="new-interface-info__title"></div>
+                                <div class="new-interface-info__details"></div>
+                                <div class="new-interface-info__description"></div>
+                            </div>
+                        </div>`);
+    };
+
+    InfoPanel.prototype.render = function (asElement) {
+        if (!this.html) this.create();
+        return asElement ? this.html[0] : this.html;
+    };
+
+    InfoPanel.prototype.update = function (data) {
+        if (!data || !this.html) return;
+
+        this.lastRenderId = Date.now();
+        var currentRenderId = this.lastRenderId;
+
+        this.html.find(".new-interface-info__head,.new-interface-info__details").removeClass("visible");
+
+        var title = this.html.find(".new-interface-info__title");
+        var desc = this.html.find(".new-interface-info__description");
+
+        desc.text(data.overview || Lampa.Lang.translate("full_notext"));
+
+        clearTimeout(this.fadeTimer);
+
+        Lampa.Background.change(Lampa.Api.img(data.backdrop_path, "original"));
+
+        this.load(data);
+
+        if (Lampa.Storage.get("logo_show", true)) {
+            title.text(data.title || data.name || "");
+            title.css({ opacity: 1 });
+            this.showLogo(data, currentRenderId);
+        } else {
+            title.text(data.title || data.name || "");
+            title.css({ opacity: 1 });
+        }
+    };
+
+    InfoPanel.prototype.showLogo = function (data, renderId) {
+        var _this = this;
+
+        var FADE_OUT_TEXT = 300;
+        var MORPH_HEIGHT = 400;
+        var FADE_IN_IMG = 400;
+        var TARGET_WIDTH = "7em";
+        var PADDING_TOP_EM = 0;
+        var PADDING_BOTTOM_EM = 0.2;
+
+        var title_elem = this.html.find(".new-interface-info__title");
+        var head_elem = this.html.find(".new-interface-info__head");
+        var details_elem = this.html.find(".new-interface-info__details");
+        var dom_title = title_elem[0];
+
+        function animateHeight(element, start, end, duration, callback) {
+            var startTime = null;
+            function step(timestamp) {
+                if (!startTime) startTime = timestamp;
+                var progress = timestamp - startTime;
+                var percent = Math.min(progress / duration, 1);
+                var ease = 1 - Math.pow(1 - percent, 3);
+                element.style.height = start + (end - start) * ease + "px";
+                if (progress < duration) {
+                    requestAnimationFrame(step);
+                } else {
+                    if (callback) callback();
+                }
+            }
+            requestAnimationFrame(step);
+        }
+
+        function animateOpacity(element, start, end, duration, callback) {
+            var startTime = null;
+            function step(timestamp) {
+                if (!startTime) startTime = timestamp;
+                var progress = timestamp - startTime;
+                var percent = Math.min(progress / duration, 1);
+                var ease = 1 - Math.pow(1 - percent, 3);
+                element.style.opacity = start + (end - start) * ease;
+                if (progress < duration) {
+                    requestAnimationFrame(step);
+                } else {
+                    if (callback) callback();
+                }
+            }
+            requestAnimationFrame(step);
+        }
+
+        function applyFinalStyles(img, text_height) {
+            img.style.marginTop = "0";
+            img.style.marginLeft = "0";
+            img.style.paddingTop = PADDING_TOP_EM + "em";
+            img.style.paddingBottom = PADDING_BOTTOM_EM + "em";
+
+            img.style.imageRendering = "-webkit-optimize-contrast";
+
+            if (text_height) {
+                img.style.height = text_height + "px";
+                img.style.width = "auto";
+                img.style.maxWidth = "100%";
+                img.style.maxHeight = "none";
+            } else if (window.innerWidth < 768) {
+                img.style.width = "100%";
+                img.style.height = "auto";
+                img.style.maxWidth = "100%";
+                img.style.maxHeight = "none";
+            } else {
+                img.style.width = TARGET_WIDTH;
+                img.style.height = "auto";
+                img.style.maxHeight = "none";
+                img.style.maxWidth = "100%";
+            }
+
+            img.style.boxSizing = "border-box";
+            img.style.display = "block";
+            img.style.objectFit = "contain";
+            img.style.objectPosition = "left bottom";
+            img.style.transition = "none";
+        }
+
+        function moveHeadToDetails(animate) {
+            if (!head_elem.length || !details_elem.length) return;
+            if (details_elem.find(".logo-moved-head").length > 0) return;
+
+            var content = head_elem.html();
+            if (!content || content.trim() === "") return;
+
+            var new_item = $('<span class="logo-moved-head">' + content + "</span>");
+            var separator = $('<span class="new-interface-info__split logo-moved-separator">●</span>');
+
+            if (animate) {
+                new_item.css({ opacity: 0, transition: "none" });
+                separator.css({ opacity: 0, transition: "none" });
+            }
+
+            if (details_elem.children().length > 0) details_elem.append(separator);
+            details_elem.append(new_item);
+
+            if (animate) {
+                head_elem.css({
+                    transition: "opacity " + FADE_OUT_TEXT / 1000 + "s ease",
+                    opacity: "0",
+                });
+
+                setTimeout(function () {
+                    new_item.css({ transition: "opacity " + FADE_IN_IMG / 1000 + "s ease", opacity: "1" });
+                    separator.css({ transition: "opacity " + FADE_IN_IMG / 1000 + "s ease", opacity: "1" });
+                }, FADE_OUT_TEXT);
+            } else {
+                head_elem.css({ opacity: "0", transition: "none" });
+            }
+        }
+
+        function startLogoAnimation(img_url, fromCache) {
+            if (renderId && renderId !== _this.lastRenderId) return;
+
+            var img = new Image();
+            img.src = img_url;
+
+            var start_text_height = 0;
+            if (dom_title) start_text_height = dom_title.getBoundingClientRect().height;
+
+            if (fromCache) {
+                if (dom_title) start_text_height = dom_title.getBoundingClientRect().height;
+
+                moveHeadToDetails(false);
+                applyFinalStyles(img, start_text_height);
+
+                title_elem.empty().append(img);
+                title_elem.css({ opacity: "1", transition: "none" });
+
+                if (dom_title) {
+                    dom_title.style.display = "block";
+                    dom_title.style.height = "";
+                    dom_title.style.transition = "none";
+                }
+                img.style.opacity = "1";
                 return;
             }
-            window.samsungPluginActive = true;
-            
-            // Основний об'єкт плагіна
-            var SamsungPlugin = {
-                initialized: false,
-                stylesAdded: false,
-                currentFocus: null,
-                lastUpdate: 0,
-                updateDelay: 300,
-                cache: {},
-                elements: {},
-                settings: {}
+
+            applyFinalStyles(img, start_text_height);
+            img.style.opacity = "0";
+
+            img.onload = function () {
+                if (renderId && renderId !== _this.lastRenderId) return;
+
+                setTimeout(function () {
+                    if (renderId && renderId !== _this.lastRenderId) return;
+
+                    if (dom_title) start_text_height = dom_title.getBoundingClientRect().height;
+
+                    moveHeadToDetails(true);
+
+                    title_elem.css({
+                        transition: "opacity " + FADE_OUT_TEXT / 1000 + "s ease",
+                        opacity: "0",
+                    });
+
+                    setTimeout(function () {
+                        if (renderId && renderId !== _this.lastRenderId) return;
+
+                        title_elem.empty();
+                        title_elem.append(img);
+                        title_elem.css({ opacity: "1", transition: "none" });
+
+                        var target_container_height = dom_title.getBoundingClientRect().height;
+
+                        dom_title.style.height = start_text_height + "px";
+                        dom_title.style.display = "block";
+                        dom_title.style.overflow = "hidden";
+                        dom_title.style.boxSizing = "border-box";
+
+                        void dom_title.offsetHeight;
+
+                        dom_title.style.transition = "height " + MORPH_HEIGHT / 1000 + "s cubic-bezier(0.4, 0, 0.2, 1)";
+
+                        requestAnimationFrame(function () {
+                            if (renderId && renderId !== _this.lastRenderId) return;
+                            dom_title.style.height = target_container_height + "px";
+
+                            setTimeout(
+                                function () {
+                                    if (renderId && renderId !== _this.lastRenderId) return;
+                                    img.style.transition = "opacity " + FADE_IN_IMG / 1000 + "s ease";
+                                    img.style.opacity = "1";
+                                },
+                                Math.max(0, MORPH_HEIGHT - 100),
+                            );
+
+                            setTimeout(
+                                function () {
+                                    if (renderId && renderId !== _this.lastRenderId) return;
+                                    applyFinalStyles(img, start_text_height);
+                                    dom_title.style.height = "";
+                                },
+                                MORPH_HEIGHT + FADE_IN_IMG + 50,
+                            );
+                        });
+                    }, FADE_OUT_TEXT);
+                }, 200);
             };
-            
-            // Ініціалізація налаштувань
-            function initSettings() {
-                console.log('Ініціалізація налаштувань...');
-                
-                var defaults = {
-                    'si_wide_post': 'true',
-                    'si_logo_show': 'false', // На Tizen часто проблеми з лого
-                    'si_show_background': 'true',
-                    'si_background_resolution': 'w780',
-                    'si_status': 'true',
-                    'si_seas': 'false',
-                    'si_eps': 'false',
-                    'si_year_ogr': 'true',
-                    'si_vremya': 'true',
-                    'si_ganr': 'true',
-                    'si_rat': 'true',
-                    'si_colored_ratings': 'true',
-                    'si_async_load': 'true',
-                    'si_hide_captions': 'true',
-                    'si_child_mode': 'false',
-                    'si_rating_border': 'false',
-                    'si_tizen_initialized': 'true'
-                };
-                
-                // Встановлюємо значення за замовчуванням
-                for (var key in defaults) {
-                    if (Lampa.Storage.get(key) === null || Lampa.Storage.get(key) === undefined) {
-                        Lampa.Storage.set(key, defaults[key]);
-                        console.log('Встановлено за замовчуванням:', key, defaults[key]);
-                    }
-                }
-                
-                SamsungPlugin.settings = {
-                    widePost: Lampa.Storage.get('si_wide_post') === 'true',
-                    showLogo: Lampa.Storage.get('si_logo_show') === 'true',
-                    showBackground: Lampa.Storage.get('si_show_background') === 'true',
-                    bgResolution: Lampa.Storage.get('si_background_resolution') || 'w780',
-                    showStatus: Lampa.Storage.get('si_status') === 'true',
-                    showSeasons: Lampa.Storage.get('si_seas') === 'true',
-                    showEpisodes: Lampa.Storage.get('si_eps') === 'true',
-                    showAge: Lampa.Storage.get('si_year_ogr') === 'true',
-                    showTime: Lampa.Storage.get('si_vremya') === 'true',
-                    showGenre: Lampa.Storage.get('si_ganr') === 'true',
-                    showRating: Lampa.Storage.get('si_rat') === 'true',
-                    coloredRatings: Lampa.Storage.get('si_colored_ratings') === 'true',
-                    asyncLoad: Lampa.Storage.get('si_async_load') === 'true',
-                    hideCaptions: Lampa.Storage.get('si_hide_captions') === 'true',
-                    childMode: Lampa.Storage.get('si_child_mode') === 'true',
-                    ratingBorder: Lampa.Storage.get('si_rating_border') === 'true'
-                };
-                
-                console.log('Налаштування завантажені:', SamsungPlugin.settings);
-            }
-            
-            // Додаємо стилі для Tizen
-            function addStyles() {
-                if (SamsungPlugin.stylesAdded) return;
-                
-                console.log('Додавання стилів для Tizen...');
-                
-                var styleContent = `
-                    <style id="samsung-tizen-styles">
-                        /* Основні стилі для Samsung Tizen */
-                        .samsung-tizen-interface {
-                            position: relative;
-                        }
-                        
-                        .samsung-tizen-info {
-                            position: relative;
-                            padding: 20px 40px;
-                            height: 250px;
-                            background: linear-gradient(180deg, 
-                                rgba(0,0,0,0.95) 0%, 
-                                rgba(0,0,0,0.7) 50%, 
-                                rgba(0,0,0,0) 100%);
-                            z-index: 9990;
-                            display: none;
-                        }
-                        
-                        .samsung-tizen-info.visible {
-                            display: block;
-                        }
-                        
-                        .samsung-tizen-info-body {
-                            max-width: 75%;
-                            margin-top: 10px;
-                        }
-                        
-                        .samsung-tizen-info-title {
-                            font-size: 38px;
-                            font-weight: bold;
-                            color: #FFFFFF;
-                            margin-bottom: 5px;
-                            overflow: hidden;
-                            text-overflow: ellipsis;
-                            white-space: nowrap;
-                        }
-                        
-                        .samsung-tizen-info-logo {
-                            max-height: 60px;
-                            max-width: 400px;
-                            object-fit: contain;
-                            margin-bottom: 10px;
-                        }
-                        
-                        .samsung-tizen-info-details {
-                            display: flex;
-                            flex-wrap: wrap;
-                            align-items: center;
-                            gap: 15px;
-                            margin: 10px 0;
-                            font-size: 18px;
-                            color: rgba(255,255,255,0.9);
-                            min-height: 30px;
-                        }
-                        
-                        .samsung-tizen-info-description {
-                            font-size: 18px;
-                            line-height: 1.4;
-                            color: rgba(255,255,255,0.9);
-                            max-height: 70px;
-                            overflow: hidden;
-                            display: -webkit-box;
-                            -webkit-line-clamp: 3;
-                            -webkit-box-orient: vertical;
-                            margin-top: 10px;
-                        }
-                        
-                        /* Фон */
-                        .samsung-tizen-bg {
-                            position: fixed;
-                            top: 0;
-                            left: 0;
-                            width: 100%;
-                            height: 100%;
-                            background-size: cover;
-                            background-position: center;
-                            opacity: 0;
-                            transition: opacity 1s ease;
-                            z-index: -1;
-                            filter: blur(20px) brightness(0.5);
-                        }
-                        
-                        .samsung-tizen-bg.active {
-                            opacity: 0.6;
-                        }
-                        
-                        /* Рейтинг */
-                        .samsung-tizen-rate {
-                            display: inline-flex;
-                            flex-direction: column;
-                            align-items: center;
-                            padding: 5px 10px;
-                            background: rgba(0,0,0,0.5);
-                            border-radius: 5px;
-                            font-size: 16px;
-                            min-width: 70px;
-                        }
-                        
-                        .samsung-tizen-rate-value {
-                            font-weight: bold;
-                            font-size: 22px;
-                        }
-                        
-                        .samsung-tizen-rate-label {
-                            font-size: 12px;
-                            opacity: 0.8;
-                            margin-top: 2px;
-                        }
-                        
-                        /* Роздільник */
-                        .samsung-tizen-split {
-                            margin: 0 8px;
-                            opacity: 0.5;
-                        }
-                        
-                        /* Вікове обмеження */
-                        .samsung-tizen-age {
-                            padding: 3px 8px;
-                            background: rgba(255,0,0,0.3);
-                            border-radius: 3px;
-                            font-size: 16px;
-                        }
-                        
-                        /* Картки */
-                        .samsung-tizen-card {
-                            transition: all 0.2s ease;
-                        }
-                        
-                        .samsung-tizen-card.focus {
-                            transform: scale(1.05);
-                            z-index: 100;
-                        }
-                        
-                        /* Широкі постереи */
-                        .samsung-tizen-wide .card {
-                            width: 220px !important;
-                        }
-                        
-                        /* Звичайні постереи */
-                        .samsung-tizen-normal .card {
-                            width: 180px !important;
-                        }
-                        
-                        /* Приховування підписів */
-                        .samsung-tizen-hide-captions .card:not(.card--collection) .card__age,
-                        .samsung-tizen-hide-captions .card:not(.card--collection) .card__title {
-                            display: none !important;
-                        }
-                        
-                        /* Анімація фокусу */
-                        @keyframes samsungFocus {
-                            0% { transform: scale(1); }
-                            100% { transform: scale(1.05); }
-                        }
-                        
-                        .card.focus {
-                            animation: samsungFocus 0.2s ease forwards;
-                        }
-                        
-                        /* Для елементів ліній */
-                        .samsung-tizen-line {
-                            padding-bottom: 30px !important;
-                        }
-                        
-                        /* Адаптація для 4K */
-                        @media (min-width: 3840px) {
-                            .samsung-tizen-info {
-                                height: 350px;
-                                padding: 30px 60px;
-                            }
-                            
-                            .samsung-tizen-info-title {
-                                font-size: 56px;
-                            }
-                            
-                            .samsung-tizen-info-logo {
-                                max-height: 90px;
-                                max-width: 600px;
-                            }
-                            
-                            .samsung-tizen-info-details {
-                                font-size: 26px;
-                                gap: 25px;
-                            }
-                            
-                            .samsung-tizen-info-description {
-                                font-size: 26px;
-                                max-height: 100px;
-                            }
-                            
-                            .samsung-tizen-rate {
-                                font-size: 24px;
-                                min-width: 100px;
-                                padding: 8px 15px;
-                            }
-                            
-                            .samsung-tizen-rate-value {
-                                font-size: 32px;
-                            }
-                            
-                            .samsung-tizen-wide .card {
-                                width: 320px !important;
-                            }
-                            
-                            .samsung-tizen-normal .card {
-                                width: 280px !important;
-                            }
-                        }
-                        
-                        /* Для Full HD */
-                        @media (max-width: 1920px) {
-                            .samsung-tizen-info {
-                                height: 220px;
-                                padding: 15px 30px;
-                            }
-                            
-                            .samsung-tizen-info-title {
-                                font-size: 32px;
-                            }
-                            
-                            .samsung-tizen-info-details {
-                                font-size: 16px;
-                                gap: 10px;
-                            }
-                            
-                            .samsung-tizen-info-description {
-                                font-size: 16px;
-                                max-height: 60px;
-                            }
-                        }
-                    </style>
-                `;
-                
-                document.head.insertAdjacentHTML('beforeend', styleContent);
-                SamsungPlugin.stylesAdded = true;
-                console.log('Стилі додані');
-            }
-            
-            // Створюємо інтерфейсні елементи
-            function createInterface() {
-                console.log('Створення інтерфейсу...');
-                
-                // Інфо панель
-                var infoPanel = document.createElement('div');
-                infoPanel.className = 'samsung-tizen-info';
-                infoPanel.id = 'samsung-tizen-info-panel';
-                infoPanel.innerHTML = `
-                    <div class="samsung-tizen-info-body">
-                        <div class="samsung-tizen-info-title"></div>
-                        <div class="samsung-tizen-info-details"></div>
-                        <div class="samsung-tizen-info-description"></div>
-                    </div>
-                `;
-                
-                // Фон
-                var background = document.createElement('div');
-                background.className = 'samsung-tizen-bg';
-                background.id = 'samsung-tizen-background';
-                
-                // Додаємо до body
-                document.body.appendChild(background);
-                document.body.appendChild(infoPanel);
-                
-                // Додаємо класи до body
-                updateBodyClasses();
-                
-                SamsungPlugin.elements = {
-                    infoPanel: infoPanel,
-                    background: background,
-                    title: infoPanel.querySelector('.samsung-tizen-info-title'),
-                    details: infoPanel.querySelector('.samsung-tizen-info-details'),
-                    description: infoPanel.querySelector('.samsung-tizen-info-description')
-                };
-                
-                console.log('Інтерфейс створений');
-            }
-            
-            // Оновлюємо класи body
-            function updateBodyClasses() {
-                // Видаляємо старі класи
-                document.body.classList.remove('samsung-tizen-wide', 'samsung-tizen-normal', 'samsung-tizen-hide-captions');
-                
-                // Додаємо нові
-                if (SamsungPlugin.settings.widePost) {
-                    document.body.classList.add('samsung-tizen-wide');
+
+            img.onerror = function () {
+                title_elem.css({ opacity: "1", transition: "none" });
+            };
+        }
+
+        if (data.id) {
+            var type = data.name ? "tv" : "movie";
+            var language = Lampa.Storage.get("language");
+            var cache_key = "logo_cache_v2_" + type + "_" + data.id + "_" + language;
+            var cached_url = Lampa.Storage.get(cache_key);
+
+            if (cached_url && cached_url !== "none") {
+                var img_cache = new Image();
+                img_cache.src = cached_url;
+
+                if (img_cache.complete) {
+                    startLogoAnimation(cached_url, true);
                 } else {
-                    document.body.classList.add('samsung-tizen-normal');
+                    startLogoAnimation(cached_url, false);
                 }
-                
-                if (SamsungPlugin.settings.hideCaptions) {
-                    document.body.classList.add('samsung-tizen-hide-captions');
-                }
-            }
-            
-            // Оновлюємо інтерфейс при фокусі на картці
-            function updateInterface() {
-                var now = Date.now();
-                if (now - SamsungPlugin.lastUpdate < SamsungPlugin.updateDelay) {
-                    return;
-                }
-                
-                SamsungPlugin.lastUpdate = now;
-                
-                try {
-                    // Шукаємо активну картку
-                    var focusedCard = findFocusedCard();
-                    if (!focusedCard) {
-                        hideInterface();
-                        return;
-                    }
-                    
-                    // Отримуємо дані картки
-                    var cardData = getCardData(focusedCard);
-                    if (!cardData) {
-                        hideInterface();
-                        return;
-                    }
-                    
-                    // Якщо дані не змінилися
-                    if (SamsungPlugin.currentFocus && 
-                        SamsungPlugin.currentFocus.id === cardData.id &&
-                        SamsungPlugin.currentFocus.media_type === cardData.media_type) {
-                        return;
-                    }
-                    
-                    SamsungPlugin.currentFocus = cardData;
-                    
-                    // Показуємо інтерфейс
-                    showInterface();
-                    
-                    // Оновлюємо контент
-                    updateContent(cardData);
-                    
-                } catch (error) {
-                    console.error('Помилка оновлення інтерфейсу:', error);
-                    hideInterface();
-                }
-            }
-            
-            // Знаходимо фокусовану картку
-            function findFocusedCard() {
-                // Спробуємо різні селектори
-                var selectors = [
-                    '.card.focus',
-                    '.selector.focus .card',
-                    '.card.focus:not(.card-more)',
-                    '.items-line .card.focus',
-                    '[class*="focus"] .card',
-                    '.focus'
-                ];
-                
-                for (var i = 0; i < selectors.length; i++) {
-                    var element = document.querySelector(selectors[i]);
-                    if (element) {
-                        // Перевіряємо чи це дійсно картка
-                        if (element.classList && element.classList.contains('card')) {
-                            return element;
-                        }
-                        // Якщо не картка, шукаємо картку всередині
-                        var cardInside = element.querySelector('.card');
-                        if (cardInside) return cardInside;
-                    }
-                }
-                
-                return null;
-            }
-            
-            // Отримуємо дані картки
-            function getCardData(cardElement) {
-                if (!cardElement) return null;
-                
-                try {
-                    // Метод 1: З атрибута data
-                    if (cardElement.getAttribute('data-card')) {
-                        try {
-                            return JSON.parse(cardElement.getAttribute('data-card'));
-                        } catch (e) {}
-                    }
-                    
-                    // Метод 2: З об'єкта картки
-                    if (cardElement.card && cardElement.card.data) {
-                        return cardElement.card.data;
-                    }
-                    
-                    // Метод 3: З найближчого елемента з даними
-                    var parent = cardElement;
-                    for (var i = 0; i < 5; i++) {
-                        if (parent.card_data) {
-                            return parent.card_data;
-                        }
-                        if (!parent.parentNode) break;
-                        parent = parent.parentNode;
-                    }
-                    
-                    // Метод 4: З глобального об'єкта Lampa (якщо є доступ)
-                    if (window.Lampa && Lampa.Cards && Lampa.Cards.active) {
-                        var active = Lampa.Cards.active();
-                        if (active && active.data) return active.data;
-                    }
-                    
-                    return null;
-                } catch (error) {
-                    console.error('Помилка отримання даних картки:', error);
-                    return null;
-                }
-            }
-            
-            // Показуємо інтерфейс
-            function showInterface() {
-                if (!SamsungPlugin.elements.infoPanel) {
-                    createInterface();
-                }
-                
-                if (SamsungPlugin.elements.infoPanel) {
-                    SamsungPlugin.elements.infoPanel.classList.add('visible');
-                }
-            }
-            
-            // Ховаємо інтерфейс
-            function hideInterface() {
-                if (SamsungPlugin.elements.infoPanel) {
-                    SamsungPlugin.elements.infoPanel.classList.remove('visible');
-                }
-                if (SamsungPlugin.elements.background) {
-                    SamsungPlugin.elements.background.classList.remove('active');
-                }
-                SamsungPlugin.currentFocus = null;
-            }
-            
-            // Оновлюємо контент
-            function updateContent(data) {
-                if (!data || !SamsungPlugin.elements.title) return;
-                
-                try {
-                    // Заголовок
-                    updateTitle(data);
-                    
-                    // Деталі
-                    updateDetails(data);
-                    
-                    // Опис
-                    updateDescription(data);
-                    
-                    // Фон
-                    updateBackground(data);
-                    
-                } catch (error) {
-                    console.error('Помилка оновлення контенту:', error);
-                }
-            }
-            
-            // Оновлюємо заголовок
-            function updateTitle(data) {
-                var title = data.title || data.name || '';
-                SamsungPlugin.elements.title.textContent = title;
-                SamsungPlugin.elements.title.style.display = 'block';
-                
-                // Логотип (спрощено для Tizen)
-                if (SamsungPlugin.settings.showLogo && data.id) {
-                    // На Tizen часто проблеми з завантаженням лого, тому спрощуємо
-                    SamsungPlugin.elements.title.textContent = title;
-                }
-            }
-            
-            // Оновлюємо деталі
-            function updateDetails(data) {
-                if (!SamsungPlugin.elements.details) return;
-                
-                var details = [];
-                
-                // Рейтинг
-                if (SamsungPlugin.settings.showRating && data.vote_average) {
-                    var rating = parseFloat(data.vote_average).toFixed(1);
-                    var color = SamsungPlugin.settings.coloredRatings ? getRatingColor(rating) : '';
-                    var borderStyle = SamsungPlugin.settings.ratingBorder && color ? 'border: 1px solid ' + color + ';' : '';
-                    
-                    details.push(`
-                        <div class="samsung-tizen-rate" style="${color ? 'color: ' + color + ';' : ''} ${borderStyle}">
-                            <div class="samsung-tizen-rate-value">${rating}</div>
-                            <div class="samsung-tizen-rate-label">TMDB</div>
-                        </div>
-                    `);
-                }
-                
-                // Рік
-                var year = (data.release_date || data.first_air_date || '').substring(0, 4);
-                if (year && year !== '0000') {
-                    details.push(`<span>${year}</span>`);
-                }
-                
-                // Жанри
-                if (SamsungPlugin.settings.showGenre) {
-                    var genres = '';
-                    if (data.genres && Array.isArray(data.genres)) {
-                        genres = data.genres.slice(0, 2).map(function(g) {
-                            return Lampa.Utils.capitalizeFirstLetter ? 
-                                   Lampa.Utils.capitalizeFirstLetter(g.name) : 
-                                   g.name;
-                        }).join(', ');
-                    } else if (data.genre_names) {
-                        genres = data.genre_names;
-                    }
-                    
-                    if (genres) {
-                        details.push(`<span>${genres}</span>`);
-                    }
-                }
-                
-                // Тривалість
-                if (SamsungPlugin.settings.showTime && data.runtime) {
-                    var time = formatTime(data.runtime);
-                    if (time) details.push(`<span>${time}</span>`);
-                }
-                
-                // Вікове обмеження
-                if (SamsungPlugin.settings.showAge) {
-                    var age = getAgeRating(data);
-                    if (age) {
-                        details.push(`<span class="samsung-tizen-age">${age}</span>`);
-                    }
-                }
-                
-                // Статус
-                if (SamsungPlugin.settings.showStatus && data.status) {
-                    var status = translateStatus(data.status);
-                    if (status) details.push(`<span>${status}</span>`);
-                }
-                
-                // Сезони
-                if (SamsungPlugin.settings.showSeasons && data.number_of_seasons) {
-                    details.push(`<span>Сезонів: ${data.number_of_seasons}</span>`);
-                }
-                
-                // Епізоди
-                if (SamsungPlugin.settings.showEpisodes && data.number_of_episodes) {
-                    details.push(`<span>Епізодів: ${data.number_of_episodes}</span>`);
-                }
-                
-                // Країни
-                if (data.production_countries && Array.isArray(data.production_countries)) {
-                    var countries = data.production_countries.slice(0, 2).map(function(c) {
-                        return c.iso_3166_1;
-                    }).join(', ');
-                    if (countries) details.push(`<span>${countries}</span>`);
-                }
-                
-                SamsungPlugin.elements.details.innerHTML = details.join('<span class="samsung-tizen-split">•</span>');
-            }
-            
-            // Оновлюємо опис
-            function updateDescription(data) {
-                if (!SamsungPlugin.elements.description) return;
-                
-                var description = data.overview || '';
-                if (!description && Lampa.Lang && Lampa.Lang.translate) {
-                    description = Lampa.Lang.translate("full_notext") || 'Опис відсутній';
-                }
-                
-                SamsungPlugin.elements.description.textContent = description;
-            }
-            
-            // Оновлюємо фон
-            function updateBackground(data) {
-                if (!SamsungPlugin.settings.showBackground || !SamsungPlugin.elements.background) {
-                    return;
-                }
-                
-                try {
-                    if (data.backdrop_path) {
-                        var bgUrl = Lampa.Api.img(data.backdrop_path, SamsungPlugin.settings.bgResolution);
-                        
-                        // Плавна зміна фону
-                        SamsungPlugin.elements.background.style.transition = 'opacity 1s ease';
-                        SamsungPlugin.elements.background.classList.remove('active');
-                        
-                        var img = new Image();
-                        var self = SamsungPlugin;
-                        
-                        img.onload = function() {
-                            setTimeout(function() {
-                                if (self.elements.background) {
-                                    self.elements.background.style.backgroundImage = "url('" + bgUrl + "')";
-                                    self.elements.background.classList.add('active');
-                                }
-                            }, 50);
-                        };
-                        
-                        img.onerror = function() {
-                            if (SamsungPlugin.elements.background) {
-                                SamsungPlugin.elements.background.classList.remove('active');
+            } else {
+                var url = Lampa.TMDB.api(type + "/" + data.id + "/images?api_key=" + Lampa.TMDB.key() + "&include_image_language=" + language + ",en,null");
+
+                $.get(url, function (data_api) {
+                    if (renderId && renderId !== _this.lastRenderId) return;
+
+                    var final_logo = null;
+                    if (data_api.logos && data_api.logos.length > 0) {
+                        for (var i = 0; i < data_api.logos.length; i++) {
+                            if (data_api.logos[i].iso_639_1 == language) {
+                                final_logo = data_api.logos[i].file_path;
+                                break;
                             }
-                        };
-                        
-                        img.src = bgUrl;
-                        
+                        }
+                        if (!final_logo) {
+                            for (var j = 0; j < data_api.logos.length; j++) {
+                                if (data_api.logos[j].iso_639_1 == "en") {
+                                    final_logo = data_api.logos[j].file_path;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!final_logo) final_logo = data_api.logos[0].file_path;
+                    }
+
+                    if (final_logo) {
+                        var img_url = Lampa.TMDB.image("/t/p/original" + final_logo.replace(".svg", ".png"));
+                        Lampa.Storage.set(cache_key, img_url);
+                        startLogoAnimation(img_url, false);
                     } else {
-                        SamsungPlugin.elements.background.classList.remove('active');
+                        Lampa.Storage.set(cache_key, "none");
                     }
-                } catch (error) {
-                    console.error('Помилка оновлення фону:', error);
-                    if (SamsungPlugin.elements.background) {
-                        SamsungPlugin.elements.background.classList.remove('active');
+                }).fail(function () {});
+            }
+        }
+    };
+
+    InfoPanel.prototype.load = function (data) {
+        if (!data || !data.id) return;
+
+        var source = data.source || "tmdb";
+        if (source !== "tmdb" && source !== "cub") return;
+
+        if (!Lampa.TMDB || typeof Lampa.TMDB.api !== "function" || typeof Lampa.TMDB.key !== "function") return;
+
+        var mediaType = data.media_type === "tv" || data.name ? "tv" : "movie";
+        var language = Lampa.Storage.get("language");
+        var apiUrl = Lampa.TMDB.api(mediaType + "/" + data.id + "?api_key=" + Lampa.TMDB.key() + "&append_to_response=content_ratings,release_dates&language=" + language);
+
+        this.currentUrl = apiUrl;
+
+        if (this.loaded[apiUrl]) {
+            this.draw(this.loaded[apiUrl]);
+            return;
+        }
+
+        clearTimeout(this.timer);
+        var self = this;
+
+        this.timer = setTimeout(function () {
+            self.network.clear();
+            self.network.timeout(5000);
+            self.network.silent(apiUrl, function (response) {
+                self.loaded[apiUrl] = response;
+                if (self.currentUrl === apiUrl) {
+                    self.draw(response);
+                }
+            });
+        }, 300);
+    };
+
+    InfoPanel.prototype.draw = function (data) {
+        if (!data || !this.html) return;
+
+        if (data.overview) {
+            this.html.find(".new-interface-info__description").text(data.overview);
+        }
+
+        var year = ((data.release_date || data.first_air_date || "0000") + "").slice(0, 4);
+
+        var rating = parseFloat((data.vote_average || 0) + "").toFixed(1);
+
+        var headInfo = [];
+        var detailsInfo = [];
+
+        var countries = Lampa.Api.sources.tmdb.parseCountries(data);
+        if (countries.length > 2) countries = countries.slice(0, 2);
+
+        var ageRating = Lampa.Api.sources.tmdb.parsePG(data);
+
+        var show_logo = Lampa.Storage.get("logo_show", true);
+
+        if (Lampa.Storage.get("rat") !== false) {
+            if (rating > 0) {
+                var rate_style = "";
+
+                if (Lampa.Storage.get("si_colored_ratings", true)) {
+                    var vote_num = parseFloat(rating);
+                    var color = "";
+
+                    if (vote_num >= 0 && vote_num <= 3) {
+                        color = "red";
+                    } else if (vote_num > 3 && vote_num < 6) {
+                        color = "orange";
+                    } else if (vote_num >= 6 && vote_num < 7) {
+                        color = "cornflowerblue";
+                    } else if (vote_num >= 7 && vote_num < 8) {
+                        color = "darkmagenta";
+                    } else if (vote_num >= 8 && vote_num <= 10) {
+                        color = "lawngreen";
                     }
+
+                    if (color) rate_style = ' style="color: ' + color + '"';
+                }
+
+                detailsInfo.push('<div class="full-start__rate"' + rate_style + "><div>" + rating + "</div><div>TMDB</div></div>");
+            }
+        }
+
+        if (Lampa.Storage.get("ganr") !== false) {
+            if (data.genres && data.genres.length > 0) {
+                detailsInfo.push(
+                    data.genres
+                        .slice(0, 2)
+                        .map(function (genre) {
+                            return Lampa.Utils.capitalizeFirstLetter(genre.name);
+                        })
+                        .join(" | "),
+                );
+            }
+        }
+
+        if (Lampa.Storage.get("vremya") !== false) {
+            if (data.runtime) {
+                detailsInfo.push(Lampa.Utils.secondsToTime(data.runtime * 60, true));
+            }
+        }
+
+        if (Lampa.Storage.get("seas", false) && data.number_of_seasons) {
+            detailsInfo.push('<span class="full-start__pg" style="font-size: 0.9em;">Сезонів ' + data.number_of_seasons + "</span>");
+        }
+
+        if (Lampa.Storage.get("eps", false) && data.number_of_episodes) {
+            detailsInfo.push('<span class="full-start__pg" style="font-size: 0.9em;">Епізодів ' + data.number_of_episodes + "</span>");
+        }
+
+        if (Lampa.Storage.get("year_ogr") !== false) {
+            if (ageRating) {
+                detailsInfo.push('<span class="full-start__pg" style="font-size: 0.9em;">' + ageRating + "</span>");
+            }
+        }
+
+        if (Lampa.Storage.get("status") !== false) {
+            var statusText = "";
+
+            if (data.status) {
+                switch (data.status.toLowerCase()) {
+                    case "released":
+                        statusText = "Випущено";
+                        break;
+                    case "ended":
+                        statusText = "Завершено";
+                        break;
+                    case "returning series":
+                        statusText = "Продовжується";
+                        break;
+                    case "canceled":
+                        statusText = "Скасовано";
+                        break;
+                    case "post production":
+                        statusText = "Пост-продакшн";
+                        break;
+                    case "planned":
+                        statusText = "Заплановано";
+                        break;
+                    case "in production":
+                        statusText = "У виробництві";
+                        break;
+                    default:
+                        statusText = data.status;
+                        break;
                 }
             }
-            
-            // Допоміжні функції
-            function getRatingColor(rating) {
-                var num = parseFloat(rating);
-                if (num >= 8) return '#00ff00';
-                if (num >= 7) return '#a0ff00';
-                if (num >= 6) return '#ffff00';
-                if (num >= 5) return '#ffa500';
-                return '#ff0000';
+
+            if (statusText) {
+                detailsInfo.push('<span class="full-start__status" style="font-size: 0.9em;">' + statusText + "</span>");
             }
-            
-            function formatTime(minutes) {
-                if (!minutes) return '';
-                var hours = Math.floor(minutes / 60);
-                var mins = minutes % 60;
-                
-                if (hours > 0 && mins > 0) return hours + ' год ' + mins + ' хв';
-                if (hours > 0) return hours + ' год';
-                return mins + ' хв';
-            }
-            
-            function getAgeRating(data) {
-                try {
-                    // Спрощена версія для Tizen
-                    if (data.adult === true) return '18';
-                    if (data.adult === false) return '16';
-                    
-                    return '';
-                } catch (e) {
-                    return '';
+        }
+
+        var yc = [];
+        if (year !== "0000") yc.push("<span>" + year + "</span>");
+        if (countries.length > 0) yc.push(countries.join(", "));
+
+        if (yc.length > 0) {
+            detailsInfo.push(yc.join(", "));
+        }
+
+        this.html
+            .find(".new-interface-info__head")
+            .empty()
+            .append(headInfo.join(", "))
+            .toggleClass("visible", headInfo.length > 0);
+        this.html.find(".new-interface-info__details").html(detailsInfo.join('<span class="new-interface-info__split">&#9679;</span>')).addClass("visible");
+    };
+
+    InfoPanel.prototype.empty = function () {
+        if (!this.html) return;
+        this.html.find(".new-interface-info__head,.new-interface-info__details").text("").removeClass("visible");
+    };
+
+    InfoPanel.prototype.destroy = function () {
+        clearTimeout(this.fadeTimer);
+        clearTimeout(this.timer);
+        this.network.clear();
+        this.currentUrl = null;
+
+        if (this.html) {
+            this.html.remove();
+            this.html = null;
+        }
+    };
+
+    function siStyleGetColorByRating(vote) {
+        if (isNaN(vote)) return "";
+        if (vote >= 0 && vote <= 3) return "red";
+        if (vote > 3 && vote < 6) return "orange";
+        if (vote >= 6 && vote < 7) return "cornflowerblue";
+        if (vote >= 7 && vote < 8) return "darkmagenta";
+        if (vote >= 8 && vote <= 10) return "lawngreen";
+        return "";
+    }
+
+    function siStyleApplyColorByRating(element) {
+        var $el = $(element);
+        var voteText = $el.text().trim();
+
+        if (/^\d+(\.\d+)?K$/.test(voteText)) return;
+
+        var match = voteText.match(/(\d+(\.\d+)?)/);
+        if (!match) return;
+
+        var vote = parseFloat(match[0]);
+        var color = siStyleGetColorByRating(vote);
+
+        if (color && Lampa.Storage.get("si_colored_ratings", true)) {
+            $el.css("color", color);
+
+            if (Lampa.Storage.get("si_rating_border", false) && !$el.hasClass("card__vote")) {
+                if ($el.parent().hasClass("full-start__rate")) {
+                    $el.parent().css("border", "1px solid " + color);
+                    $el.css("border", "");
+                } else if ($el.hasClass("full-start__rate") || $el.hasClass("full-start-new__rate") || $el.hasClass("info__rate")) {
+                    $el.css("border", "1px solid " + color);
+                } else {
+                    $el.css("border", "");
+                }
+            } else {
+                $el.css("border", "");
+                if ($el.parent().hasClass("full-start__rate")) {
+                    $el.parent().css("border", "");
                 }
             }
-            
-            function translateStatus(status) {
-                var map = {
-                    'released': 'Випущено',
-                    'ended': 'Завершено',
-                    'returning series': 'Триває',
-                    'canceled': 'Скасовано',
-                    'in production': 'В производстве',
-                    'post production': 'Пост-продакшн',
-                    'planned': 'Заплановано',
-                    'pilot': 'Пілот'
-                };
-                
-                return map[status.toLowerCase()] || status;
+        } else {
+            $el.css("color", "");
+            $el.css("border", "");
+            if ($el.parent().hasClass("full-start__rate")) {
+                $el.parent().css("border", "");
             }
-            
-            // Дитячий режим (спрощено)
-            function initChildMode() {
-                if (!SamsungPlugin.settings.childMode) return;
-                
-                console.log('Дитячий режим активовано');
-                // На Tizen це може бути реалізовано через фільтрацію контенту
-            }
-            
-            // Додаємо налаштування в інтерфейс Lampa
-            function addSettingsToLampa() {
-                console.log('Додавання налаштувань до Lampa...');
-                
-                // Чекаємо на готовність SettingsApi
-                var checkSettings = setInterval(function() {
-                    if (typeof Lampa.SettingsApi !== 'undefined') {
-                        clearInterval(checkSettings);
-                        createSettingsMenu();
-                    }
-                }, 1000);
-                
-                function createSettingsMenu() {
-                    try {
-                        // Створюємо компонент
-                        Lampa.SettingsApi.addComponent({
-                            component: "samsung_tizen_interface",
-                            name: "Samsung Tizen Interface"
-                        });
-                        
-                        // Додаємо параметри
-                        var settingsList = [
-                            {
-                                name: "si_wide_post",
-                                type: "trigger",
-                                default: true,
-                                field: {
-                                    name: "Широкі постереи",
-                                    description: "Потрібне перезавантаження"
-                                },
-                                onChange: function() {
-                                    Lampa.Noty.show("Перезавантаження...");
-                                    setTimeout(location.reload, 1000);
-                                }
-                            },
-                            {
-                                name: "si_logo_show",
-                                type: "trigger",
-                                default: false,
-                                field: {
-                                    name: "Показувати логотип",
-                                    description: "На Tizen може працювати нестабільно"
-                                }
-                            },
-                            {
-                                name: "si_show_background",
-                                type: "trigger",
-                                default: true,
-                                field: { name: "Показувати фон" }
-                            },
-                            {
-                                name: "si_background_resolution",
-                                type: "select",
-                                default: "w780",
-                                values: {
-                                    w300: "Низька (w300)",
-                                    w780: "Середня (w780)",
-                                    w1280: "Висока (w1280)",
-                                    original: "Оригінал"
-                                },
-                                field: {
-                                    name: "Якість фону",
-                                    description: "Якість фонових зображень"
-                                }
-                            },
-                            {
-                                name: "si_rat",
-                                type: "trigger",
-                                default: true,
-                                field: { name: "Показувати рейтинг" }
-                            },
-                            {
-                                name: "si_colored_ratings",
-                                type: "trigger",
-                                default: true,
-                                field: { name: "Кольорові рейтинги" }
-                            },
-                            {
-                                name: "si_rating_border",
-                                type: "trigger",
-                                default: false,
-                                field: { name: "Обводка рейтингу" }
-                            },
-                            {
-                                name: "si_ganr",
-                                type: "trigger",
-                                default: true,
-                                field: { name: "Показувати жанри" }
-                            },
-                            {
-                                name: "si_year_ogr",
-                                type: "trigger",
-                                default: true,
-                                field: { name: "Показувати вікове обмеження" }
-                            },
-                            {
-                                name: "si_vremya",
-                                type: "trigger",
-                                default: true,
-                                field: { name: "Показувати тривалість" }
-                            },
-                            {
-                                name: "si_status",
-                                type: "trigger",
-                                default: true,
-                                field: { name: "Показувати статус" }
-                            },
-                            {
-                                name: "si_seas",
-                                type: "trigger",
-                                default: false,
-                                field: { name: "Показувати сезони" }
-                            },
-                            {
-                                name: "si_eps",
-                                type: "trigger",
-                                default: false,
-                                field: { name: "Показувати епізоди" }
-                            },
-                            {
-                                name: "si_hide_captions",
-                                type: "trigger",
-                                default: true,
-                                field: {
-                                    name: "Приховати підписи",
-                                    description: "Потрібне перезавантаження"
-                                },
-                                onChange: function() {
-                                    Lampa.Noty.show("Перезавантаження...");
-                                    setTimeout(location.reload, 1000);
-                                }
-                            },
-                            {
-                                name: "si_child_mode",
-                                type: "trigger",
-                                default: false,
-                                field: {
-                                    name: "Дитячий режим",
-                                    description: "Фільтрація контенту"
-                                },
-                                onChange: function() {
-                                    Lampa.Noty.show("Перезавантаження...");
-                                    setTimeout(location.reload, 1000);
-                                }
-                            },
-                            {
-                                name: "si_clear_cache",
-                                type: "static",
-                                field: {
-                                    name: "Очистити кеш плагіна",
-                                    description: "Видалити всі збережені дані"
-                                },
-                                onRender: function(item) {
-                                    item.addEventListener('click', function() {
-                                        Lampa.Select.show({
-                                            title: "Очистити кеш плагіна?",
-                                            items: [
-                                                { title: "Так, очистити", confirm: true },
-                                                { title: "Скасувати" }
-                                            ],
-                                            onSelect: function(a) {
-                                                if (a.confirm) {
-                                                    // Видаляємо наші налаштування
-                                                    var keys = [];
-                                                    for (var i = 0; i < localStorage.length; i++) {
-                                                        var key = localStorage.key(i);
-                                                        if (key.indexOf('si_') === 0) {
-                                                            keys.push(key);
-                                                        }
-                                                    }
-                                                    
-                                                    keys.forEach(function(key) {
-                                                        localStorage.removeItem(key);
-                                                    });
-                                                    
-                                                    // Очищаємо глобальний кеш
-                                                    SamsungPlugin.cache = {};
-                                                    
-                                                    Lampa.Noty.show("Кеш очищено. Перезавантаження...");
-                                                    setTimeout(function() {
-                                                        location.reload();
-                                                    }, 1500);
-                                                }
-                                            }
-                                        });
-                                    });
-                                }
-                            }
-                        ];
-                        
-                        // Додаємо кожен параметр
-                        settingsList.forEach(function(param) {
-                            Lampa.SettingsApi.addParam({
-                                component: "samsung_tizen_interface",
-                                param: {
-                                    name: param.name,
-                                    type: param.type,
-                                    default: param.default,
-                                    values: param.values
-                                },
-                                field: param.field,
-                                onChange: param.onChange,
-                                onRender: param.onRender
-                            });
-                        });
-                        
-                        // Додаємо пункт у головне меню налаштувань
-                        Lampa.SettingsApi.addParam({
-                            component: "interface",
-                            param: { name: "samsung_tizen_menu", type: "static" },
-                            field: { name: "Samsung Tizen Interface" },
-                            onRender: function(item) {
-                                item.addEventListener('click', function() {
-                                    Lampa.Settings.create("samsung_tizen_interface");
-                                });
-                            }
-                        });
-                        
-                        console.log('Меню налаштувань створено');
-                    } catch (error) {
-                        console.error('Помилка створення меню налаштувань:', error);
-                    }
-                }
-            }
-            
-            // Модифікація карток для роботи з плагіном
-            function modifyCards() {
-                console.log('Модифікація карток...');
-                
-                // Додаємо обробник клавіатури
-                document.addEventListener('keydown', function(e) {
-                    // Оновлюємо інтерфейс при навігації
-                    if ([37, 38, 39, 40, 13].includes(e.keyCode)) {
-                        setTimeout(updateInterface, 100);
-                    }
-                });
-                
-                // Додаємо обробник скролу
-                var scrollTimer;
-                window.addEventListener('scroll', function() {
-                    clearTimeout(scrollTimer);
-                    scrollTimer = setTimeout(updateInterface, 200);
-                });
-                
-                // Регулярна перевірка оновлення
-                setInterval(updateInterface, 1000);
-                
-                // Додаємо класи до карток
-                var cardCheckInterval = setInterval(function() {
-                    var cards = document.querySelectorAll('.card:not(.samsung-tizen-card)');
-                    if (cards.length > 0) {
-                        cards.forEach(function(card) {
-                            card.classList.add('samsung-tizen-card');
-                        });
-                    }
-                }, 2000);
-            }
-            
-            // Головна функція ініціалізації
-            function main() {
-                console.log('Запуск головної ініціалізації...');
-                
-                // 1. Налаштування
-                initSettings();
-                
-                // 2. Стилі
-                addStyles();
-                
-                // 3. Налаштування в Lampa
-                addSettingsToLampa();
-                
-                // 4. Дитячий режим
-                initChildMode();
-                
-                // 5. Модифікація карток
-                setTimeout(modifyCards, 2000);
-                
-                // 6. Перше оновлення
-                setTimeout(updateInterface, 3000);
-                
-                // 7. Позначаємо як ініціалізований
-                SamsungPlugin.initialized = true;
-                
-                console.log('Samsung Tizen Interface Plugin повністю ініціалізовано');
-                
-                // Повідомлення про успішне завантаження
-                setTimeout(function() {
-                    if (Lampa.Noty) {
-                        Lampa.Noty.show('Samsung Tizen Interface завантажено');
-                    }
-                }, 5000);
-            }
-            
-            // Запускаємо головну функцію
-            main();
-            
-        } catch (error) {
-            console.error('Критична помилка ініціалізації плагіна:', error);
         }
     }
-    
-    // Обробник глобальних помилок
-    window.addEventListener('error', function(e) {
-        console.error('Глобальна помилка в Tizen плагіні:', e.error);
-    });
-    
+
+    function siStyleUpdateVoteColors() {
+        if (!Lampa.Storage.get("si_colored_ratings", true)) return;
+
+        $(".card__vote").each(function () {
+            siStyleApplyColorByRating(this);
+        });
+
+        $(".full-start__rate, .full-start-new__rate").each(function () {
+            siStyleApplyColorByRating(this);
+        });
+
+        $(".info__rate, .card__imdb-rate, .card__kinopoisk-rate").each(function () {
+            siStyleApplyColorByRating(this);
+        });
+
+        $(".rate--kp, .rate--imdb, .rate--cub").each(function () {
+            siStyleApplyColorByRating($(this).find("> div").eq(0));
+        });
+    }
+
+    function siStyleSetupVoteColorsObserver() {
+        siStyleUpdateVoteColors();
+
+        var pendingUpdate = null;
+        var observer = new MutationObserver(function (mutations) {
+            if (!Lampa.Storage.get("si_colored_ratings", true)) return;
+
+            for (var i = 0; i < mutations.length; i++) {
+                var added = mutations[i].addedNodes;
+                for (var j = 0; j < added.length; j++) {
+                    var node = added[j];
+                    if (node.nodeType === 1) {
+                        var $node = $(node);
+                        $node.find(".card__vote, .full-start__rate, .full-start-new__rate, .info__rate, .card__imdb-rate, .card__kinopoisk-rate").each(function () {
+                            siStyleApplyColorByRating(this);
+                        });
+                        $node.find(".rate--kp, .rate--imdb, .rate--cub").each(function () {
+                            siStyleApplyColorByRating($(this).find("> div").eq(0));
+                        });
+                        if ($node.hasClass("card__vote") || $node.hasClass("full-start__rate") || $node.hasClass("info__rate")) {
+                            siStyleApplyColorByRating(node);
+                        }
+                        if ($node.hasClass("rate--kp") || $node.hasClass("rate--imdb") || $node.hasClass("rate--cub")) {
+                            siStyleApplyColorByRating($node.find("> div").eq(0));
+                        }
+                    }
+                }
+            }
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+        });
+    }
+
+    function siStyleSetupVoteColorsForDetailPage() {
+        if (!window.Lampa || !Lampa.Listener) return;
+
+        Lampa.Listener.follow("full", function (data) {
+            if (data.type === "complite") {
+                siStyleUpdateVoteColors();
+            }
+        });
+
+        Lampa.Listener.follow("activity", function (e) {
+            if (e.type === "active" || e.type === "start") {
+                setTimeout(preloadAllVisibleCards, 1000);
+            }
+        });
+
+        Lampa.Listener.follow("target", function (e) {
+            if (e.target && $(e.target).hasClass("card")) {
+                preloadAllVisibleCards();
+            }
+        });
+    }
+
+    function initializeSettings() {
+        Lampa.Settings.listener.follow("open", function (event) {
+            if (event.name == "main") {
+                if (Lampa.Settings.main().render().find('[data-component="style_interface"]').length == 0) {
+                    Lampa.SettingsApi.addComponent({
+                        component: "style_interface",
+                        name: "Стильний інтерфейс",
+                    });
+                }
+
+                Lampa.Settings.main().update();
+                Lampa.Settings.main().render().find('[data-component="style_interface"]').addClass("hide");
+            }
+        });
+
+        Lampa.SettingsApi.addParam({
+            component: "interface",
+            param: {
+                name: "style_interface",
+                type: "static",
+                default: true,
+            },
+            field: {
+                name: "Стильний інтерфейс",
+                description: "Налаштування елементів",
+            },
+            onRender: function (item) {
+                item.css("opacity", "0");
+                requestAnimationFrame(function () {
+                    item.insertAfter($('div[data-name="interface_size"]'));
+                    item.css("opacity", "");
+                });
+
+                item.on("hover:enter", function () {
+                    Lampa.Settings.create("style_interface");
+                    Lampa.Controller.enabled().controller.back = function () {
+                        Lampa.Settings.create("interface");
+                    };
+                });
+            },
+        });
+
+        Lampa.SettingsApi.addParam({
+            component: "style_interface",
+            param: { name: "logo_show", type: "trigger", default: true },
+            field: { name: "Показувати логотип замість назви" },
+        });
+
+        Lampa.SettingsApi.addParam({
+            component: "style_interface",
+            param: { name: "show_background", type: "trigger", default: true },
+            field: { name: "Відображати постера на фоні" },
+            onChange: function (value) {
+                if (!value) {
+                    $(".full-start__background").removeClass("active");
+                }
+            },
+        });
+
+        Lampa.SettingsApi.addParam({
+            component: "style_interface",
+            param: { name: "status", type: "trigger", default: true },
+            field: { name: "Показувати статус фільму/серіалу" },
+        });
+
+        Lampa.SettingsApi.addParam({
+            component: "style_interface",
+            param: { name: "seas", type: "trigger", default: false },
+            field: { name: "Показувати кількість сезонів" },
+        });
+
+        Lampa.SettingsApi.addParam({
+            component: "style_interface",
+            param: { name: "eps", type: "trigger", default: false },
+            field: { name: "Показувати кількість епізодів" },
+        });
+
+        Lampa.SettingsApi.addParam({
+            component: "style_interface",
+            param: { name: "year_ogr", type: "trigger", default: true },
+            field: { name: "Показувати вікове обмеження" },
+        });
+
+        Lampa.SettingsApi.addParam({
+            component: "style_interface",
+            param: { name: "vremya", type: "trigger", default: true },
+            field: { name: "Показувати час фільму" },
+        });
+
+        Lampa.SettingsApi.addParam({
+            component: "style_interface",
+            param: { name: "ganr", type: "trigger", default: true },
+            field: { name: "Показувати жанр фільму" },
+        });
+
+        Lampa.SettingsApi.addParam({
+            component: "style_interface",
+            param: { name: "rat", type: "trigger", default: true },
+            field: { name: "Показувати рейтинг фільму" },
+        });
+
+        Lampa.SettingsApi.addParam({
+            component: "style_interface",
+            param: { name: "si_colored_ratings", type: "trigger", default: true },
+            field: { name: "Кольорові рейтинги" },
+            onChange: function (value) {
+                if (value) {
+                    siStyleUpdateVoteColors();
+                } else {
+                    $(".card__vote, .full-start__rate, .full-start-new__rate, .info__rate, .card__imdb-rate, .card__kinopoisk-rate").css("color", "").css("border", "");
+                    $(".full-start__rate").css("border", "");
+                }
+            },
+        });
+
+        Lampa.SettingsApi.addParam({
+            component: "style_interface",
+            param: { name: "si_rating_border", type: "trigger", default: false },
+            field: { name: "Обводка рейтингів" },
+            onChange: function (value) {
+                siStyleUpdateVoteColors();
+            },
+        });
+
+        Lampa.SettingsApi.addParam({
+            component: "style_interface",
+            param: { name: "child_mode", type: "trigger", default: false },
+            field: { name: "Дитячий режим", description: "Лампа буде перезавантажена" },
+            onChange: function () {
+                window.location.reload();
+            },
+        });
+
+        Lampa.SettingsApi.addParam({
+            component: "style_interface",
+            param: { name: "async_load", type: "trigger", default: true },
+            field: { name: "Увімкнути асинхронне завантаження даних" },
+            onChange: function (value) {
+                if (value) preloadAllVisibleCards();
+            },
+        });
+
+        Lampa.SettingsApi.addParam({
+            component: "style_interface",
+            param: { name: "background_resolution", type: "select", default: "original", values: { w300: "w300", w780: "w780", w1280: "w1280", original: "original" } },
+            field: { name: "Роздільна здатність фону", description: "Якість завантажуваних фонових зображень" },
+        });
+
+        Lampa.SettingsApi.addParam({
+            component: "style_interface",
+            param: { name: "hide_captions", type: "trigger", default: true },
+            field: { name: "Приховати назви та рік", description: "Лампа буде перезавантажена" },
+            onChange: function () {
+                window.location.reload();
+            },
+        });
+
+        Lampa.SettingsApi.addParam({
+            component: "style_interface",
+            param: { name: "wide_post", type: "trigger", default: true },
+            field: { name: "Широкі постера", description: "Лампа буде перезавантажена" },
+            onChange: function () {
+                window.location.reload();
+            },
+        });
+
+        Lampa.SettingsApi.addParam({
+            component: "style_interface",
+            param: { name: "int_clear_logo_cache", type: "static" },
+            field: { name: "Очистити кеш логотипів", description: "Лампа буде перезавантажена" },
+            onRender: function (item) {
+                item.on("hover:enter", function () {
+                    Lampa.Select.show({
+                        title: "Очистити кеш логотипів?",
+                        items: [{ title: "Так", confirm: true }, { title: "Ні" }],
+                        onSelect: function (a) {
+                            if (a.confirm) {
+                                var keys = [];
+                                for (var i = 0; i < localStorage.length; i++) {
+                                    var key = localStorage.key(i);
+                                    if (key.indexOf("logo_cache_v2_") !== -1) {
+                                        keys.push(key);
+                                    }
+                                }
+                                keys.forEach(function (key) {
+                                    localStorage.removeItem(key);
+                                });
+                                window.location.reload();
+                            } else {
+                                Lampa.Controller.toggle("settings_component");
+                            }
+                        },
+                        onBack: function () {
+                            Lampa.Controller.toggle("settings_component");
+                        },
+                    });
+                });
+            },
+        });
+
+        var initInterval = setInterval(function () {
+            if (typeof Lampa !== "undefined") {
+                clearInterval(initInterval);
+                if (!Lampa.Storage.get("int_plug", false)) {
+                    setDefaultSettings();
+                }
+            }
+        }, 200);
+
+        function setDefaultSettings() {
+            Lampa.Storage.set("int_plug", "true");
+            Lampa.Storage.set("wide_post", "true");
+            Lampa.Storage.set("logo_show", "true");
+            Lampa.Storage.set("show_background", "true");
+            Lampa.Storage.set("background_resolution", "original");
+            Lampa.Storage.set("status", "true");
+            Lampa.Storage.set("seas", "false");
+            Lampa.Storage.set("eps", "false");
+            Lampa.Storage.set("year_ogr", "true");
+            Lampa.Storage.set("vremya", "true");
+            Lampa.Storage.set("ganr", "true");
+            Lampa.Storage.set("rat", "true");
+            Lampa.Storage.set("si_colored_ratings", "true");
+            Lampa.Storage.set("async_load", "true");
+            Lampa.Storage.set("hide_captions", "true");
+            Lampa.Storage.set("si_rating_border", "false");
+            Lampa.Storage.set("child_mode", "false");
+            Lampa.Storage.set("interface_size", "small");
+        }
+    }
+
 })();
