@@ -422,6 +422,11 @@
         flex-wrap:wrap !important;
         gap:10px !important;
       }
+      
+      /* Приховуємо позначку TV на постерах серіалів */
+      .card__type {
+        display: none !important;
+      }
     `;
     var st = document.createElement('style');
     st.id = 'interface_mod_base';
@@ -1421,24 +1426,24 @@ border: 0.2em solid #f6a5b0;
     switch (settings.button_size) {
       case 'small':
         return { 
-          width: '24',      // збільшено до 24px (замість 22)
-          height: '24',     // збільшено до 24px (замість 22)
-          svgWidth: '1.6em', // залишено
-          svgHeight: '1.6em' // залишено
+          width: '30',      // Збільшено до 30px (замість 24)
+          height: '30',     // Збільшено до 30px (замість 24)
+          svgWidth: '1.8em', // Збільшено з 1.6em
+          svgHeight: '1.8em' // Збільшено з 1.6em
         };
       case 'large':
         return { 
-          width: '34',      // залишено без змін
-          height: '34',     // залишено без змін
-          svgWidth: '2.4em', // залишено
-          svgHeight: '2.4em' // залишено
+          width: '38',      // Збільшено до 38px (замість 34)
+          height: '38',     // Збільшено до 38px (замість 34)
+          svgWidth: '2.6em', // Збільшено з 2.4em
+          svgHeight: '2.6em' // Збільшено з 2.4em
         };
       default: // normal
         return { 
-          width: '32',      // збільшено до 32px (замість 28)
-          height: '32',     // збільшено до 32px (замість 28)
-          svgWidth: '2.0em', // залишено
-          svgHeight: '2.0em' // залишено
+          width: '34',      // Збільшено до 34px (замість 32)
+          height: '34',     // Збільшено до 34px (замість 32)
+          svgWidth: '2.2em', // Збільшено з 2.0em
+          svgHeight: '2.2em' // Збільшено з 2.0em
         };
     }
   }
@@ -1455,7 +1460,7 @@ border: 0.2em solid #f6a5b0;
       case 'small':
         css = `
           .full-start__button, .full-start-new__button {
-            min-height: 3.3em !important;  /* збільшено до 3.3em (замість 3.0em) */
+            min-height: 3.3em !important;
             padding: 0.5em 1.2em !important;
             font-size: 1.0em !important;
           }
@@ -1489,7 +1494,7 @@ border: 0.2em solid #f6a5b0;
       default: // normal
         css = `
           .full-start__button, .full-start-new__button {
-            min-height: 3.8em !important;  /* збільшено до 3.8em (замість 3.5em) */
+            min-height: 3.8em !important;
             padding: 0.6em 1.4em !important;
             font-size: 1.1em !important;
           }
