@@ -1,13 +1,9 @@
 /**
- * Lampa: Enhanced Ratings (MDBList + OMDb) + Poster Badges
+ * Lampa: Enhanced Ratings (MDBList + OMDb)
  * --------------------------------------------------------
  * - Працює на старих WebView: локальні шими/поліфіли (localStorage, Promise, fetch, DOM-методи)
  * - Бере рейтинги з MDBList (+ OMDb для віку/нагород) і малює їх у деталці
- * - Додає опційні “стікери” (badges) рейтингів прямо на постери у грідах/детальці
  * - Має секцію налаштувань “Рейтинги”, живе застосування стилів без перезавантаження
- *
- * - $poster → тепер $cardView
- * - Підчистка стилю/порядку коду, вирівняні коментарі, дрібні захисти
  */
 
 (function() {
@@ -307,37 +303,27 @@
 
   /**
    * Конфігурація API ключів
-   * (Значення за замовчуванням, оновлюються з Lampa.Storage)
    */
   var LMP_ENH_CONFIG = {
     apiKeys: {
-      mdblist: 'nmqhlb9966w9m86h3yntb0dpz', // ✅ ключ до MDBList
-      omdb: '358837db' // ✅ ключ до OMDb
-    },
-    // true  -> іконки стають монохромні через filter: grayscale(100%)
-    // false -> кольорові логотипи як є
-    monochromeIcons: false /*✅ Вкл./Викл. Ч/Б рейтинги */
+      mdblist: 'nmqhlb9966w9m86h3yntb0dpz', // ключ до MDBList
+      omdb: '358837db' // ключ до OMDb
+    }
   };
 
   /**
    * Джерела іконок
    */
-  // Базовий шлях до іконок у репо
   var BASE_ICON = 'https://raw.githubusercontent.com/ko3ik/LMP/main/wwwroot/';
 
   var ICONS = {
-    // середній рейтинг (TOTAL)
     total_star: BASE_ICON + 'star.png',
-    // логотипи сервісів
     imdb: BASE_ICON + 'imdb.png',
     tmdb: BASE_ICON + 'tmdb.png',
     metacritic: BASE_ICON + 'metacritic.png',
-    // Rotten Tomatoes
     rotten_good: BASE_ICON + 'RottenTomatoes.png',
     rotten_bad: BASE_ICON + 'RottenBad.png',
-    // PopcornMeter / Audience
     popcorn: BASE_ICON + 'PopcornGood.png',
-    // Нагороди
     awards: BASE_ICON + 'awards.png',
     oscar: BASE_ICON + 'OscarGold.png',
     emmy: BASE_ICON + 'EmmyGold.png'
@@ -422,35 +408,22 @@
     "  --lmp-h-rt:26px;" +
     "  --lmp-h-popcorn:26px;" +
     "  --lmp-h-tmdb:26px;" +
-    "  --lmp-h-awards:20px;" + // іконка 'Awards' у rate--awards
-    "  --lmp-h-avg:20px;" + // зірка 'TOTAL/AVG'
-    "  --lmp-h-oscar:22px;" + // статуетка Оскара
-    "  --lmp-h-emmy:24px;" + // статуетка Еммі
+    "  --lmp-h-awards:20px;" +
+    "  --lmp-h-avg:20px;" +
+    "  --lmp-h-oscar:22px;" +
+    "  --lmp-h-emmy:24px;" +
     "}" +
 
-    /* --- Кольоровий режим (за замовчуванням) --- */
+    /* --- Кольоровий режим --- */
     ".rate--oscars, .rate--emmy, .rate--awards, .rate--gold {" +
     "    color: gold;" +
     "}" +
 
-    /* --- Монохромний режим (активується класом 'lmp-enh--mono' на body) --- */
-    "body.lmp-enh--mono .rate--oscars," +
-    "body.lmp-enh--mono .rate--emmy," +
-    "body.lmp-enh--mono .rate--awards," +
-    "body.lmp-enh--mono .rate--gold," +
-    "body.lmp-enh--mono .rating--green," +
-    "body.lmp-enh--mono .rating--blue," +
-    "body.lmp-enh--mono .rating--orange," +
-    "body.lmp-enh--mono .rating--red," +
-    "body.lmp-enh--mono .full-start__rate {" +
-    "    color: inherit !important;" +
-    "}" +
-
-    /* --- Кольори оцінок (активні лише коли НЕ монохром) --- */
-    "body:not(.lmp-enh--mono) .full-start__rate.rating--green  { color: #2ecc71; }" + /* ≥ 8.0  */
-    "body:not(.lmp-enh--mono) .full-start__rate.rating--blue   { color: #60a5fa; }" + /* 6.0–7.9 */
-    "body:not(.lmp-enh--mono) .full-start__rate.rating--orange { color: #f59e0b; }" + /* 4.0–5.9 */
-    "body:not(.lmp-enh--mono) .full-start__rate.rating--red    { color: #ef4444; }" + /* < 4.0   */
+    /* --- Кольори оцінок --- */
+    ".full-start__rate.rating--green  { color: #2ecc71; }" + /* ≥ 8.0  */
+    ".full-start__rate.rating--blue   { color: #60a5fa; }" + /* 6.0–7.9 */
+    ".full-start__rate.rating--orange { color: #f59e0b; }" + /* 4.0–5.9 */
+    ".full-start__rate.rating--red    { color: #ef4444; }" + /* < 4.0   */
 
     /* --- Ущільнення відступів --- */
     ".full-start-new__rate-line .full-start__rate {" +
@@ -468,7 +441,7 @@
     "    transition: opacity 0.15s;" +
     "}" +
 
-    /* --- Вирівнювання іконок нагород (Оскар / Еммі) --- */
+    /* --- Вирівнювання іконок нагород --- */
     ".lmp-award-icon{" +
     "  display:inline-flex;" +
     "  align-items:center;" +
@@ -540,8 +513,8 @@
    * Налаштування кешу
    */
   var CACHE_TIME = 3 * 24 * 60 * 60 * 1000; // 3 дні
-  var RATING_CACHE_KEY = 'lmp_enh_rating_cache'; // Кеш рейтингів
-  var ID_MAPPING_CACHE = 'lmp_rating_id_cache'; // Кеш TMDB -> IMDb ID
+  var RATING_CACHE_KEY = 'lmp_enh_rating_cache';
+  var ID_MAPPING_CACHE = 'lmp_rating_id_cache';
 
   /**
    * Мапінг вікових рейтингів
@@ -561,19 +534,17 @@
   };
 
   /**
-   * Налаштування за замовчуванням (для меню)
+   * Налаштування за замовчуванням
    */
   var RCFG_DEFAULT = {
-    ratings_bw_logos: false,
     ratings_show_awards: true,
     ratings_show_average: true,
-    // Нові тумблери
-    ratings_colorize_all: false, // Кольорові оцінки рейтингів (усі плитки + нагороди + AVG)
-    ratings_enable_imdb: true, // Вкл/Викл IMDb
-    ratings_enable_tmdb: true, // Вкл/Викл TMDB
-    ratings_enable_mc: true, // Вкл/Викл Metacritic
-    ratings_enable_rt: true, // Вкл/Викл Rotten Tomatoes
-    ratings_enable_popcorn: true, // Вкл/Викл PopcornMeter (Audience)
+    ratings_colorize_all: false,
+    ratings_enable_imdb: true,
+    ratings_enable_tmdb: true,
+    ratings_enable_mc: true,
+    ratings_enable_rt: true,
+    ratings_enable_popcorn: true
   };
 
   /*
@@ -582,12 +553,9 @@
   |==========================================================================
   */
 
-  /**
-   * Внутрішній стан
-   */
-  var __lmpRateLineObs = null; // Спостерігач за DOM (для лоадера)
-  var currentRatingsData = null; // Кеш рейтингів для поточної картки
-  var __lmpLastReqToken = null; // Токен останнього запиту (для уникнення гонки)
+  var __lmpRateLineObs = null;
+  var currentRatingsData = null;
+  var __lmpLastReqToken = null;
 
   /**
    * Визначає тип картки (movie/tv)
@@ -615,59 +583,10 @@
   function getRatingClass(rating) {
     var r = parseFloat(rating);
     if (isNaN(r)) return 'rating--red';
-    if (r >= 8.0) return 'rating--green'; // ≥ 8.0
-    if (r >= 6.0) return 'rating--blue'; // 6.0–7.9
-    if (r >= 4.0) return 'rating--orange'; // 4.0–5.9
-    return 'rating--red'; // < 4.0
-  }
-
-  /**
-   * Отримує "сире" значення рейтингу з об'єкта
-   */
-  function lmpRawVal(it) {
-    if (!it || typeof it !== 'object') return null;
-    var v = it.value;
-    if (v == null) v = it.score;
-    if (v == null) v = it.rating;
-    if (v == null) v = it.percent;
-    if (v == null && typeof it.display === 'string') v = it.display;
-    return v == null ? null : v;
-  }
-
-  /**
-   * Додає CSS-стилі для стікерів на постері (одноразово)
-   */
-  function ensurePosterBadgeStylesOnce() {
-    if (document.getElementById('lmp-poster-badges-css')) return;
-
-    var css = `
-    /* === Бейдж одного рейтингу на постері === */
-    .card__lmerating{
-      position:absolute;
-      right:-0.8em;                     /* 👉 відступ від правого краю */
-      padding:0.40em 0.60em;            /* 👉 внутрішні відступи */
-      background:linear-gradient(90deg,#2c2c2c,#1a1a1a); /* 👉 фон бейджа */
-      color:#fff;
-      border-radius:0.35em;             /* 👉 скруглення */
-      text-transform:uppercase;
-      font-size:0.80em;                 /* 👉 розмір шрифту */
-      line-height:1;
-      box-shadow:0 2px 6px rgba(0,0,0,.35); /* 👉 тінь */
-      z-index:5;
-      pointer-events:none;
-    }
-    @media (max-width:768px){
-      .card__lmerating{ right:.2em; font-size:.74em; }
-    }
-    @media (max-width:480px){
-      .card__lmerating{ right:.2em; font-size:.66em; }
-    }
-    `.trim();
-
-    var st = document.createElement('style');
-    st.id = 'lmp-poster-badges-css';
-    st.textContent = css;
-    document.head.appendChild(st);
+    if (r >= 8.0) return 'rating--green';
+    if (r >= 6.0) return 'rating--blue';
+    if (r >= 4.0) return 'rating--orange';
+    return 'rating--red';
   }
 
   /**
@@ -719,7 +638,7 @@
     var render = Lampa.Activity.active().activity.render();
     if (!render || !render[0]) return;
 
-    if ($('#lmp-search-loader', render).length) return; // Вже є
+    if ($('#lmp-search-loader', render).length) return;
 
     var loaderHtml =
       '<div id="lmp-search-loader" class="loading-dots-container">' +
@@ -729,7 +648,6 @@
       '<div class="loading-dots__dot"></div>' +
       '</div>';
 
-    // 1) Шукаємо реальний rate-line
     var realSel = '.full-start-new__rate-line:not([data-lmp-fake]), .full-start__rate-line:not([data-lmp-fake])';
     var rateLine = $(realSel, render).first();
     if (rateLine.length) {
@@ -738,7 +656,6 @@
       return;
     }
 
-    // 2) Створюємо фейковий rate-line, щоб лоадер був "на місці"
     var fake = $(
       '<div class="full-start-new__rate-line" ' +
       '     id="lmp-loader-fake" data-lmp-fake="1" ' +
@@ -751,7 +668,6 @@
 
     fake.append(loaderHtml);
 
-    // 3) Спостерігаємо за появою реального rate-line
     try {
       if (__lmpRateLineObs) __lmpRateLineObs.disconnect();
     } catch (_) {}
@@ -773,7 +689,6 @@
       subtree: true
     });
 
-    // Таймаут безпеки
     setTimeout(function() {
       if (__lmpRateLineObs) {
         try {
@@ -868,9 +783,7 @@
    */
   (function() {
     function fixTenIn(el) {
-      // Нормалізуємо пробіли (у т.ч. нерозривні)
       var t = (el.textContent || '').replace(/\u00A0/g, ' ').trim();
-      // 10 з будь-якою кількістю нульових десяткових: 10.0, 10.00, 10., 10,0
       if (/^10(?:[.,]0+)?$/.test(t)) {
         el.textContent = '10';
       }
@@ -883,7 +796,6 @@
       } catch (e) {}
     }
 
-    // Запускаємо спостерігача
     window.__lmpTenFixStart = function() {
       try {
         var render = Lampa && Lampa.Activity && Lampa.Activity.active() &&
@@ -895,19 +807,16 @@
           render[0].querySelector('.full-start-new__rate-line, .full-start__rate-line') ||
           render[0];
 
-        // Одноразово виправляємо вже наявне
         scan(target);
 
         var MObs = window.MutationObserver || window.WebKitMutationObserver;
         if (!MObs) return;
 
-        // Скидаємо попереднього, якщо був
         if (window.__lmpTenObs) {
           window.__lmpTenObs.disconnect();
           window.__lmpTenObs = null;
         }
 
-        // Реагуємо на нові/змінені вузли
         var obs = new MObs(function(muts) {
           for (var i = 0; i < muts.length; i++) {
             var m = muts[i];
@@ -939,11 +848,7 @@
     };
   })();
 
-  /* --- ДОДАНО: Функція для сповіщень (Toast) --- */
-  /**
-   * Показує коротке сповіщення (Toast)
-   * @param {string} msg - Текст повідомлення
-   */
+  /* --- Функція для сповіщень (Toast) --- */
   function lmpToast(msg) {
     try {
       if (Lampa && typeof Lampa.Noty === 'function') {
@@ -970,13 +875,9 @@
     }, 1300);
   }
 
-  /* --- ДОДАНО: Функція очищення кешу --- */
-  /**
-   * Очищує кеш рейтингів та ID
-   */
+  /* --- Функція очищення кешу --- */
   function lmpRatingsClearCache() {
     try {
-      // RATING_CACHE_KEY та ID_MAPPING_CACHE визначені у Секції 2
       Lampa.Storage.set(RATING_CACHE_KEY, {});
       Lampa.Storage.set(ID_MAPPING_CACHE, {});
       lmpToast('Кеш рейтингів очищено');
@@ -1015,12 +916,10 @@
     var keyPreferred = preferredType + '_' + tmdbId;
     var keyAlt = altType + '_' + tmdbId;
 
-    // 1) Шукаємо в кеші
     var cachedId = fromCache(keyPreferred) || fromCache(keyAlt);
     if (cachedId) return callback(cachedId);
 
     var tmdbKey = Lampa.TMDB.key();
-    // 2) Робимо запити
     var queue = [
       'https://api.themoviedb.org/3/' + preferredType + '/' + tmdbId + '/external_ids?api_key=' + tmdbKey,
       'https://api.themoviedb.org/3/' + preferredType + '/' + tmdbId + '?api_key=' + tmdbKey + '&append_to_response=external_ids',
@@ -1055,7 +954,6 @@
     }
 
     function saveAndReturn(id) {
-      // Кешуємо під обома ключами
       var payload = {
         imdb_id: id,
         timestamp: Date.now()
@@ -1094,10 +992,8 @@
     var url = 'https://api.mdblist.com/tmdb/' + typeSegment + '/' + card.id +
       '?apikey=' + encodeURIComponent(key);
 
-    // Основний запит
     new Lampa.Reguest().silent(url, handleSuccess, handleFail);
 
-    // Фолбек-запит
     function handleFail() {
       new Lampa.Reguest().native(
         url,
@@ -1117,7 +1013,6 @@
       );
     }
 
-    // Обробка успішної відповіді
     function handleSuccess(response) {
       if (!response || !response.ratings || !response.ratings.length) {
         callback(null);
@@ -1169,44 +1064,37 @@
         var val = parseRawScore(r.value);
         if (val === null || isNaN(val)) return;
 
-        // TMDB
         if (src.indexOf('tmdb') !== -1) {
           var tmdb10 = val > 10 ? (val / 10) : val;
           res.tmdb_display = tmdb10.toFixed(1);
           res.tmdb_for_avg = tmdb10;
         }
-        // IMDb
         if (src.indexOf('imdb') !== -1) {
           var imdb10 = val > 10 ? (val / 10) : val;
           res.imdb_display = imdb10.toFixed(1);
           res.imdb_for_avg = imdb10;
         }
-        // Metacritic (users)
         if (src.indexOf('metacritic') !== -1 && isUserSource(src)) {
           var user10 = val > 10 ? (val / 10) : val;
           res.mc_user_display = user10.toFixed(1);
           res.mc_user_for_avg = user10;
         }
-        // Metacritic (critics)
         if (src.indexOf('metacritic') !== -1 && !isUserSource(src)) {
           var critic10 = val > 10 ? (val / 10) : val;
           res.mc_critic_display = critic10.toFixed(1);
           res.mc_critic_for_avg = critic10;
         }
-        // Rotten Tomatoes
         if (src.indexOf('rotten') !== -1 || src.indexOf('tomato') !== -1) {
           res.rt_display = String(Math.round(val));
           res.rt_for_avg = val / 10;
           res.rt_fresh = val >= 60;
         }
-        // PopcornMeter / Audience
         if (src.indexOf('popcorn') !== -1 || src.indexOf('audience') !== -1) {
           res.popcorn_display = String(Math.round(val));
           res.popcorn_for_avg = val / 10;
         }
       });
 
-      // Збережемо "сирі" рейтинги
       res._mdblist_ratings = Array.isArray(response.ratings) ? response.ratings.slice() : [];
 
       callback(res);
@@ -1325,7 +1213,6 @@
       oscars: omdb.oscars || 0,
       emmy: omdb.emmy || 0,
       awards: omdb.awards || 0,
-      // Не загубити сирі рейтинги
       _mdblist_ratings: Array.isArray(mdb._mdblist_ratings) ? mdb._mdblist_ratings.slice() : []
     };
 
@@ -1339,23 +1226,12 @@
   */
 
   /**
-   * Прибирає стікери рейтингів з постера
-   */
-  function removePosterBadges(root) {
-    var host = (root || document).querySelectorAll('.card__lmerating');
-    host.forEach(function(x) {
-      x.parentNode && x.parentNode.removeChild(x);
-    });
-  }
-
-  /**
    * Оновлює приховані елементи (вік, IMDb, TMDB)
    */
   function updateHiddenElements(data) {
     var render = Lampa.Activity.active().activity.render();
     if (!render || !render[0]) return;
 
-    // Віковий рейтинг
     var pgElement = $('.full-start__pg.hide', render);
     if (pgElement.length && data.ageRating) {
       var invalidRatings = ['N/A', 'Not Rated', 'Unrated'];
@@ -1366,7 +1242,6 @@
       }
     }
 
-    // IMDb блок
     var imdbContainer = $('.rate--imdb', render);
     if (imdbContainer.length) {
       var cfg = getCfg();
@@ -1387,7 +1262,6 @@
       }
     }
 
-    // TMDB блок
     var tmdbContainer = $('.rate--tmdb', render);
     if (tmdbContainer.length) {
       var cfg = getCfg();
@@ -1409,7 +1283,7 @@
   }
 
   /**
-   * Застосовує "золотий" колір до нагород (залежно від налаштувань)
+   * Застосовує "золотий" колір до нагород
    */
   function applyAwardsColor(rateLine, cfg) {
     var $tiles = rateLine.find('.rate--awards, .rate--oscars, .rate--emmy');
@@ -1442,7 +1316,6 @@
       colorizeAll: false
     };
 
-    // ===== METACRITIC (Автовибір: User → Critic → Fallback) =====
     (function() {
       var cont = $('.rate--mc', rateLine);
       if (!cfg.enableMc) {
@@ -1489,7 +1362,6 @@
       if (cfg.colorizeAll) cont.addClass(getRatingClass(mcVal));
     })();
 
-    // ===== ROTTEN TOMATOES (0–10) =====
     (function() {
       var cont = $('.rate--rt', rateLine);
       if (!cfg.enableRt) {
@@ -1538,7 +1410,6 @@
       if (cfg.colorizeAll) cont.addClass(getRatingClass(rtVal));
     })();
 
-    // ===== POPCORN / AUDIENCE (0–10) =====
     (function() {
       var cont = $('.rate--popcorn', rateLine);
       if (!cfg.enablePop) {
@@ -1581,7 +1452,6 @@
       if (cfg.colorizeAll) cont.addClass(getRatingClass(pcVal));
     })();
 
-    // ===== Нагороди (Awards, Emmy, Oscars) =====
     if (data.awards && data.awards > 0 && !$('.rate--awards', rateLine).length) {
       var awardsElement = $(
         '<div class="full-start__rate rate--awards rate--gold">' +
@@ -1621,7 +1491,6 @@
       rateLine.prepend(oscarsElement);
     }
 
-    // Застосувати колір до нагород
     try {
       applyAwardsColor(rateLine, cfg);
     } catch (e) {}
@@ -1715,13 +1584,11 @@
 
   /**
    * Головна функція, що запускає весь процес
-   * (Отримання IMDb ID -> Запит -> Мердж -> Рендер)
    */
   function fetchAdditionalRatings(card) {
     var render = Lampa.Activity.active().activity.render();
     if (!render) return;
 
-    // Синхронізуємо конфіг з налаштувань
     refreshConfigFromStorage();
 
     var normalizedCard = {
@@ -1731,18 +1598,15 @@
       original_title: card.original_title || card.original_name || '',
       type: getCardType(card),
       release_date: card.release_date || card.first_air_date || '',
-      vote: card.vote_average || card.vote || null // Запасний рейтинг TMDB
+      vote: card.vote_average || card.vote || null
     };
 
     var cardKeyForToken = (normalizedCard.type || getCardType(normalizedCard)) + '_' + (normalizedCard.imdb_id || normalizedCard.id || '');
     var reqToken = cardKeyForToken + '_' + Date.now();
     __lmpLastReqToken = reqToken;
 
-    /**
-     * Рендерить всі дані (викликається в кінці)
-     */
     function renderAll() {
-      if (reqToken !== __lmpLastReqToken) return; // Запит застарів
+      if (reqToken !== __lmpLastReqToken) return;
       if (!currentRatingsData) {
         removeLoadingAnimation();
         return;
@@ -1752,30 +1616,22 @@
       insertRatings(currentRatingsData);
       calculateAverageRating(currentRatingsData);
 
-      // Застосувати стилі з меню
       applyStylesToAll();
     }
 
-    /**
-     * Внутрішня логіка (після отримання IMDb ID)
-     */
     function proceedWithImdbId() {
-      // 1) Будуємо ключ кешу
       var cacheKeyBase = normalizedCard.imdb_id || normalizedCard.id;
       var cacheKey = cacheKeyBase ? (normalizedCard.type + '_' + cacheKeyBase) : null;
 
-      // 2) Швидка гілка: дані є в кеші
       var cached = cacheKey ? getCachedRatings(cacheKey) : null;
       if (cached) {
         currentRatingsData = cached;
-        renderAll(); // Малюємо одразу, БЕЗ лоадера
+        renderAll();
         return;
       }
 
-      // 3) Кешу нема -> показуємо лоадер
       addLoadingAnimation();
 
-      // 4) Тягнемо MDBList і OMDb паралельно
       var pending = 2;
       var mdbRes = null;
       var omdbRes = null;
@@ -1784,10 +1640,8 @@
         pending--;
         if (pending !== 0) return;
 
-        // 5) Змерджили відповіді
         currentRatingsData = mergeRatings(mdbRes, omdbRes);
 
-        // 6) Fallback: якщо MDBList не дав TMDB-оцінку -> беремо з картки
         if (
           (!currentRatingsData.tmdb_display || !currentRatingsData.tmdb_for_avg) &&
           normalizedCard.vote != null
@@ -1802,7 +1656,6 @@
           }
         }
 
-        // 7) Кешуємо тільки не порожній результат
         if (
           cacheKey &&
           currentRatingsData && (
@@ -1819,7 +1672,6 @@
           saveCachedRatings(cacheKey, currentRatingsData);
         }
 
-        // 8) Фінальний рендер (всередині прибере лоадер)
         renderAll();
       }
 
@@ -1833,15 +1685,12 @@
       });
     }
 
-    // --- Точка входу в `fetchAdditionalRatings` ---
-    // Якщо немає IMDb ID, спочатку отримуємо його
     if (!normalizedCard.imdb_id) {
       getImdbIdFromTmdb(normalizedCard.id, normalizedCard.type, function(imdb_id) {
         normalizedCard.imdb_id = imdb_id;
         proceedWithImdbId();
       });
     } else {
-      // Якщо IMDb ID вже є, одразу запускаємо
       proceedWithImdbId();
     }
   }
@@ -1849,7 +1698,6 @@
   /*
   |==========================================================================
   | 8. НАЛАШТУВАННЯ (SETTINGS)
-  | (Функції для меню налаштувань та застосування стилів)
   |==========================================================================
   */
 
@@ -1857,7 +1705,6 @@
    * Отримує актуальні налаштування з Lampa.Storage
    */
   function getCfg() {
-    var bwLogos = !!Lampa.Storage.field('ratings_bw_logos', RCFG_DEFAULT.ratings_bw_logos);
     var showAwards = !!Lampa.Storage.field('ratings_show_awards', RCFG_DEFAULT.ratings_show_awards);
     var showAverage = !!Lampa.Storage.field('ratings_show_average', RCFG_DEFAULT.ratings_show_average);
     var colorizeAll = !!Lampa.Storage.field('ratings_colorize_all', RCFG_DEFAULT.ratings_colorize_all);
@@ -1868,7 +1715,6 @@
     var enPopcorn = !!Lampa.Storage.field('ratings_enable_popcorn', RCFG_DEFAULT.ratings_enable_popcorn);
 
     return {
-      bwLogos: bwLogos,
       showAwards: showAwards,
       showAverage: showAverage,
       colorizeAll: colorizeAll,
@@ -1881,17 +1727,10 @@
   }
 
   /**
-   * Синхронізує apiKeys + monochromeIcons у LMP_ENH_CONFIG
+   * Синхронізує конфіг
    */
   function refreshConfigFromStorage() {
     var cfg = getCfg();
-    LMP_ENH_CONFIG.monochromeIcons = cfg.bwLogos;
-    // Оновлюємо клас на body
-    if (cfg.bwLogos) {
-      $('body').addClass('lmp-enh--mono');
-    } else {
-      $('body').removeClass('lmp-enh--mono');
-    }
     return cfg;
   }
 
@@ -1916,34 +1755,12 @@
   }
 
   /**
-   * Застосовує "золотий" колір до нагород
-   */
-  function applyAwardsColorStatic(cfg) {
-    var tiles = document.querySelectorAll('.rate--awards, .rate--oscars, .rate--emmy');
-    tiles.forEach(function(tile) {
-      tile.classList.remove('rating--green', 'rating--blue', 'rating--orange', 'rating--red');
-      if (cfg && cfg.colorizeAll) {
-        tile.classList.add('rate--gold');
-      } else {
-        tile.classList.remove('rate--gold');
-      }
-    });
-  }
-
-  /**
-   * Головна функція стилізації (застосовує все)
+   * Головна функція стилізації
    */
   function applyStylesToAll() {
     var cfg = getCfg();
-    // Оновлюємо body клас
-    if (cfg.bwLogos) {
-      $('body').addClass('lmp-enh--mono');
-    } else {
-      $('body').removeClass('lmp-enh--mono');
-    }
     toggleAwards(cfg.showAwards);
     toggleAverage(cfg.showAverage);
-    applyAwardsColorStatic(cfg);
   }
 
   /**
@@ -1979,7 +1796,7 @@
   })();
 
   /**
-   * Встановлює дефолтні значення для нових тумблерів
+   * Встановлює дефолтні значення для тумблерів
    */
   function ensureDefaultToggles() {
     if (typeof Lampa.Storage.get('ratings_show_awards') === 'undefined') {
@@ -1999,7 +1816,6 @@
       return function() {
         clearTimeout(t);
         t = setTimeout(function() {
-          // 1) Спочатку оновлюємо дані/плитки (вкл/викл, кольори)
           try {
             if (typeof currentRatingsData === 'object' && currentRatingsData) {
               updateHiddenElements(currentRatingsData);
@@ -2007,7 +1823,6 @@
               calculateAverageRating(currentRatingsData);
             }
           } catch (e) {}
-          // 2) Потім — стилі (видимість)
           applyStylesToAll();
         }, 150);
       };
@@ -2059,21 +1874,6 @@
     Lampa.SettingsApi.addParam({
       component: 'lmp_ratings',
       param: {
-        name: 'ratings_bw_logos',
-        type: 'trigger',
-        values: '',
-        "default": RCFG_DEFAULT.ratings_bw_logos
-      },
-      field: {
-        name: 'Ч/Б логотипи',
-        description: 'Чорно-білі логотипи рейтингів'
-      },
-      onRender: function(item) {}
-    });
-
-    Lampa.SettingsApi.addParam({
-      component: 'lmp_ratings',
-      param: {
         name: 'ratings_show_awards',
         type: 'trigger',
         values: '',
@@ -2101,7 +1901,6 @@
       onRender: function(item) {}
     });
 
-    // === Нові тумблери ===
     Lampa.SettingsApi.addParam({
       component: 'lmp_ratings',
       param: {
@@ -2115,6 +1914,7 @@
       },
       onRender: function() {}
     });
+    
     Lampa.SettingsApi.addParam({
       component: 'lmp_ratings',
       param: {
@@ -2127,6 +1927,7 @@
         description: 'Показувати/ховати джерело'
       }
     });
+    
     Lampa.SettingsApi.addParam({
       component: 'lmp_ratings',
       param: {
@@ -2139,6 +1940,7 @@
         description: 'Показувати/ховати джерело'
       }
     });
+    
     Lampa.SettingsApi.addParam({
       component: 'lmp_ratings',
       param: {
@@ -2151,6 +1953,7 @@
         description: 'Показувати/ховати джерело'
       }
     });
+    
     Lampa.SettingsApi.addParam({
       component: 'lmp_ratings',
       param: {
@@ -2163,6 +1966,7 @@
         description: 'Показувати/ховати джерело'
       }
     });
+    
     Lampa.SettingsApi.addParam({
       component: 'lmp_ratings',
       param: {
@@ -2176,7 +1980,6 @@
       }
     });
 
-    /* --- ДОДАНО: Кнопка очищення кешу --- */
     Lampa.SettingsApi.addParam({
       component: 'lmp_ratings',
       param: {
@@ -2197,15 +2000,13 @@
    * Ініціалізація UI налаштувань
    */
   function initRatingsPluginUI() {
-    ensureDefaultToggles(); // Дефолтні значення для тумблерів
-    addSettingsSection(); // Реєструємо секцію
-    patchStorageSetOnce(); // Патч для миттєвого застосування
-    attachLiveSettingsHandlers(); // "Живе" оновлення
-    // Експорт утиліт
+    ensureDefaultToggles();
+    addSettingsSection();
+    patchStorageSetOnce();
+    attachLiveSettingsHandlers();
     window.LampaRatings = window.LampaRatings || {};
     window.LampaRatings.applyStyles = applyStylesToAll;
     window.LampaRatings.getConfig = getCfg;
-    // Одразу застосувати стилі
     applyStylesToAll();
   }
 
@@ -2224,7 +2025,7 @@
       if (e.type === 'complite') {
         setTimeout(function() {
           fetchAdditionalRatings(e.data.movie || e.object || {});
-          __lmpTenFixStart(); // Запускаємо "фікс 10.0"
+          __lmpTenFixStart();
         }, 500);
       }
     });
@@ -2232,21 +2033,16 @@
 
   // --- Початок виконання коду ---
 
-  // 1. Додаємо CSS в DOM
   Lampa.Template.add('lmp_enh_styles', pluginStyles);
   $('body').append(Lampa.Template.get('lmp_enh_styles', {}, true));
 
-  // 2. Ініціалізуємо UI налаштувань
   initRatingsPluginUI();
 
-  // 3. Синхронізуємо конфіг (для Ч/Б класу на body)
   refreshConfigFromStorage();
 
-  // 4. Додаємо слухачі на resize/orientation
   window.addEventListener('resize', reapplyOnResize);
   window.addEventListener('orientationchange', reapplyOnResize);
 
-  // 5. Запускаємо основний слухач плагіну
   if (!window.combined_ratings_plugin) {
     startPlugin();
   }
