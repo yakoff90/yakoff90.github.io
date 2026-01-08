@@ -1,320 +1,219 @@
 (function () {
 	"use strict";
 	
-	// Додаємо явний виклик TV режиму для Samsung
-	try {
-		if (typeof Lampa !== 'undefined' && Lampa.Platform && Lampa.Platform.tv) {
-			Lampa.Platform.tv();
-		}
-	} catch(e) {
-		console.log('Samsung TV Platform init error:', e);
+	// Ініціалізація для TV режиму
+	if (typeof Lampa !== 'undefined' && Lampa.Platform && Lampa.Platform.tv) {
+		Lampa.Platform.tv();
 	}
 
-	// Чекаємо повного завантаження Lampa
-	var initAttempts = 0;
-	var maxAttempts = 30;
-	
-	function initializePlugin() {
-		if (typeof Lampa === "undefined") {
-			if (initAttempts < maxAttempts) {
-				initAttempts++;
-				setTimeout(initializePlugin, 500);
-			}
-			return;
+	// Очікуємо повного завантаження
+	function waitForLampa(callback) {
+		if (typeof Lampa !== "undefined" && Lampa.Maker && Lampa.Utils) {
+			callback();
+		} else {
+			setTimeout(function() { waitForLampa(callback); }, 100);
 		}
+	}
 
-		if (!Lampa.Maker || !Lampa.Maker.map || !Lampa.Utils) {
-			if (initAttempts < maxAttempts) {
-				initAttempts++;
-				setTimeout(initializePlugin, 500);
-			}
-			return;
-		}
-		
+	waitForLampa(function() {
+		if (!Lampa.Maker || !Lampa.Maker.map || !Lampa.Utils) return;
 		if (window.plugin_interface_ready_v3) return;
+
 		window.plugin_interface_ready_v3 = true;
 
-		console.log('Samsung TV Styled Interface plugin initializing...');
+		console.log('Samsung TV Interface Plugin: Initializing...');
 
 		var globalInfoCache = {};
 
-		// Ініціалізація налаштувань для Samsung TV
+		// Налаштування для TV
 		try {
-			if (Lampa.Storage) {
-				Lampa.Storage.set("interface_size", "small");
-				Lampa.Storage.set("background", "false");
-			}
-		} catch(e) {
-			console.log('Storage init error:', e);
-		}
+			Lampa.Storage.set("interface_size", "small");
+			Lampa.Storage.set("background", "false");
+		} catch(e) {}
 
+		// Додаємо стилі
 		addStyles();
-		initializeSettings();
-
-		// Запускаємо спостерігачі з затримкою для стабільності
-		setTimeout(function() {
-			try {
-				siStyleSetupVoteColorsObserver();
-				siStyleSetupVoteColorsForDetailPage();
-				setupPreloadObserver();
-			} catch(e) {
-				console.log('Observers init error:', e);
-			}
-		}, 1000);
-
-		// Отримуємо основний Maker з перевірками
-		var mainMaker = null;
-		try {
-			mainMaker = Lampa.Maker.map("Main");
-		} catch(e) {
-			console.log('Error getting Main Maker:', e);
-		}
 		
-		if (!mainMaker || !mainMaker.Items || !mainMaker.Create) {
-			console.log('Main Maker not ready, retrying...');
-			setTimeout(initializePlugin, 1000);
-			return;
-		}
+		// Ініціалізуємо налаштування
+		setTimeout(function() {
+			initializeSettings();
+		}, 1500);
+		
+		// Запускаємо спостерігачі
+		setTimeout(function() {
+			siStyleSetupVoteColorsObserver();
+			siStyleSetupVoteColorsForDetailPage();
+			setupPreloadObserver();
+		}, 2000);
 
-		// Обгортка методу onInit
+		var mainMaker = Lampa.Maker.map("Main");
+		if (!mainMaker || !mainMaker.Items || !mainMaker.Create) return;
+
+		// Обгортка методів для TV оптимізації
 		wrapMethod(mainMaker.Items, "onInit", function (originalMethod, args) {
-			try {
-				this.__newInterfaceEnabled = shouldEnableInterface(this && this.object);
+			this.__newInterfaceEnabled = shouldEnableInterface(this && this.object);
 
-				if (this.__newInterfaceEnabled) {
-					if (this.object) this.object.wide = false;
-					this.wide = false;
+			if (this.__newInterfaceEnabled) {
+				if (this.object) this.object.wide = false;
+				this.wide = false;
+				
+				// TV оптимізація
+				if (this.object) {
+					this.object.tvOptimized = true;
 				}
-
-				if (originalMethod) originalMethod.apply(this, args);
-			} catch(e) {
-				console.log('onInit wrapper error:', e);
-				if (originalMethod) originalMethod.apply(this, args);
 			}
+
+			if (originalMethod) originalMethod.apply(this, args);
 		});
 
-		// Обгортка методу onCreate
 		wrapMethod(mainMaker.Create, "onCreate", function (originalMethod, args) {
-			try {
-				if (originalMethod) originalMethod.apply(this, args);
-				if (!this.__newInterfaceEnabled) return;
+			if (originalMethod) originalMethod.apply(this, args);
+			if (!this.__newInterfaceEnabled) return;
 
-				var state = getOrCreateState(this);
-				state.attach();
-			} catch(e) {
-				console.log('onCreate wrapper error:', e);
-			}
+			var state = getOrCreateState(this);
+			state.attach();
 		});
 
-		// Обгортка методу onCreateAndAppend
 		wrapMethod(mainMaker.Create, "onCreateAndAppend", function (originalMethod, args) {
-			try {
-				var data = args && args[0];
-				if (this.__newInterfaceEnabled && data) {
-					data.wide = false;
+			var data = args && args[0];
+			if (this.__newInterfaceEnabled && data) {
+				data.wide = false;
 
-					if (!data.params) data.params = {};
-					if (!data.params.items) data.params.items = {};
-					data.params.items.view = 12;
-					data.params.items_per_row = 12;
-					data.items_per_row = 12;
+				if (!data.params) data.params = {};
+				if (!data.params.items) data.params.items = {};
+				data.params.items.view = 12;
+				data.params.items_per_row = 12;
+				data.items_per_row = 12;
 
-					extendResultsWithStyle(data);
-				}
-				return originalMethod ? originalMethod.apply(this, args) : undefined;
-			} catch(e) {
-				console.log('onCreateAndAppend wrapper error:', e);
-				return originalMethod ? originalMethod.apply(this, args) : undefined;
+				extendResultsWithStyle(data);
 			}
+			return originalMethod ? originalMethod.apply(this, args) : undefined;
 		});
 
-		// Обгортка методу onAppend
 		wrapMethod(mainMaker.Items, "onAppend", function (originalMethod, args) {
-			try {
-				if (originalMethod) originalMethod.apply(this, args);
-				if (!this.__newInterfaceEnabled) return;
+			if (originalMethod) originalMethod.apply(this, args);
+			if (!this.__newInterfaceEnabled) return;
 
-				var element = args && args[0];
-				var data = args && args[1];
+			var element = args && args[0];
+			var data = args && args[1];
 
-				if (element && data) {
-					handleLineAppend(this, element, data);
-				}
-			} catch(e) {
-				console.log('onAppend wrapper error:', e);
+			if (element && data) {
+				handleLineAppend(this, element, data);
 			}
 		});
 
-		// Обгортка методу onDestroy
 		wrapMethod(mainMaker.Items, "onDestroy", function (originalMethod, args) {
-			try {
-				if (this.__newInterfaceState) {
-					this.__newInterfaceState.destroy();
-					delete this.__newInterfaceState;
-				}
-				delete this.__newInterfaceEnabled;
-				if (originalMethod) originalMethod.apply(this, args);
-			} catch(e) {
-				console.log('onDestroy wrapper error:', e);
-				if (originalMethod) originalMethod.apply(this, args);
+			if (this.__newInterfaceState) {
+				this.__newInterfaceState.destroy();
+				delete this.__newInterfaceState;
 			}
+			delete this.__newInterfaceEnabled;
+			if (originalMethod) originalMethod.apply(this, args);
 		});
 
-		console.log('Samsung TV Styled Interface plugin initialized successfully');
-	}
-
-	// Запускаємо ініціалізацію
-	if (document.readyState === 'loading') {
-		document.addEventListener('DOMContentLoaded', function() {
-			setTimeout(initializePlugin, 1000);
-		});
-	} else {
-		setTimeout(initializePlugin, 1000);
-	}
-
-	function shouldEnableInterface(object) {
-		if (!object) return false;
-		if (window.innerWidth < 767) return false;
-		if (Lampa.Platform && Lampa.Platform.screen && Lampa.Platform.screen("mobile")) return false;
-		if (object.title === "Избранное" || object.title === "Обране") return false;
-		return true;
-	}
-
-	function getOrCreateState(createInstance) {
-		if (createInstance.__newInterfaceState) {
-			return createInstance.__newInterfaceState;
+		function shouldEnableInterface(object) {
+			if (!object) return false;
+			if (window.innerWidth < 767) return false;
+			if (Lampa.Platform.screen("mobile")) return false;
+			if (object.title === "Избранное") return false;
+			return true;
 		}
-		var state = createState(createInstance);
-		createInstance.__newInterfaceState = state;
-		return state;
-	}
 
-	function createState(mainInstance) {
-		var infoPanel = new InfoPanel();
-		infoPanel.create();
+		function getOrCreateState(createInstance) {
+			if (createInstance.__newInterfaceState) {
+				return createInstance.__newInterfaceState;
+			}
+			var state = createState(createInstance);
+			createInstance.__newInterfaceState = state;
+			return state;
+		}
 
-		var backgroundWrapper = document.createElement("div");
-		backgroundWrapper.className = "full-start__background-wrapper";
+		function createState(mainInstance) {
+			var infoPanel = new InfoPanel();
+			infoPanel.create();
 
-		var bg1 = document.createElement("img");
-		bg1.className = "full-start__background";
-		bg1.setAttribute("loading", "eager"); // Для Samsung TV
-		var bg2 = document.createElement("img");
-		bg2.className = "full-start__background";
-		bg2.setAttribute("loading", "eager"); // Для Samsung TV
+			var backgroundWrapper = document.createElement("div");
+			backgroundWrapper.className = "full-start__background-wrapper";
+			backgroundWrapper.style.cssText = "transform: translate3d(0,0,0); backface-visibility: hidden;";
 
-		backgroundWrapper.appendChild(bg1);
-		backgroundWrapper.appendChild(bg2);
+			var bg1 = document.createElement("img");
+			bg1.className = "full-start__background";
+			bg1.setAttribute("decoding", "async");
+			bg1.style.cssText = "transform: translate3d(0,0,0); image-rendering: auto;";
+			
+			var bg2 = document.createElement("img");
+			bg2.className = "full-start__background";
+			bg2.setAttribute("decoding", "async");
+			bg2.style.cssText = "transform: translate3d(0,0,0); image-rendering: auto;";
 
-		var state = {
-			main: mainInstance,
-			info: infoPanel,
-			background: backgroundWrapper,
-			infoElement: null,
-			backgroundTimer: null,
-			backgroundLast: "",
-			attached: false,
+			backgroundWrapper.appendChild(bg1);
+			backgroundWrapper.appendChild(bg2);
 
-			attach: function () {
-				if (this.attached) return;
+			var state = {
+				main: mainInstance,
+				info: infoPanel,
+				background: backgroundWrapper,
+				infoElement: null,
+				backgroundTimer: null,
+				backgroundLast: "",
+				attached: false,
 
-				var container = null;
-				try {
-					container = mainInstance.render(true);
-				} catch(e) {
-					console.log('Error getting container:', e);
-					return;
-				}
-				
-				if (!container) return;
+				attach: function () {
+					if (this.attached) return;
 
-				container.classList.add("new-interface");
-				container.classList.add("samsung-tv-optimized"); // Додатковий клас для TV
+					var container = mainInstance.render(true);
+					if (!container) return;
 
-				if (!backgroundWrapper.parentElement) {
-					try {
+					container.classList.add("new-interface");
+					container.classList.add("samsung-tv");
+					
+					// TV оптимізація
+					container.style.cssText = "transform: translate3d(0,0,0); backface-visibility: hidden;";
+
+					if (!backgroundWrapper.parentElement) {
 						container.insertBefore(backgroundWrapper, container.firstChild || null);
-					} catch(e) {
-						console.log('Error inserting background:', e);
 					}
-				}
 
-				var infoElement = null;
-				try {
-					infoElement = infoPanel.render(true);
-				} catch(e) {
-					console.log('Error rendering info panel:', e);
-					return;
-				}
-				
-				this.infoElement = infoElement;
+					var infoElement = infoPanel.render(true);
+					this.infoElement = infoElement;
 
-				if (infoElement && infoElement.parentNode !== container) {
-					try {
+					if (infoElement && infoElement.parentNode !== container) {
 						if (backgroundWrapper.parentElement === container) {
 							container.insertBefore(infoElement, backgroundWrapper.nextSibling);
 						} else {
 							container.insertBefore(infoElement, container.firstChild || null);
 						}
-					} catch(e) {
-						console.log('Error inserting info panel:', e);
 					}
-				}
 
-				try {
-					if (mainInstance.scroll && mainInstance.scroll.minus) {
-						mainInstance.scroll.minus(infoElement);
-					}
-				} catch(e) {
-					console.log('Error adjusting scroll:', e);
-				}
-				
-				this.attached = true;
-			},
+					mainInstance.scroll.minus(infoElement);
+					this.attached = true;
+				},
 
-			update: function (data) {
-				if (!data) return;
-				try {
+				update: function (data) {
+					if (!data) return;
 					infoPanel.update(data);
 					this.updateBackground(data);
-				} catch(e) {
-					console.log('Error updating state:', e);
-				}
-			},
+				},
 
-			updateBackground: function (data) {
-				var BACKGROUND_DEBOUNCE_DELAY = 300;
-				var self = this;
+				updateBackground: function (data) {
+					var BACKGROUND_DEBOUNCE_DELAY = 300;
+					var self = this;
 
-				clearTimeout(this.backgroundTimer);
+					clearTimeout(this.backgroundTimer);
 
-				if (this._pendingImg) {
-					this._pendingImg.onload = null;
-					this._pendingImg.onerror = null;
-					this._pendingImg = null;
-				}
-
-				var show_bg = true;
-				try {
-					show_bg = Lampa.Storage.get("show_background", true);
-				} catch(e) {}
-				
-				var bg_resolution = "original";
-				try {
-					bg_resolution = Lampa.Storage.get("background_resolution", "original");
-				} catch(e) {}
-				
-				var backdropUrl = "";
-				try {
-					if (data && data.backdrop_path && show_bg && Lampa.Api && Lampa.Api.img) {
-						backdropUrl = Lampa.Api.img(data.backdrop_path, bg_resolution);
+					if (this._pendingImg) {
+						this._pendingImg.onload = null;
+						this._pendingImg.onerror = null;
+						this._pendingImg = null;
 					}
-				} catch(e) {}
 
-				if (backdropUrl === this.backgroundLast) return;
+					var show_bg = Lampa.Storage.get("show_background", true);
+					var bg_resolution = Lampa.Storage.get("background_resolution", "original");
+					var backdropUrl = data && data.backdrop_path && show_bg ? Lampa.Api.img(data.backdrop_path, bg_resolution) : "";
 
-				this.backgroundTimer = setTimeout(function () {
-					try {
+					if (backdropUrl === this.backgroundLast) return;
+
+					this.backgroundTimer = setTimeout(function () {
 						if (!backdropUrl) {
 							bg1.classList.remove("active");
 							bg2.classList.remove("active");
@@ -327,31 +226,24 @@
 
 						var img = new Image();
 						self._pendingImg = img;
-						
-						// Оптимізація для Samsung TV
 						img.setAttribute("decoding", "async");
-						img.setAttribute("loading", "eager");
 
 						img.onload = function () {
-							try {
-								if (self._pendingImg !== img) return;
+							if (self._pendingImg !== img) return;
+							if (backdropUrl !== self.backgroundLast) return;
+
+							self._pendingImg = null;
+							nextLayer.src = backdropUrl;
+							
+							// Використовуємо requestAnimationFrame для TV
+							requestAnimationFrame(function() {
+								nextLayer.classList.add("active");
+							});
+
+							setTimeout(function () {
 								if (backdropUrl !== self.backgroundLast) return;
-
-								self._pendingImg = null;
-								nextLayer.src = backdropUrl;
-								
-								// Використовуємо requestAnimationFrame для плавності
-								requestAnimationFrame(function() {
-									nextLayer.classList.add("active");
-								});
-
-								setTimeout(function () {
-									if (backdropUrl !== self.backgroundLast) return;
-									prevLayer.classList.remove("active");
-								}, 100);
-							} catch(e) {
-								console.log('Background image onload error:', e);
-							}
+								prevLayer.classList.remove("active");
+							}, 100);
 						};
 
 						img.onerror = function() {
@@ -360,94 +252,65 @@
 
 						self.backgroundLast = backdropUrl;
 						img.src = backdropUrl;
-					} catch(e) {
-						console.log('Background update error:', e);
-					}
-				}, BACKGROUND_DEBOUNCE_DELAY);
-			},
+					}, BACKGROUND_DEBOUNCE_DELAY);
+				},
 
-			reset: function () {
-				try {
+				reset: function () {
 					infoPanel.empty();
-				} catch(e) {
-					console.log('Reset error:', e);
-				}
-			},
+				},
 
-			destroy: function () {
-				clearTimeout(this.backgroundTimer);
-				try {
+				destroy: function () {
+					clearTimeout(this.backgroundTimer);
 					infoPanel.destroy();
-				} catch(e) {
-					console.log('Info panel destroy error:', e);
-				}
 
-				var container = null;
-				try {
-					container = mainInstance.render(true);
-				} catch(e) {}
-				
-				if (container) {
-					container.classList.remove("new-interface");
-					container.classList.remove("samsung-tv-optimized");
-				}
+					var container = mainInstance.render(true);
+					if (container) {
+						container.classList.remove("new-interface");
+						container.classList.remove("samsung-tv");
+					}
 
-				if (this.infoElement && this.infoElement.parentNode) {
-					try {
+					if (this.infoElement && this.infoElement.parentNode) {
 						this.infoElement.parentNode.removeChild(this.infoElement);
-					} catch(e) {}
-				}
+					}
 
-				if (backgroundWrapper && backgroundWrapper.parentNode) {
-					try {
+					if (backgroundWrapper && backgroundWrapper.parentNode) {
 						backgroundWrapper.parentNode.removeChild(backgroundWrapper);
-					} catch(e) {}
-				}
+					}
 
-				this.attached = false;
-			},
-		};
+					this.attached = false;
+				},
+			};
 
-		return state;
-	}
+			return state;
+		}
 
-	function initChildModeApiHook() {
-		try {
+		function initChildModeApiHook() {
 			if (!Lampa.TMDB || !Lampa.TMDB.api) return;
 
 			var originalApi = Lampa.TMDB.api;
 
 			Lampa.TMDB.api = function (url) {
-				try {
-					if (Lampa.Storage.get("child_mode", false)) {
-						if (url.indexOf("discover/") !== -1 || url.indexOf("trending/") !== -1 || url.indexOf("movie/popular") !== -1 || url.indexOf("movie/top_rated") !== -1 || url.indexOf("movie/now_playing") !== -1 || url.indexOf("movie/upcoming") !== -1 || url.indexOf("tv/popular") !== -1 || url.indexOf("tv/top_rated") !== -1 || url.indexOf("tv/on_the_air") !== -1 || url.indexOf("tv/airing_today") !== -1) {
-							if (url.indexOf("certification") === -1) {
-								var separator = url.indexOf("?") !== -1 ? "&" : "?";
-								url = url + separator + "certification_country=RU&certification.lte=16&include_adult=false";
-							}
-						}
-						if (url.indexOf("include_adult") === -1 && url.indexOf("search/") !== -1) {
+				if (Lampa.Storage.get("child_mode", false)) {
+					if (url.indexOf("discover/") !== -1 || url.indexOf("trending/") !== -1 || url.indexOf("movie/popular") !== -1 || url.indexOf("movie/top_rated") !== -1 || url.indexOf("movie/now_playing") !== -1 || url.indexOf("movie/upcoming") !== -1 || url.indexOf("tv/popular") !== -1 || url.indexOf("tv/top_rated") !== -1 || url.indexOf("tv/on_the_air") !== -1 || url.indexOf("tv/airing_today") !== -1) {
+						if (url.indexOf("certification") === -1) {
 							var separator = url.indexOf("?") !== -1 ? "&" : "?";
-							url = url + separator + "include_adult=false";
+							url = url + separator + "certification_country=RU&certification.lte=16&include_adult=false";
 						}
 					}
-				} catch(e) {
-					console.log('Child mode API hook error:', e);
+					if (url.indexOf("include_adult") === -1 && url.indexOf("search/") !== -1) {
+						var separator = url.indexOf("?") !== -1 ? "&" : "?";
+						url = url + separator + "include_adult=false";
+					}
 				}
 				return originalApi(url);
 			};
-		} catch(e) {
-			console.log('Child mode init error:', e);
 		}
-	}
 
-	// Викликаємо пізніше
-	setTimeout(initChildModeApiHook, 2000);
+		initChildModeApiHook();
 
-	function extendResultsWithStyle(data) {
-		if (!data) return;
+		function extendResultsWithStyle(data) {
+			if (!data) return;
 
-		try {
 			if (Array.isArray(data.results)) {
 				data.results.forEach(function (card) {
 					if (card.wide !== false) {
@@ -455,33 +318,23 @@
 					}
 				});
 
-				if (Lampa.Utils && Lampa.Utils.extendItemsParams) {
-					Lampa.Utils.extendItemsParams(data.results, {
-						style: {
-							name: Lampa.Storage.get("wide_post") !== false ? "wide" : "small",
-						},
-					});
-				}
+				Lampa.Utils.extendItemsParams(data.results, {
+					style: {
+						name: Lampa.Storage.get("wide_post") !== false ? "wide" : "small",
+					},
+				});
 			}
-		} catch(e) {
-			console.log('Extend results error:', e);
 		}
-	}
 
-	function handleCard(state, card) {
-		if (!card || card.__newInterfaceCard) return;
-		if (typeof card.use !== "function" || !card.data) return;
+		function handleCard(state, card) {
+			if (!card || card.__newInterfaceCard) return;
+			if (typeof card.use !== "function" || !card.data) return;
 
-		try {
 			card.__newInterfaceCard = true;
 			card.params = card.params || {};
 			card.params.style = card.params.style || {};
 
-			var targetStyle = "small";
-			try {
-				targetStyle = Lampa.Storage.get("wide_post") !== false ? "wide" : "small";
-			} catch(e) {}
-			
+			var targetStyle = Lampa.Storage.get("wide_post") !== false ? "wide" : "small";
 			card.params.style.name = targetStyle;
 
 			if (card.render && typeof card.render === "function") {
@@ -496,60 +349,44 @@
 							node.classList.add("card--small");
 							node.classList.remove("card--wide");
 						}
+						
+						// TV оптимізація
+						node.style.transform = "translate3d(0,0,0)";
+						node.style.backfaceVisibility = "hidden";
 					}
 				}
 			}
 
 			card.use({
 				onFocus: function () {
-					try {
-						state.update(card.data);
-					} catch(e) {
-						console.log('Card focus error:', e);
-					}
+					state.update(card.data);
 				},
 				onHover: function () {
-					try {
-						state.update(card.data);
-					} catch(e) {
-						console.log('Card hover error:', e);
-					}
+					state.update(card.data);
 				},
 				onTouch: function () {
-					try {
-						state.update(card.data);
-					} catch(e) {
-						console.log('Card touch error:', e);
-					}
+					state.update(card.data);
 				},
 				onDestroy: function () {
 					delete card.__newInterfaceCard;
 				},
 			});
-		} catch(e) {
-			console.log('Handle card error:', e);
 		}
-	}
 
-	function getCardData(card, results, index) {
-		index = index || 0;
+		function getCardData(card, results, index) {
+			index = index || 0;
 
-		try {
 			if (card && card.data) return card.data;
 			if (results && Array.isArray(results.results)) {
 				return results.results[index] || results.results[0];
 			}
-		} catch(e) {
-			console.log('Get card data error:', e);
+
+			return null;
 		}
 
-		return null;
-	}
+		function findCardData(element) {
+			if (!element) return null;
 
-	function findCardData(element) {
-		if (!element) return null;
-
-		try {
 			var node = element && element.jquery ? element[0] : element;
 
 			while (node && !node.card_data) {
@@ -557,30 +394,20 @@
 			}
 
 			return node && node.card_data ? node.card_data : null;
-		} catch(e) {
-			console.log('Find card data error:', e);
-			return null;
 		}
-	}
 
-	function getFocusedCard(items) {
-		try {
+		function getFocusedCard(items) {
 			var container = items && typeof items.render === "function" ? items.render(true) : null;
 			if (!container || !container.querySelector) return null;
 
 			var focusedElement = container.querySelector(".selector.focus") || container.querySelector(".focus");
 			return findCardData(focusedElement);
-		} catch(e) {
-			console.log('Get focused card error:', e);
-			return null;
 		}
-	}
 
-	function handleLineAppend(items, line, data) {
-		if (line.__newInterfaceLine) return;
-		line.__newInterfaceLine = true;
+		function handleLineAppend(items, line, data) {
+			if (line.__newInterfaceLine) return;
+			line.__newInterfaceLine = true;
 
-		try {
 			var state = getOrCreateState(items);
 
 			line.items_per_row = 12;
@@ -599,21 +426,13 @@
 					processCard(instance);
 				},
 				onActive: function (card, results) {
-					try {
-						var cardData = getCardData(card, results);
-						if (cardData) state.update(cardData);
-					} catch(e) {
-						console.log('Line active error:', e);
-					}
+					var cardData = getCardData(card, results);
+					if (cardData) state.update(cardData);
 				},
 				onToggle: function () {
 					setTimeout(function () {
-						try {
-							var focusedCard = getFocusedCard(line);
-							if (focusedCard) state.update(focusedCard);
-						} catch(e) {
-							console.log('Line toggle error:', e);
-						}
+						var focusedCard = getFocusedCard(line);
+						if (focusedCard) state.update(focusedCard);
 					}, 32);
 				},
 				onMore: function () {
@@ -633,67 +452,42 @@
 				var lastCardData = findCardData(line.last);
 				if (lastCardData) state.update(lastCardData);
 			}
-		} catch(e) {
-			console.log('Handle line append error:', e);
 		}
-	}
 
-	function wrapMethod(object, methodName, wrapper) {
-		if (!object) return;
+		function wrapMethod(object, methodName, wrapper) {
+			if (!object) return;
 
-		try {
 			var originalMethod = typeof object[methodName] === "function" ? object[methodName] : null;
 
 			object[methodName] = function () {
 				var args = Array.prototype.slice.call(arguments);
 				return wrapper.call(this, originalMethod, args);
 			};
-		} catch(e) {
-			console.log('Wrap method error:', e);
 		}
-	}
 
-	function addStyles() {
-		if (addStyles.added) return;
-		addStyles.added = true;
+		function addStyles() {
+			if (addStyles.added) return;
+			addStyles.added = true;
 
-		try {
-			var styles = "";
-			try {
-				var widePost = Lampa.Storage.get("wide_post");
-				styles = widePost !== false ? getWideStyles() : getSmallStyles();
-			} catch(e) {
-				styles = getWideStyles(); // За замовчуванням
-			}
+			var styles = Lampa.Storage.get("wide_post") !== false ? getWideStyles() : getSmallStyles();
 
-			if (Lampa.Template && Lampa.Template.add) {
-				Lampa.Template.add("new_interface_style_v3", styles);
-			}
-			
-			// Додаємо стилі безпосередньо в head
+			// Додаємо стилі безпосередньо
 			var styleElement = document.createElement('style');
-			styleElement.id = 'samsung-tv-styled-interface';
+			styleElement.id = 'styled-interface-samsung-tv';
 			styleElement.textContent = styles;
 			
-			// Додаємо з перевірками
-			setTimeout(function() {
-				try {
-					if (!document.getElementById('samsung-tv-styled-interface')) {
-						document.head.appendChild(styleElement);
-					}
-				} catch(e) {
-					console.log('Error adding styles:', e);
-				}
-			}, 1000);
-			
-		} catch(e) {
-			console.log('Add styles error:', e);
+			// Чекаємо готовності DOM
+			if (document.head) {
+				document.head.appendChild(styleElement);
+			} else {
+				document.addEventListener('DOMContentLoaded', function() {
+					document.head.appendChild(styleElement);
+				});
+			}
 		}
-	}
 
-	function getWideStyles() {
-		return `
-			<style id="samsung-tv-wide-styles">
+		function getWideStyles() {
+			return `
 				.items-line__title .full-person__photo {
 					width: 1.8em !important;
 					height: 1.8em !important;
@@ -708,30 +502,18 @@
 				.items-line {
 					padding-bottom: 4em !important;
 				}
-				.new-interface-info__head, .new-interface-info__details{ 
-					opacity: 0; 
-					transition: opacity 0.5s ease; 
-					min-height: 2.2em !important;
-				}
-				.new-interface-info__head.visible, .new-interface-info__details.visible{ 
-					opacity: 1; 
-				}
+				.new-interface-info__head, .new-interface-info__details{ opacity: 0; transition: opacity 0.5s ease; min-height: 2.2em !important;}
+				.new-interface-info__head.visible, .new-interface-info__details.visible{ opacity: 1; }
 				.new-interface .card.card--wide {
 					width: 18.3em;
-					-webkit-transform: translate3d(0,0,0);
-					transform: translate3d(0,0,0);
 				}
 				.new-interface .card.card--small {
 					width: 18.3em;
-					-webkit-transform: translate3d(0,0,0);
-					transform: translate3d(0,0,0);
 				}
 				.new-interface-info {
 					position: relative;
 					padding: 1.5em;
 					height: 27.5em;
-					-webkit-transform: translate3d(0,0,0);
-					transform: translate3d(0,0,0);
 				}
 				.new-interface-info__body {
 					position: absolute;
@@ -752,14 +534,14 @@
 					font-weight: 600;
 					margin-bottom: 0.3em;
 					overflow: hidden;
-					text-overflow: ellipsis;
+					-o-text-overflow: '.';
+					text-overflow: '.';
 					display: -webkit-box;
 					-webkit-line-clamp: 1;
 					line-clamp: 1;
 					-webkit-box-orient: vertical;
 					margin-left: -0.03em;
 					line-height: 1.3;
-					-webkit-font-smoothing: antialiased;
 				}
 				.new-interface-info__details {
 					margin-top: 1.2em;
@@ -779,13 +561,13 @@
 					font-weight: 310;
 					line-height: 1.3;
 					overflow: hidden;
-					text-overflow: ellipsis;
+					-o-text-overflow: '.';
+					text-overflow: '.';
 					display: -webkit-box;
 					-webkit-line-clamp: 3;
 					line-clamp: 3;
 					-webkit-box-orient: vertical;
 					width: 65%;
-					-webkit-font-smoothing: antialiased;
 				}
 				.new-interface .card-more__box {
 					padding-bottom: 95%;
@@ -798,8 +580,6 @@
 					height: 100%;
 					z-index: -1;
 					pointer-events: none;
-					-webkit-transform: translate3d(0,0,0);
-					transform: translate3d(0,0,0);
 				}
 				.new-interface .full-start__background {
 					position: absolute;
@@ -810,10 +590,6 @@
 					opacity: 0;
 					object-fit: cover;
 					transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-					-webkit-transform: translate3d(0,0,0);
-					transform: translate3d(0,0,0);
-					image-rendering: -webkit-optimize-contrast;
-					image-rendering: crisp-edges;
 				}
 				.new-interface .full-start__background.active {
 					opacity: 0.5;
@@ -852,65 +628,67 @@
 				body.advanced--animation:not(.no--animation) .new-interface .card.card--small.animate-trigger-enter .card__view {
 					animation: animation-trigger-enter 0.2s forwards;
 				}
-				.logo-moved-head { 
-					transition: opacity 0.4s ease; 
-				}
-				.logo-moved-separator { 
-					transition: opacity 0.4s ease; 
-				}
-				.samsung-tv-optimized .card__view {
-					-webkit-transform: translate3d(0,0,0);
+				.logo-moved-head { transition: opacity 0.4s ease; }
+				.logo-moved-separator { transition: opacity 0.4s ease; }
+				
+				/* Samsung TV оптимізації */
+				.samsung-tv .card__view {
 					transform: translate3d(0,0,0);
+					-webkit-transform: translate3d(0,0,0);
 					backface-visibility: hidden;
-					perspective: 1000px;
-					will-change: transform;
+					-webkit-backface-visibility: hidden;
 				}
-				.samsung-tv-optimized .items-line {
-					-webkit-transform: translate3d(0,0,0);
+				.samsung-tv .items-line {
 					transform: translate3d(0,0,0);
+					-webkit-transform: translate3d(0,0,0);
 				}
-				.samsung-tv-optimized {
+				.samsung-tv .card {
+					transform: translate3d(0,0,0);
+					-webkit-transform: translate3d(0,0,0);
+				}
+				.samsung-tv .new-interface-info {
+					transform: translate3d(0,0,0);
+					-webkit-transform: translate3d(0,0,0);
+				}
+				.samsung-tv img {
+					image-rendering: -webkit-optimize-contrast;
+					image-rendering: optimizeQuality;
+				}
+				.samsung-tv * {
 					-webkit-font-smoothing: antialiased;
 					text-rendering: optimizeLegibility;
 				}
-				/* Оптимізації для TV */
+				
+				/* Медіа-запити для TV */
 				@media (max-width: 1920px) {
-					.new-interface .card.card--wide,
-					.new-interface .card.card--small {
+					.samsung-tv .card.card--wide,
+					.samsung-tv .card.card--small {
 						width: 16.3em;
 					}
 				}
 				@media (max-width: 1600px) {
-					.new-interface .card.card--wide,
-					.new-interface .card.card--small {
+					.samsung-tv .card.card--wide,
+					.samsung-tv .card.card--small {
 						width: 14.3em;
 					}
 				}
 				@media (max-width: 1366px) {
-					.new-interface .card.card--wide,
-					.new-interface .card.card--small {
+					.samsung-tv .card.card--wide,
+					.samsung-tv .card.card--small {
 						width: 12.3em;
 					}
 				}
-			</style>
-		`;
-	}
+				
+				${Lampa.Storage.get("hide_captions", true) ? ".card:not(.card--collection) .card__age, .card:not(.card--collection) .card__title { display: none !important; }" : ""}
+			`;
+		}
 
-	function getSmallStyles() {
-		return `
-			<style id="samsung-tv-small-styles">
-				.new-interface-info__head, .new-interface-info__details{ 
-					opacity: 0; 
-					transition: opacity 0.5s ease; 
-					min-height: 2.2em !important;
-				}
-				.new-interface-info__head.visible, .new-interface-info__details.visible{ 
-					opacity: 1; 
-				}
+		function getSmallStyles() {
+			return `
+				.new-interface-info__head, .new-interface-info__details{ opacity: 0; transition: opacity 0.5s ease; min-height: 2.2em !important;}
+				.new-interface-info__head.visible, .new-interface-info__details.visible{ opacity: 1; }
 				.new-interface .card.card--wide{
 					width: 18.3em;
-					-webkit-transform: translate3d(0,0,0);
-					transform: translate3d(0,0,0);
 				}
 				.items-line__title .full-person__photo {
 					width: 1.8em !important;
@@ -927,8 +705,6 @@
 					position: relative;
 					padding: 1.5em;
 					height: 19.8em;
-					-webkit-transform: translate3d(0,0,0);
-					transform: translate3d(0,0,0);
 				}
 				.new-interface-info__body {
 					position: absolute;
@@ -950,14 +726,14 @@
 					font-weight: 600;
 					margin-bottom: 0.2em;
 					overflow: hidden;
-					text-overflow: ellipsis;
+					-o-text-overflow: '.';
+					text-overflow: '.';
 					display: -webkit-box;
 					-webkit-line-clamp: 1;
 					line-clamp: 1;
 					-webkit-box-orient: vertical;
 					margin-left: -0.03em;
 					line-height: 1.3;
-					-webkit-font-smoothing: antialiased;
 				}
 				.new-interface-info__details {
 					margin-top: 1.2em;
@@ -977,13 +753,13 @@
 					font-weight: 310;
 					line-height: 1.3;
 					overflow: hidden;
-					text-overflow: ellipsis;
+					-o-text-overflow: '.';
+					text-overflow: '.';
 					display: -webkit-box;
 					-webkit-line-clamp: 2;
 					line-clamp: 2;
 					-webkit-box-orient: vertical;
 					width: 70%;
-					-webkit-font-smoothing: antialiased;
 				}
 				.new-interface .card-more__box {
 					padding-bottom: 150%;
@@ -996,8 +772,6 @@
 					height: 100%;
 					z-index: -1;
 					pointer-events: none;
-					-webkit-transform: translate3d(0,0,0);
-					transform: translate3d(0,0,0);
 				}
 				.new-interface .full-start__background {
 					position: absolute;
@@ -1008,10 +782,6 @@
 					opacity: 0;
 					object-fit: cover;
 					transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-					-webkit-transform: translate3d(0,0,0);
-					transform: translate3d(0,0,0);
-					image-rendering: -webkit-optimize-contrast;
-					image-rendering: crisp-edges;
 				}
 				.new-interface .full-start__background.active {
 					opacity: 0.5;
@@ -1050,65 +820,68 @@
 				body.advanced--animation:not(.no--animation) .new-interface .card.card--small.animate-trigger-enter .card__view {
 					animation: animation-trigger-enter 0.2s forwards;
 				}
-				.logo-moved-head { 
-					transition: opacity 0.4s ease; 
-				}
-				.logo-moved-separator { 
-					transition: opacity 0.4s ease; 
-				}
-				.samsung-tv-optimized .card__view {
-					-webkit-transform: translate3d(0,0,0);
+				.logo-moved-head { transition: opacity 0.4s ease; }
+				.logo-moved-separator { transition: opacity 0.4s ease; }
+				
+				/* Samsung TV оптимізації */
+				.samsung-tv .card__view {
 					transform: translate3d(0,0,0);
+					-webkit-transform: translate3d(0,0,0);
 					backface-visibility: hidden;
-					perspective: 1000px;
-					will-change: transform;
+					-webkit-backface-visibility: hidden;
 				}
-				.samsung-tv-optimized .items-line {
-					-webkit-transform: translate3d(0,0,0);
+				.samsung-tv .items-line {
 					transform: translate3d(0,0,0);
+					-webkit-transform: translate3d(0,0,0);
 				}
-				.samsung-tv-optimized {
+				.samsung-tv .card {
+					transform: translate3d(0,0,0);
+					-webkit-transform: translate3d(0,0,0);
+				}
+				.samsung-tv .new-interface-info {
+					transform: translate3d(0,0,0);
+					-webkit-transform: translate3d(0,0,0);
+				}
+				.samsung-tv img {
+					image-rendering: -webkit-optimize-contrast;
+					image-rendering: optimizeQuality;
+				}
+				.samsung-tv * {
 					-webkit-font-smoothing: antialiased;
 					text-rendering: optimizeLegibility;
 				}
-				/* Оптимізації для TV */
+				
+				/* Медіа-запити для TV */
 				@media (max-width: 1920px) {
-					.new-interface .card.card--wide,
-					.new-interface .card.card--small {
+					.samsung-tv .card.card--wide,
+					.samsung-tv .card.card--small {
 						width: 16.3em;
 					}
 				}
 				@media (max-width: 1600px) {
-					.new-interface .card.card--wide,
-					.new-interface .card.card--small {
+					.samsung-tv .card.card--wide,
+					.samsung-tv .card.card--small {
 						width: 14.3em;
 					}
 				}
 				@media (max-width: 1366px) {
-					.new-interface .card.card--wide,
-					.new-interface .card.card--small {
+					.samsung-tv .card.card--wide,
+					.samsung-tv .card.card--small {
 						width: 12.3em;
 					}
 				}
-			</style>
-		`;
-	}
+				
+				${Lampa.Storage.get("hide_captions", true) ? ".card:not(.card--collection) .card__age, .card:not(.card--collection) .card__title { display: none !important; }" : ""}
+			`;
+		}
 
-	function preloadData(data, silent) {
-		if (!data || !data.id) return;
-		
-		try {
+		function preloadData(data, silent) {
+			if (!data || !data.id) return;
 			var source = data.source || "tmdb";
 			if (source !== "tmdb" && source !== "cub") return;
 
 			var mediaType = data.media_type === "tv" || data.name ? "tv" : "movie";
-			var language = "ru";
-			try {
-				language = Lampa.Storage.get("language") || "ru";
-			} catch(e) {}
-			
-			if (!Lampa.TMDB || !Lampa.TMDB.api || !Lampa.TMDB.key) return;
-			
+			var language = Lampa.Storage.get("language") || "ru";
 			var apiUrl = Lampa.TMDB.api(mediaType + "/" + data.id + "?api_key=" + Lampa.TMDB.key() + "&append_to_response=content_ratings,release_dates&language=" + language);
 
 			if (!globalInfoCache[apiUrl]) {
@@ -1117,14 +890,10 @@
 					globalInfoCache[apiUrl] = response;
 				});
 			}
-		} catch(e) {
-			console.log('Preload data error:', e);
 		}
-	}
 
-	var preloadTimer = null;
-	function preloadAllVisibleCards() {
-		try {
+		var preloadTimer = null;
+		function preloadAllVisibleCards() {
 			if (!Lampa.Storage.get("async_load", true)) return;
 
 			clearTimeout(preloadTimer);
@@ -1143,37 +912,29 @@
 					}
 				});
 			}, 800);
-		} catch(e) {
-			console.log('Preload visible cards error:', e);
 		}
-	}
 
-	function setupPreloadObserver() {
-		try {
+		function setupPreloadObserver() {
 			var observer = new MutationObserver(function (mutations) {
-				try {
-					if (!Lampa.Storage.get("async_load", true)) return;
+				if (!Lampa.Storage.get("async_load", true)) return;
 
-					var hasNewCards = false;
-					for (var i = 0; i < mutations.length; i++) {
-						var added = mutations[i].addedNodes;
-						for (var j = 0; j < added.length; j++) {
-							var node = added[j];
-							if (node.nodeType === 1) {
-								if (node.classList && (node.classList.contains("card") || node.querySelector(".card"))) {
-									hasNewCards = true;
-									break;
-								}
+				var hasNewCards = false;
+				for (var i = 0; i < mutations.length; i++) {
+					var added = mutations[i].addedNodes;
+					for (var j = 0; j < added.length; j++) {
+						var node = added[j];
+						if (node.nodeType === 1) {
+							if (node.classList.contains("card") || node.querySelector(".card")) {
+								hasNewCards = true;
+								break;
 							}
 						}
-						if (hasNewCards) break;
 					}
+					if (hasNewCards) break;
+				}
 
-					if (hasNewCards) {
-						preloadAllVisibleCards();
-					}
-				} catch(e) {
-					console.log('Mutation observer error:', e);
+				if (hasNewCards) {
+					preloadAllVisibleCards();
 				}
 			});
 
@@ -1181,28 +942,18 @@
 				childList: true,
 				subtree: true,
 			});
-		} catch(e) {
-			console.log('Setup preload observer error:', e);
 		}
-	}
-	
-	function InfoPanel() {
-		this.html = null;
-		this.timer = null;
-		this.fadeTimer = null;
-		this.network = null;
-		this.loaded = globalInfoCache;
-		this.currentUrl = null;
 		
-		try {
+		function InfoPanel() {
+			this.html = null;
+			this.timer = null;
+			this.fadeTimer = null;
 			this.network = new Lampa.Reguest();
-		} catch(e) {
-			console.log('Network request init error:', e);
+			this.loaded = globalInfoCache;
+			this.currentUrl = null;
 		}
-	}
 
-	InfoPanel.prototype.create = function () {
-		try {
+		InfoPanel.prototype.create = function () {
 			this.html = $(`<div class="new-interface-info">
 								<div class="new-interface-info__body">
 									<div class="new-interface-info__head"></div>
@@ -1211,20 +962,16 @@
 									<div class="new-interface-info__description"></div>
 								</div>
 							</div>`);
-		} catch(e) {
-			console.log('InfoPanel create error:', e);
-		}
-	};
+		};
 
-	InfoPanel.prototype.render = function (asElement) {
-		if (!this.html) this.create();
-		return asElement ? this.html[0] : this.html;
-	};
+		InfoPanel.prototype.render = function (asElement) {
+			if (!this.html) this.create();
+			return asElement ? this.html[0] : this.html;
+		};
 
-	InfoPanel.prototype.update = function (data) {
-		if (!data || !this.html) return;
+		InfoPanel.prototype.update = function (data) {
+			if (!data || !this.html) return;
 
-		try {
 			this.lastRenderId = Date.now();
 			var currentRenderId = this.lastRenderId;
 
@@ -1233,24 +980,15 @@
 			var title = this.html.find(".new-interface-info__title");
 			var desc = this.html.find(".new-interface-info__description");
 
-			desc.text(data.overview || "Нет описания");
+			desc.text(data.overview || Lampa.Lang.translate("full_notext"));
 
 			clearTimeout(this.fadeTimer);
 
-			try {
-				if (Lampa.Background && Lampa.Background.change && Lampa.Api && Lampa.Api.img) {
-					Lampa.Background.change(Lampa.Api.img(data.backdrop_path, "original"));
-				}
-			} catch(e) {}
+			Lampa.Background.change(Lampa.Api.img(data.backdrop_path, "original"));
 
 			this.load(data);
 
-			var showLogo = true;
-			try {
-				showLogo = Lampa.Storage.get("logo_show", true);
-			} catch(e) {}
-			
-			if (showLogo) {
+			if (Lampa.Storage.get("logo_show", true)) {
 				title.text(data.title || data.name || "");
 				title.css({ opacity: 1 });
 				this.showLogo(data, currentRenderId);
@@ -1258,15 +996,11 @@
 				title.text(data.title || data.name || "");
 				title.css({ opacity: 1 });
 			}
-		} catch(e) {
-			console.log('InfoPanel update error:', e);
-		}
-	};
+		};
 
-	InfoPanel.prototype.showLogo = function (data, renderId) {
-		var _this = this;
+		InfoPanel.prototype.showLogo = function (data, renderId) {
+			var _this = this;
 
-		try {
 			var FADE_OUT_TEXT = 300;
 			var MORPH_HEIGHT = 400;
 			var FADE_IN_IMG = 400;
@@ -1320,7 +1054,6 @@
 				img.style.paddingBottom = PADDING_BOTTOM_EM + "em";
 
 				img.style.imageRendering = "-webkit-optimize-contrast";
-				img.style.imageRendering = "crisp-edges";
 
 				if (text_height) {
 					img.style.height = text_height + "px";
@@ -1344,8 +1077,6 @@
 				img.style.objectFit = "contain";
 				img.style.objectPosition = "left bottom";
 				img.style.transition = "none";
-				img.style.webkitTransform = "translate3d(0,0,0)";
-				img.style.transform = "translate3d(0,0,0)";
 			}
 
 			function moveHeadToDetails(animate) {
@@ -1387,7 +1118,6 @@
 				var img = new Image();
 				img.src = img_url;
 				img.setAttribute("decoding", "async");
-				img.setAttribute("loading", "eager");
 
 				var start_text_height = 0;
 				if (dom_title) start_text_height = dom_title.getBoundingClientRect().height;
@@ -1479,16 +1209,9 @@
 
 			if (data.id) {
 				var type = data.name ? "tv" : "movie";
-				var language = "ru";
-				try {
-					language = Lampa.Storage.get("language") || "ru";
-				} catch(e) {}
-				
+				var language = Lampa.Storage.get("language");
 				var cache_key = "logo_cache_v2_" + type + "_" + data.id + "_" + language;
-				var cached_url = null;
-				try {
-					cached_url = Lampa.Storage.get(cache_key);
-				} catch(e) {}
+				var cached_url = Lampa.Storage.get(cache_key);
 
 				if (cached_url && cached_url !== "none") {
 					var img_cache = new Image();
@@ -1500,8 +1223,6 @@
 						startLogoAnimation(cached_url, false);
 					}
 				} else {
-					if (!Lampa.TMDB || !Lampa.TMDB.api || !Lampa.TMDB.key) return;
-					
 					var url = Lampa.TMDB.api(type + "/" + data.id + "/images?api_key=" + Lampa.TMDB.key() + "&include_image_language=" + language + ",en,null");
 
 					$.get(url, function (data_api) {
@@ -1528,38 +1249,26 @@
 
 						if (final_logo) {
 							var img_url = Lampa.TMDB.image("/t/p/original" + final_logo.replace(".svg", ".png"));
-							try {
-								Lampa.Storage.set(cache_key, img_url);
-							} catch(e) {}
+							Lampa.Storage.set(cache_key, img_url);
 							startLogoAnimation(img_url, false);
 						} else {
-							try {
-								Lampa.Storage.set(cache_key, "none");
-							} catch(e) {}
+							Lampa.Storage.set(cache_key, "none");
 						}
 					}).fail(function () {});
 				}
 			}
-		} catch(e) {
-			console.log('Show logo error:', e);
-		}
-	};
+		};
 
-	InfoPanel.prototype.load = function (data) {
-		if (!data || !data.id) return;
+		InfoPanel.prototype.load = function (data) {
+			if (!data || !data.id) return;
 
-		try {
 			var source = data.source || "tmdb";
 			if (source !== "tmdb" && source !== "cub") return;
 
 			if (!Lampa.TMDB || typeof Lampa.TMDB.api !== "function" || typeof Lampa.TMDB.key !== "function") return;
 
 			var mediaType = data.media_type === "tv" || data.name ? "tv" : "movie";
-			var language = "ru";
-			try {
-				language = Lampa.Storage.get("language") || "ru";
-			} catch(e) {}
-			
+			var language = Lampa.Storage.get("language");
 			var apiUrl = Lampa.TMDB.api(mediaType + "/" + data.id + "?api_key=" + Lampa.TMDB.key() + "&append_to_response=content_ratings,release_dates&language=" + language);
 
 			this.currentUrl = apiUrl;
@@ -1573,30 +1282,20 @@
 			var self = this;
 
 			this.timer = setTimeout(function () {
-				try {
-					if (self.network) {
-						self.network.clear();
-						self.network.timeout(5000);
-						self.network.silent(apiUrl, function (response) {
-							self.loaded[apiUrl] = response;
-							if (self.currentUrl === apiUrl) {
-								self.draw(response);
-							}
-						});
+				self.network.clear();
+				self.network.timeout(5000);
+				self.network.silent(apiUrl, function (response) {
+					self.loaded[apiUrl] = response;
+					if (self.currentUrl === apiUrl) {
+						self.draw(response);
 					}
-				} catch(e) {
-					console.log('Network request error:', e);
-				}
+				});
 			}, 300);
-		} catch(e) {
-			console.log('InfoPanel load error:', e);
-		}
-	};
+		};
 
-	InfoPanel.prototype.draw = function (data) {
-		if (!data || !this.html) return;
+		InfoPanel.prototype.draw = function (data) {
+			if (!data || !this.html) return;
 
-		try {
 			if (data.overview) {
 				this.html.find(".new-interface-info__description").text(data.overview);
 			}
@@ -1608,22 +1307,12 @@
 			var headInfo = [];
 			var detailsInfo = [];
 
-			var countries = [];
-			try {
-				countries = Lampa.Api.sources.tmdb.parseCountries(data);
-			} catch(e) {}
-			
+			var countries = Lampa.Api.sources.tmdb.parseCountries(data);
 			if (countries.length > 2) countries = countries.slice(0, 2);
 
-			var ageRating = "";
-			try {
-				ageRating = Lampa.Api.sources.tmdb.parsePG(data);
-			} catch(e) {}
+			var ageRating = Lampa.Api.sources.tmdb.parsePG(data);
 
-			var show_logo = true;
-			try {
-				show_logo = Lampa.Storage.get("logo_show", true);
-			} catch(e) {}
+			var show_logo = Lampa.Storage.get("logo_show", true);
 
 			if (Lampa.Storage.get("rat") !== false) {
 				if (rating > 0) {
@@ -1658,7 +1347,7 @@
 						data.genres
 							.slice(0, 2)
 							.map(function (genre) {
-								return genre.name;
+								return Lampa.Utils.capitalizeFirstLetter(genre.name);
 							})
 							.join(" | "),
 					);
@@ -1667,11 +1356,7 @@
 
 			if (Lampa.Storage.get("vremya") !== false) {
 				if (data.runtime) {
-					try {
-						detailsInfo.push(Lampa.Utils.secondsToTime(data.runtime * 60, true));
-					} catch(e) {
-						detailsInfo.push(data.runtime + " мин");
-					}
+					detailsInfo.push(Lampa.Utils.secondsToTime(data.runtime * 60, true));
 				}
 			}
 
@@ -1740,49 +1425,36 @@
 				.append(headInfo.join(", "))
 				.toggleClass("visible", headInfo.length > 0);
 			this.html.find(".new-interface-info__details").html(detailsInfo.join('<span class="new-interface-info__split">&#9679;</span>')).addClass("visible");
-		} catch(e) {
-			console.log('InfoPanel draw error:', e);
-		}
-	};
+		};
 
-	InfoPanel.prototype.empty = function () {
-		if (!this.html) return;
-		try {
+		InfoPanel.prototype.empty = function () {
+			if (!this.html) return;
 			this.html.find(".new-interface-info__head,.new-interface-info__details").text("").removeClass("visible");
-		} catch(e) {}
-	};
+		};
 
-	InfoPanel.prototype.destroy = function () {
-		clearTimeout(this.fadeTimer);
-		clearTimeout(this.timer);
-		try {
-			if (this.network) {
-				this.network.clear();
-			}
-		} catch(e) {}
-		
-		this.currentUrl = null;
+		InfoPanel.prototype.destroy = function () {
+			clearTimeout(this.fadeTimer);
+			clearTimeout(this.timer);
+			this.network.clear();
+			this.currentUrl = null;
 
-		if (this.html) {
-			try {
+			if (this.html) {
 				this.html.remove();
-			} catch(e) {}
-			this.html = null;
+				this.html = null;
+			}
+		};
+
+		function siStyleGetColorByRating(vote) {
+			if (isNaN(vote)) return "";
+			if (vote >= 0 && vote <= 3) return "red";
+			if (vote > 3 && vote < 6) return "orange";
+			if (vote >= 6 && vote < 7) return "cornflowerblue";
+			if (vote >= 7 && vote < 8) return "darkmagenta";
+			if (vote >= 8 && vote <= 10) return "lawngreen";
+			return "";
 		}
-	};
 
-	function siStyleGetColorByRating(vote) {
-		if (isNaN(vote)) return "";
-		if (vote >= 0 && vote <= 3) return "red";
-		if (vote > 3 && vote < 6) return "orange";
-		if (vote >= 6 && vote < 7) return "cornflowerblue";
-		if (vote >= 7 && vote < 8) return "darkmagenta";
-		if (vote >= 8 && vote <= 10) return "lawngreen";
-		return "";
-	}
-
-	function siStyleApplyColorByRating(element) {
-		try {
+		function siStyleApplyColorByRating(element) {
 			var $el = $(element);
 			var voteText = $el.text().trim();
 
@@ -1819,13 +1491,9 @@
 					$el.parent().css("border", "");
 				}
 			}
-		} catch(e) {
-			console.log('Apply color by rating error:', e);
 		}
-	}
 
-	function siStyleUpdateVoteColors() {
-		try {
+		function siStyleUpdateVoteColors() {
 			if (!Lampa.Storage.get("si_colored_ratings", true)) return;
 
 			$(".card__vote").each(function () {
@@ -1843,43 +1511,35 @@
 			$(".rate--kp, .rate--imdb, .rate--cub").each(function () {
 				siStyleApplyColorByRating($(this).find("> div").eq(0));
 			});
-		} catch(e) {
-			console.log('Update vote colors error:', e);
 		}
-	}
 
-	function siStyleSetupVoteColorsObserver() {
-		try {
+		function siStyleSetupVoteColorsObserver() {
 			siStyleUpdateVoteColors();
 
 			var pendingUpdate = null;
 			var observer = new MutationObserver(function (mutations) {
-				try {
-					if (!Lampa.Storage.get("si_colored_ratings", true)) return;
+				if (!Lampa.Storage.get("si_colored_ratings", true)) return;
 
-					for (var i = 0; i < mutations.length; i++) {
-						var added = mutations[i].addedNodes;
-						for (var j = 0; j < added.length; j++) {
-							var node = added[j];
-							if (node.nodeType === 1) {
-								var $node = $(node);
-								$node.find(".card__vote, .full-start__rate, .full-start-new__rate, .info__rate, .card__imdb-rate, .card__kinopoisk-rate").each(function () {
-									siStyleApplyColorByRating(this);
-								});
-								$node.find(".rate--kp, .rate--imdb, .rate--cub").each(function () {
-									siStyleApplyColorByRating($(this).find("> div").eq(0));
-								});
-								if ($node.hasClass("card__vote") || $node.hasClass("full-start__rate") || $node.hasClass("info__rate")) {
-									siStyleApplyColorByRating(node);
-								}
-								if ($node.hasClass("rate--kp") || $node.hasClass("rate--imdb") || $node.hasClass("rate--cub")) {
-									siStyleApplyColorByRating($node.find("> div").eq(0));
-								}
+				for (var i = 0; i < mutations.length; i++) {
+					var added = mutations[i].addedNodes;
+					for (var j = 0; j < added.length; j++) {
+						var node = added[j];
+						if (node.nodeType === 1) {
+							var $node = $(node);
+							$node.find(".card__vote, .full-start__rate, .full-start-new__rate, .info__rate, .card__imdb-rate, .card__kinopoisk-rate").each(function () {
+								siStyleApplyColorByRating(this);
+							});
+							$node.find(".rate--kp, .rate--imdb, .rate--cub").each(function () {
+								siStyleApplyColorByRating($(this).find("> div").eq(0));
+							});
+							if ($node.hasClass("card__vote") || $node.hasClass("full-start__rate") || $node.hasClass("info__rate")) {
+								siStyleApplyColorByRating(node);
+							}
+							if ($node.hasClass("rate--kp") || $node.hasClass("rate--imdb") || $node.hasClass("rate--cub")) {
+								siStyleApplyColorByRating($node.find("> div").eq(0));
 							}
 						}
 					}
-				} catch(e) {
-					console.log('Vote colors observer mutation error:', e);
 				}
 			});
 
@@ -1887,13 +1547,9 @@
 				childList: true,
 				subtree: true,
 			});
-		} catch(e) {
-			console.log('Setup vote colors observer error:', e);
 		}
-	}
 
-	function siStyleSetupVoteColorsForDetailPage() {
-		try {
+		function siStyleSetupVoteColorsForDetailPage() {
 			if (!window.Lampa || !Lampa.Listener) return;
 
 			Lampa.Listener.follow("full", function (data) {
@@ -1913,13 +1569,9 @@
 					preloadAllVisibleCards();
 				}
 			});
-		} catch(e) {
-			console.log('Setup vote colors for detail page error:', e);
 		}
-	}
 
-	function initializeSettings() {
-		try {
+		function initializeSettings() {
 			Lampa.Settings.listener.follow("open", function (event) {
 				if (event.name == "main") {
 					if (Lampa.Settings.main().render().find('[data-component="style_interface"]').length == 0) {
@@ -2129,32 +1781,26 @@
 			}, 200);
 
 			function setDefaultSettings() {
-				try {
-					Lampa.Storage.set("int_plug", "true");
-					Lampa.Storage.set("wide_post", "true");
-					Lampa.Storage.set("logo_show", "true");
-					Lampa.Storage.set("show_background", "true");
-					Lampa.Storage.set("background_resolution", "original");
-					Lampa.Storage.set("status", "true");
-					Lampa.Storage.set("seas", "false");
-					Lampa.Storage.set("eps", "false");
-					Lampa.Storage.set("year_ogr", "true");
-					Lampa.Storage.set("vremya", "true");
-					Lampa.Storage.set("ganr", "true");
-					Lampa.Storage.set("rat", "true");
-					Lampa.Storage.set("si_colored_ratings", "true");
-					Lampa.Storage.set("async_load", "true");
-					Lampa.Storage.set("hide_captions", "true");
-					Lampa.Storage.set("si_rating_border", "false");
-					Lampa.Storage.set("child_mode", "false");
-					Lampa.Storage.set("interface_size", "small");
-				} catch(e) {
-					console.log('Set default settings error:', e);
-				}
+				Lampa.Storage.set("int_plug", "true");
+				Lampa.Storage.set("wide_post", "true");
+				Lampa.Storage.set("logo_show", "true");
+				Lampa.Storage.set("show_background", "true");
+				Lampa.Storage.set("background_resolution", "original");
+				Lampa.Storage.set("status", "true");
+				Lampa.Storage.set("seas", "false");
+				Lampa.Storage.set("eps", "false");
+				Lampa.Storage.set("year_ogr", "true");
+				Lampa.Storage.set("vremya", "true");
+				Lampa.Storage.set("ganr", "true");
+				Lampa.Storage.set("rat", "true");
+				Lampa.Storage.set("si_colored_ratings", "true");
+				Lampa.Storage.set("async_load", "true");
+				Lampa.Storage.set("hide_captions", "true");
+				Lampa.Storage.set("si_rating_border", "false");
+				Lampa.Storage.set("child_mode", "false");
+				Lampa.Storage.set("interface_size", "small");
 			}
-		} catch(e) {
-			console.log('Initialize settings error:', e);
 		}
-	}
 
+	});
 })();
