@@ -1,10 +1,10 @@
 (function () {
 	"use strict";
 	
-	// TV платформа по умолчанию
+	// TV платформа за замовчуванням
 	Lampa.Platform.tv();
 	
-	// Проверка на Samsung TV
+	// Перевірка на Samsung TV
 	var isSamsungTV = /samsung|smart-tv|tizen|orsay/i.test(navigator.userAgent) || 
 					  /web0s|webos/i.test(navigator.userAgent) ||
 					  typeof webOS !== 'undefined';
@@ -17,13 +17,13 @@
 
 	var globalInfoCache = {};
 
-	// TV-оптимизированные настройки по умолчанию
+	// TV-оптимізовані налаштування за замовчуванням
 	Lampa.Storage.set("interface_size", "small");
 	Lampa.Storage.set("background", "false");
 	
-	// Оптимизации для TV
+	// Оптимізації для TV
 	if (isSamsungTV) {
-		// Уменьшаем нагрузку на TV процессор
+		// Зменшуємо навантаження на TV процесор
 		Lampa.Storage.set("async_load", "true");
 		Lampa.Storage.set("advanced_animation", "false");
 	}
@@ -45,10 +45,10 @@
 			if (this.object) this.object.wide = false;
 			this.wide = false;
 			
-			// TV оптимизация - фиксируем размеры
+			// TV оптимізація - фіксуємо розміри
 			if (isSamsungTV) {
 				this.object.params = this.object.params || {};
-				this.object.params.items_per_row = 6; // Меньше для TV
+				this.object.params.items_per_row = 6; // Менше для TV
 				this.object.params.view = 6;
 			}
 		}
@@ -72,7 +72,7 @@
 			if (!data.params) data.params = {};
 			if (!data.params.items) data.params.items = {};
 			
-			// TV-адаптированные значения
+			// TV-адаптовані значення
 			if (isSamsungTV) {
 				data.params.items.view = 6;
 				data.params.items_per_row = 6;
@@ -113,9 +113,9 @@
 		if (!object) return false;
 		if (window.innerWidth < 767 && !isSamsungTV) return false;
 		if (Lampa.Platform.screen("mobile") && !isSamsungTV) return false;
-		if (object.title === "Избранное") return false;
+		if (object.title === "Обране") return false; // Зміна з "Избранное"
 		
-		// Всегда включаем для TV
+		// Завжди вмикаємо для TV
 		if (isSamsungTV) return true;
 		
 		return true;
@@ -139,7 +139,7 @@
 
 		var bg1 = document.createElement("img");
 		bg1.className = "full-start__background";
-		bg1.alt = ""; // Для доступности
+		bg1.alt = ""; // Для доступності
 		var bg2 = document.createElement("img");
 		bg2.className = "full-start__background";
 		bg2.alt = "";
@@ -164,7 +164,7 @@
 
 				container.classList.add("new-interface");
 				
-				// TV оптимизация
+				// TV оптимізація
 				if (isSamsungTV) {
 					container.classList.add("tv-optimized");
 				}
@@ -195,7 +195,7 @@
 			},
 
 			updateBackground: function (data) {
-				// Увеличиваем задержку для TV
+				// Збільшуємо затримку для TV
 				var BACKGROUND_DEBOUNCE_DELAY = isSamsungTV ? 500 : 300;
 				var self = this;
 
@@ -210,7 +210,7 @@
 				var show_bg = Lampa.Storage.get("show_background", true);
 				var bg_resolution = Lampa.Storage.get("background_resolution", "original");
 				
-				// Для TV используем меньшее разрешение по умолчанию
+				// Для TV використовуємо меншу роздільну здатність за замовчуванням
 				if (isSamsungTV && bg_resolution === "original") {
 					bg_resolution = "w1280";
 				}
@@ -233,7 +233,7 @@
 					var img = new Image();
 					self._pendingImg = img;
 					
-					// TV оптимизация - предзагрузка
+					// TV оптимізація - попереднє завантаження
 					if (isSamsungTV) {
 						img.loading = "eager";
 					}
@@ -412,7 +412,7 @@
 
 		var state = getOrCreateState(items);
 
-		// TV адаптация
+		// TV адаптація
 		if (isSamsungTV) {
 			line.items_per_row = 6;
 			line.view = 6;
@@ -486,7 +486,7 @@
 
 	function getWideStyles() {
 		return `<style>
-					/* TV оптимизации */
+					/* TV оптимізації */
 					.tv-optimized * {
 						-webkit-font-smoothing: antialiased;
 						-moz-osx-font-smoothing: grayscale;
@@ -509,7 +509,7 @@
 					.new-interface-info__head, .new-interface-info__details{ opacity: 0; transition: opacity 0.5s ease; min-height: 2.2em !important;}
 					.new-interface-info__head.visible, .new-interface-info__details.visible{ opacity: 1; }
 					.tv-optimized .new-interface .card.card--wide {
-						width: 22em; /* Больше для TV */
+						width: 22em; /* Більше для TV */
 						margin: 0.3em;
 					}
 					.tv-optimized .new-interface .card.card--small {
@@ -528,7 +528,7 @@
 						height: 27.5em;
 					}
 					.tv-optimized .new-interface-info {
-						height: 30em; /* Выше для TV */
+						height: 30em; /* Вище для TV */
 						padding: 2em;
 					}
 					.new-interface-info__body {
@@ -547,7 +547,7 @@
 						min-height: 1em;
 					}
 					.tv-optimized .new-interface-info__head {
-						font-size: 1.5em; /* Крупнее для TV */
+						font-size: 1.5em; /* Крупніше для TV */
 					}
 					.new-interface-info__head span {
 						color: #fff;
@@ -567,7 +567,7 @@
 						line-height: 1.3;
 					}
 					.tv-optimized .new-interface-info__title {
-						font-size: 4.5em; /* Крупнее для TV */
+						font-size: 4.5em; /* Крупніше для TV */
 						line-height: 1.4;
 					}
 					.new-interface-info__details {
@@ -580,7 +580,7 @@
 						font-size: 1.3em;
 					}
 					.tv-optimized .new-interface-info__details {
-						font-size: 1.5em; /* Крупнее для TV */
+						font-size: 1.5em; /* Крупніше для TV */
 						margin-top: 1.5em;
 						margin-bottom: 2em;
 					}
@@ -602,7 +602,7 @@
 						width: 65%;
 					}
 					.tv-optimized .new-interface-info__description {
-						font-size: 1.6em; /* Крупнее для TV */
+						font-size: 1.6em; /* Крупніше для TV */
 						width: 70%;
 						line-height: 1.4;
 					}
@@ -629,7 +629,7 @@
 						transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 					}
 					.tv-optimized .new-interface .full-start__background {
-						transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1); /* Медленнее для TV */
+						transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1); /* Повільніше для TV */
 					}
 					.new-interface .full-start__background.active {
 						opacity: 0.5;
@@ -672,14 +672,14 @@
 						animation: animation-trigger-enter 0.2s forwards;
 					}
 					.tv-optimized .new-interface .card.focus {
-						transform: scale(1.05); /* Более заметный focus для TV */
+						transform: scale(1.05); /* Помітніший focus для TV */
 						z-index: 10;
 					}
 					.logo-moved-head { transition: opacity 0.4s ease; }
 					.logo-moved-separator { transition: opacity 0.4s ease; }
 					${Lampa.Storage.get("hide_captions", true) ? ".card:not(.card--collection) .card__age, .card:not(.card--collection) .card__title { display: none !important; }" : ""}
 					
-					/* TV-specific оптимизации */
+					/* TV-specific оптимізації */
 					@media (min-width: 1920px) {
 						.tv-optimized .new-interface-info__title {
 							font-size: 5em;
@@ -695,7 +695,7 @@
 
 	function getSmallStyles() {
 		return `<style>
-					/* TV оптимизации */
+					/* TV оптимізації */
 					.tv-optimized * {
 						-webkit-font-smoothing: antialiased;
 						-moz-osx-font-smoothing: grayscale;
@@ -704,7 +704,7 @@
 					.new-interface-info__head, .new-interface-info__details{ opacity: 0; transition: opacity 0.5s ease; min-height: 2.2em !important;}
 					.new-interface-info__head.visible, .new-interface-info__details.visible{ opacity: 1; }
 					.tv-optimized .new-interface .card.card--wide{
-						width: 22em; /* Больше для TV */
+						width: 22em; /* Більше для TV */
 						margin: 0.3em;
 					}
 					.new-interface .card.card--wide{
@@ -727,7 +727,7 @@
 						height: 19.8em;
 					}
 					.tv-optimized .new-interface-info {
-						height: 22em; /* Выше для TV */
+						height: 22em; /* Вище для TV */
 						padding: 2em;
 					}
 					.new-interface-info__body {
@@ -879,7 +879,7 @@
 					.logo-moved-separator { transition: opacity 0.4s ease; }
 					${Lampa.Storage.get("hide_captions", true) ? ".card:not(.card--collection) .card__age, .card:not(.card--collection) .card__title { display: none !important; }" : ""}
 					
-					/* TV-specific оптимизации */
+					/* TV-specific оптимізації */
 					@media (min-width: 1920px) {
 						.tv-optimized .new-interface-info__title {
 							font-size: 4em;
@@ -929,7 +929,7 @@
 					count++;
 				}
 			});
-		}, isSamsungTV ? 1000 : 800); // Большая задержка для TV
+		}, isSamsungTV ? 1000 : 800); // Більша затримка для TV
 	}
 
 	function setupPreloadObserver() {
@@ -961,6 +961,7 @@
 			subtree: true,
 		});
 	}
+	
 	function InfoPanel() {
 		this.html = null;
 		this.timer = null;
@@ -997,7 +998,8 @@
 		var title = this.html.find(".new-interface-info__title");
 		var desc = this.html.find(".new-interface-info__description");
 
-		desc.text(data.overview || Lampa.Lang.translate("full_notext"));
+		// Українська мова для опису
+		desc.text(data.overview || Lampa.Lang.translate("full_notext") || "Опис відсутній");
 
 		clearTimeout(this.fadeTimer);
 
@@ -1025,7 +1027,7 @@
 		var PADDING_TOP_EM = 0;
 		var PADDING_BOTTOM_EM = 0.2;
 
-		// TV оптимизация - увеличиваем время анимации
+		// TV оптимізація - збільшуємо час анімації
 		if (isSamsungTV) {
 			FADE_OUT_TEXT = 400;
 			MORPH_HEIGHT = 500;
@@ -1307,14 +1309,14 @@
 
 		this.timer = setTimeout(function () {
 			self.network.clear();
-			self.network.timeout(isSamsungTV ? 8000 : 5000); // Больший таймаут для TV
+			self.network.timeout(isSamsungTV ? 8000 : 5000); // Більший таймаут для TV
 			self.network.silent(apiUrl, function (response) {
 				self.loaded[apiUrl] = response;
 				if (self.currentUrl === apiUrl) {
 					self.draw(response);
 				}
 			});
-		}, isSamsungTV ? 500 : 300); // Большая задержка для TV
+		}, isSamsungTV ? 500 : 300); // Більша затримка для TV
 	};
 
 	InfoPanel.prototype.draw = function (data) {
@@ -1385,11 +1387,11 @@
 		}
 
 		if (Lampa.Storage.get("seas", false) && data.number_of_seasons) {
-			detailsInfo.push('<span class="full-start__pg" style="font-size: 0.9em;">Сезонов ' + data.number_of_seasons + "</span>");
+			detailsInfo.push('<span class="full-start__pg" style="font-size: 0.9em;">Сезонів ' + data.number_of_seasons + "</span>");
 		}
 
 		if (Lampa.Storage.get("eps", false) && data.number_of_episodes) {
-			detailsInfo.push('<span class="full-start__pg" style="font-size: 0.9em;">Эпизодов ' + data.number_of_episodes + "</span>");
+			detailsInfo.push('<span class="full-start__pg" style="font-size: 0.9em;">Епізодів ' + data.number_of_episodes + "</span>");
 		}
 
 		if (Lampa.Storage.get("year_ogr") !== false) {
@@ -1404,25 +1406,25 @@
 			if (data.status) {
 				switch (data.status.toLowerCase()) {
 					case "released":
-						statusText = "Выпущенный";
+						statusText = "Випущений";
 						break;
 					case "ended":
-						statusText = "Закончен";
+						statusText = "Завершений";
 						break;
 					case "returning series":
-						statusText = "Онгоинг";
+						statusText = "Триває";
 						break;
 					case "canceled":
-						statusText = "Отменено";
+						statusText = "Скасовано";
 						break;
 					case "post production":
 						statusText = "Скоро";
 						break;
 					case "planned":
-						statusText = "Запланировано";
+						statusText = "Заплановано";
 						break;
 					case "in production":
-						statusText = "В производстве";
+						statusText = "У виробництві";
 						break;
 					default:
 						statusText = data.status;
@@ -1601,7 +1603,7 @@
 				if (Lampa.Settings.main().render().find('[data-component="style_interface"]').length == 0) {
 					Lampa.SettingsApi.addComponent({
 						component: "style_interface",
-						name: "Стильный интерфейс",
+						name: "Стильний інтерфейс", // Українська назва
 					});
 				}
 
@@ -1618,8 +1620,8 @@
 				default: true,
 			},
 			field: {
-				name: "Стильный интерфейс",
-				description: "Настройки элементов",
+				name: "Стильний інтерфейс", // Українська назва
+				description: "Налаштування елементів", // Український опис
 			},
 			onRender: function (item) {
 				item.css("opacity", "0");
@@ -1640,13 +1642,19 @@
 		Lampa.SettingsApi.addParam({
 			component: "style_interface",
 			param: { name: "logo_show", type: "trigger", default: true },
-			field: { name: "Показывать логотип вместо названия" },
+			field: { 
+				name: "Показувати логотип замість назви", // Українська назва
+				description: "Відображати логотип замість текстової назви" // Український опис
+			},
 		});
 
 		Lampa.SettingsApi.addParam({
 			component: "style_interface",
 			param: { name: "show_background", type: "trigger", default: true },
-			field: { name: "Отображать постеры на фоне" },
+			field: { 
+				name: "Відображати постeри на фоні", // Українська назва
+				description: "Показувати фоновий постер при наведенні" // Український опис
+			},
 			onChange: function (value) {
 				if (!value) {
 					$(".full-start__background").removeClass("active");
@@ -1657,49 +1665,73 @@
 		Lampa.SettingsApi.addParam({
 			component: "style_interface",
 			param: { name: "status", type: "trigger", default: true },
-			field: { name: "Показывать статус фильма/сериала" },
+			field: { 
+				name: "Показувати статус фільму/серіалу", // Українська назва
+				description: "Відображати статус виробництва" // Український опис
+			},
 		});
 
 		Lampa.SettingsApi.addParam({
 			component: "style_interface",
 			param: { name: "seas", type: "trigger", default: false },
-			field: { name: "Показывать количество сезонов" },
+			field: { 
+				name: "Показувати кількість сезонів", // Українська назва
+				description: "Відображати загальну кількість сезонів" // Український опис
+			},
 		});
 
 		Lampa.SettingsApi.addParam({
 			component: "style_interface",
 			param: { name: "eps", type: "trigger", default: false },
-			field: { name: "Показывать количество эпизодов" },
+			field: { 
+				name: "Показувати кількість епізодів", // Українська назва
+				description: "Відображати загальну кількість епізодів" // Український опис
+			},
 		});
 
 		Lampa.SettingsApi.addParam({
 			component: "style_interface",
 			param: { name: "year_ogr", type: "trigger", default: true },
-			field: { name: "Показывать возрастное ограничение" },
+			field: { 
+				name: "Показувати вікове обмеження", // Українська назва
+				description: "Відображати віковий рейтинг" // Український опис
+			},
 		});
 
 		Lampa.SettingsApi.addParam({
 			component: "style_interface",
 			param: { name: "vremya", type: "trigger", default: true },
-			field: { name: "Показывать время фильма" },
+			field: { 
+				name: "Показувати час фільму", // Українська назва
+				description: "Відображати тривалість фільму" // Український опис
+			},
 		});
 
 		Lampa.SettingsApi.addParam({
 			component: "style_interface",
 			param: { name: "ganr", type: "trigger", default: true },
-			field: { name: "Показывать жанр фильма" },
+			field: { 
+				name: "Показувати жанр фільму", // Українська назва
+				description: "Відображати жанри контенту" // Український опис
+			},
 		});
 
 		Lampa.SettingsApi.addParam({
 			component: "style_interface",
 			param: { name: "rat", type: "trigger", default: true },
-			field: { name: "Показывать рейтинг фильма" },
+			field: { 
+				name: "Показувати рейтинг фільму", // Українська назва
+				description: "Відображати рейтинг TMDB" // Український опис
+			},
 		});
 
 		Lampa.SettingsApi.addParam({
 			component: "style_interface",
 			param: { name: "si_colored_ratings", type: "trigger", default: true },
-			field: { name: "Цветные рейтинги" },
+			field: { 
+				name: "Кольорові рейтинги", // Українська назва
+				description: "Забарвлювати рейтинги залежно від значення" // Український опис
+			},
 			onChange: function (value) {
 				if (value) {
 					siStyleUpdateVoteColors();
@@ -1713,7 +1745,10 @@
 		Lampa.SettingsApi.addParam({
 			component: "style_interface",
 			param: { name: "si_rating_border", type: "trigger", default: false },
-			field: { name: "Обводка рейтингов" },
+			field: { 
+				name: "Обведення рейтингів", // Українська назва
+				description: "Додавати рамку навколо рейтингів" // Український опис
+			},
 			onChange: function (value) {
 				siStyleUpdateVoteColors();
 			},
@@ -1722,7 +1757,10 @@
 		Lampa.SettingsApi.addParam({
 			component: "style_interface",
 			param: { name: "child_mode", type: "trigger", default: false },
-			field: { name: "Детский режим", description: "Лампа будет перезагружена" },
+			field: { 
+				name: "Дитячий режим", // Українська назва
+				description: "Лампа буде перезавантажена" // Український опис
+			},
 			onChange: function () {
 				window.location.reload();
 			},
@@ -1731,7 +1769,10 @@
 		Lampa.SettingsApi.addParam({
 			component: "style_interface",
 			param: { name: "async_load", type: "trigger", default: true },
-			field: { name: "Включить асинхронную загрузку данных" },
+			field: { 
+				name: "Увімкнути асинхронне завантаження даних", // Українська назва
+				description: "Попереднє завантаження інформації про контент" // Український опис
+			},
 			onChange: function (value) {
 				if (value) preloadAllVisibleCards();
 			},
@@ -1740,13 +1781,19 @@
 		Lampa.SettingsApi.addParam({
 			component: "style_interface",
 			param: { name: "background_resolution", type: "select", default: "original", values: { w300: "w300", w780: "w780", w1280: "w1280", original: "original" } },
-			field: { name: "Разрешение фона", description: "Качество загружаемых фоновых изображений" },
+			field: { 
+				name: "Роздільна здатність фону", // Українська назва
+				description: "Якість завантажуваних фонових зображень" // Український опис
+			},
 		});
 
 		Lampa.SettingsApi.addParam({
 			component: "style_interface",
 			param: { name: "hide_captions", type: "trigger", default: true },
-			field: { name: "Скрывать названия и год", description: "Лампа будет перезагружена" },
+			field: { 
+				name: "Приховувати назви та рік", // Українська назва
+				description: "Лампа буде перезавантажена" // Український опис
+			},
 			onChange: function () {
 				window.location.reload();
 			},
@@ -1755,17 +1802,23 @@
 		Lampa.SettingsApi.addParam({
 			component: "style_interface",
 			param: { name: "wide_post", type: "trigger", default: true },
-			field: { name: "Широкие постеры", description: "Лампа будет перезагружена" },
+			field: { 
+				name: "Широкі постeри", // Українська назва
+				description: "Лампа буде перезавантажена" // Український опис
+			},
 			onChange: function () {
 				window.location.reload();
 			},
 		});
 
-		// TV-специфичная настройка
+		// TV-специфічне налаштування
 		Lampa.SettingsApi.addParam({
 			component: "style_interface",
 			param: { name: "tv_optimization", type: "trigger", default: isSamsungTV },
-			field: { name: "TV оптимизация", description: "Оптимизации для телевизоров" },
+			field: { 
+				name: "TV оптимізація", // Українська назва
+				description: "Оптимізації для телевізорів" // Український опис
+			},
 			onChange: function (value) {
 				window.location.reload();
 			},
@@ -1774,12 +1827,15 @@
 		Lampa.SettingsApi.addParam({
 			component: "style_interface",
 			param: { name: "int_clear_logo_cache", type: "static" },
-			field: { name: "Очистить кеш логотипов", description: "Лампа будет перезагружена" },
+			field: { 
+				name: "Очистити кеш логотипів", // Українська назва
+				description: "Лампа буде перезавантажена" // Український опис
+			},
 			onRender: function (item) {
 				item.on("hover:enter", function () {
 					Lampa.Select.show({
-						title: "Очистить кеш логотипов?",
-						items: [{ title: "Да", confirm: true }, { title: "Нет" }],
+						title: "Очистити кеш логотипів?", // Українська назва
+						items: [{ title: "Так", confirm: true }, { title: "Ні" }], // Українські варіанти
 						onSelect: function (a) {
 							if (a.confirm) {
 								var keys = [];
@@ -1837,19 +1893,19 @@
 		}
 	}
 
-	// TV-специфичные оптимизации
+	// TV-специфічні оптимізації
 	if (isSamsungTV) {
-		// Улучшаем производительность для TV
+		// Покращуємо продуктивність для TV
 		$(document).on('visibilitychange', function() {
 			if (document.hidden) {
-				// При сворачивании приложения
+				// При згортанні програми
 				$('.full-start__background').removeClass('active');
 			}
 		});
 		
-		// Оптимизация для пульта ДУ
+		// Оптимізація для пульта ДУ
 		$(window).on('keydown', function(e) {
-			// Замедляем обработку для TV
+			// Уповільнюємо обробку для TV
 			if (e.keyCode === 38 || e.keyCode === 40) { // Up/Down
 				var active = $('.focus');
 				if (active.length) {
