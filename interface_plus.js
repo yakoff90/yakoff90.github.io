@@ -280,6 +280,116 @@
       uk: 'Підсвічувати кількість сідерів на роздачі: \n0–4 — червоний, 5–14 — жовтий, 15 і вище — зелений',
       en: 'Seeders: 0–4 red, 5–14 yellow, 15+ green'
     },
+    
+    // РЕЙТИНГИ (з rating_my.js)
+    interface_mod_new_ratings_group: {
+      en: 'Ratings',
+      uk: 'Рейтинги'
+    },
+    interface_mod_new_ratings_desc: {
+      en: 'Enhanced ratings from MDBList + OMDb',
+      uk: 'Покращені рейтинги з MDBList + OMDb'
+    },
+    interface_mod_new_ratings_show_awards: {
+      en: 'Show awards',
+      uk: 'Показувати нагороди'
+    },
+    interface_mod_new_ratings_show_awards_desc: {
+      en: 'Show Oscars, Emmy and other awards',
+      uk: 'Показувати Оскари, Еммі та інші нагороди'
+    },
+    interface_mod_new_ratings_show_average: {
+      en: 'Average rating',
+      uk: 'Середній рейтинг'
+    },
+    interface_mod_new_ratings_show_average_desc: {
+      en: 'Show average rating',
+      uk: 'Показувати середній рейтинг'
+    },
+    interface_mod_new_ratings_colorize_all: {
+      en: 'Colorize ratings',
+      uk: 'Кольорові рейтинги'
+    },
+    interface_mod_new_ratings_colorize_all_desc: {
+      en: 'Color highlighting of ratings',
+      uk: 'Кольорове виділення оцінок рейтингів'
+    },
+    interface_mod_new_ratings_enable_imdb: {
+      en: 'IMDb',
+      uk: 'IMDb'
+    },
+    interface_mod_new_ratings_enable_imdb_desc: {
+      en: 'Show/hide source',
+      uk: 'Показувати/ховати джерело'
+    },
+    interface_mod_new_ratings_enable_tmdb: {
+      en: 'TMDB',
+      uk: 'TMDB'
+    },
+    interface_mod_new_ratings_enable_tmdb_desc: {
+      en: 'Show/hide source',
+      uk: 'Показувати/ховати джерело'
+    },
+    interface_mod_new_ratings_enable_mc: {
+      en: 'Metacritic',
+      uk: 'Metacritic'
+    },
+    interface_mod_new_ratings_enable_mc_desc: {
+      en: 'Show/hide source',
+      uk: 'Показувати/ховати джерело'
+    },
+    interface_mod_new_ratings_enable_rt: {
+      en: 'Rotten Tomatoes',
+      uk: 'Rotten Tomatoes'
+    },
+    interface_mod_new_ratings_enable_rt_desc: {
+      en: 'Show/hide source',
+      uk: 'Показувати/ховати джерело'
+    },
+    interface_mod_new_ratings_enable_popcorn: {
+      en: 'Popcornmeter',
+      uk: 'Popcornmeter'
+    },
+    interface_mod_new_ratings_enable_popcorn_desc: {
+      en: 'Show/hide source',
+      uk: 'Показувати/ховати джерело'
+    },
+    interface_mod_new_ratings_clear_cache: {
+      en: 'Clear ratings cache',
+      uk: 'Очистити кеш рейтингів'
+    },
+    oscars_label: {
+      uk: 'Оскар'
+    },
+    emmy_label: {
+      uk: 'Еммі'
+    },
+    awards_other_label: {
+      uk: 'Нагороди'
+    },
+    popcorn_label: {
+      uk: 'Глядачі'
+    },
+    source_tmdb: {
+      ru: 'TMDB',
+      en: 'TMDB',
+      uk: 'TMDB'
+    },
+    source_imdb: {
+      ru: 'IMDb',
+      en: 'IMDb',
+      uk: 'IMDb'
+    },
+    source_mc: {
+      ru: 'Metacritic',
+      en: 'Metacritic',
+      uk: 'Metacritic'
+    },
+    source_rt: {
+      ru: 'Rotten',
+      en: 'Rotten',
+      uk: 'Rotten'
+    }
   });
 
   /* ============================================================
@@ -295,6 +405,47 @@
     // Fallback до старого ключа
     return getBool('interface_mod_new_english_data', false);
   }
+
+  /**
+   * Конфігурація API ключів для рейтингів
+   */
+  var LMP_ENH_CONFIG = {
+    apiKeys: {
+      mdblist: 'nmqhlb9966w9m86h3yntb0dpz', // ключ до MDBList
+      omdb: '358837db' // ключ до OMDb
+    }
+  };
+
+  /**
+   * Налаштування за замовчуванням для рейтингів
+   */
+  var RCFG_DEFAULT = {
+    ratings_show_awards: true,
+    ratings_show_average: true,
+    ratings_colorize_all: false,
+    ratings_enable_imdb: true,
+    ratings_enable_tmdb: true,
+    ratings_enable_mc: true,
+    ratings_enable_rt: true,
+    ratings_enable_popcorn: true
+  };
+
+  /**
+   * Джерела іконок для рейтингів
+   */
+  var BASE_ICON = 'https://raw.githubusercontent.com/ko3ik/LMP/main/wwwroot/';
+  var ICONS = {
+    total_star: BASE_ICON + 'star.png',
+    imdb: BASE_ICON + 'imdb.png',
+    tmdb: BASE_ICON + 'tmdb.png',
+    metacritic: BASE_ICON + 'metacritic.png',
+    rotten_good: BASE_ICON + 'RottenTomatoes.png',
+    rotten_bad: BASE_ICON + 'RottenBad.png',
+    popcorn: BASE_ICON + 'PopcornGood.png',
+    awards: BASE_ICON + 'awards.png',
+    oscar: BASE_ICON + 'OscarGold.png',
+    emmy: BASE_ICON + 'EmmyGold.png'
+  };
 
   /**
    * Об'єкт з поточними налаштуваннями плагіну
@@ -319,6 +470,16 @@
     // Налаштування тем (з themes_ua_loader.js)
     theme: Lampa.Storage.get('interface_mod_new_theme', 'mint_dark'),
     animations: getBool('interface_mod_new_animations', true),
+
+    // Налаштування для рейтингів
+    ratings_show_awards: getBool('ratings_show_awards', RCFG_DEFAULT.ratings_show_awards),
+    ratings_show_average: getBool('ratings_show_average', RCFG_DEFAULT.ratings_show_average),
+    ratings_colorize_all: getBool('ratings_colorize_all', RCFG_DEFAULT.ratings_colorize_all),
+    ratings_enable_imdb: getBool('ratings_enable_imdb', RCFG_DEFAULT.ratings_enable_imdb),
+    ratings_enable_tmdb: getBool('ratings_enable_tmdb', RCFG_DEFAULT.ratings_enable_tmdb),
+    ratings_enable_mc: getBool('ratings_enable_mc', RCFG_DEFAULT.ratings_enable_mc),
+    ratings_enable_rt: getBool('ratings_enable_rt', RCFG_DEFAULT.ratings_enable_rt),
+    ratings_enable_popcorn: getBool('ratings_enable_popcorn', RCFG_DEFAULT.ratings_enable_popcorn),
 
     // Видалені налаштування
     translate_tv: false,
@@ -430,6 +591,160 @@
     `;
     var st = document.createElement('style');
     st.id = 'interface_mod_base';
+    st.textContent = css;
+    document.head.appendChild(st);
+  })();
+
+  /* ============================================================
+   * СТИЛІ ДЛЯ РЕЙТИНГІВ
+   * ============================================================ */
+  (function injectRatingsCss() {
+    if (document.getElementById('interface_mod_ratings_css')) return;
+
+    var css = `
+      /* --- Лоадер "Пошук..." --- */
+      .loading-dots-container {
+        display: flex;
+        align-items: center;
+        font-size: 0.85em;
+        color: #ccc;
+        padding: 0.6em 1em;
+        border-radius: 0.5em;
+      }
+      .loading-dots__text {
+        margin-right: 1em;
+      }
+      .loading-dots__dot {
+        width: 0.5em;
+        height: 0.5em;
+        border-radius: 50%;
+        background-color: currentColor;
+        animation: loading-dots-bounce 1.4s infinite ease-in-out both;
+      }
+      .loading-dots__dot:nth-child(1) {
+        animation-delay: -0.32s;
+      }
+      .loading-dots__dot:nth-child(2) {
+        animation-delay: -0.16s;
+      }
+      @keyframes loading-dots-bounce {
+        0%, 80%, 100% { transform: translateY(0); opacity: 0.6; }
+        40% { transform: translateY(-0.5em); opacity: 1; }
+      }
+
+      /* --- CSS Змінні (розміри іконок) --- */
+      :root{
+        --lmp-h-imdb:24px;
+        --lmp-h-mc:24px;
+        --lmp-h-rt:26px;
+        --lmp-h-popcorn:26px;
+        --lmp-h-tmdb:26px;
+        --lmp-h-awards:20px;
+        --lmp-h-avg:20px;
+        --lmp-h-oscar:22px;
+        --lmp-h-emmy:24px;
+      }
+
+      /* --- Кольоровий режим --- */
+      .rate--oscars, .rate--emmy, .rate--awards, .rate--gold {
+        color: gold;
+      }
+
+      /* --- Кольори оцінок --- */
+      .full-start__rate.rating--green  { color: #2ecc71; } /* ≥ 8.0  */
+      .full-start__rate.rating--blue   { color: #60a5fa; } /* 6.0–7.9 */
+      .full-start__rate.rating--orange { color: #f59e0b; } /* 4.0–5.9 */
+      .full-start__rate.rating--red    { color: #ef4444; } /* < 4.0   */
+
+      /* --- Ущільнення відступів --- */
+      .full-start-new__rate-line .full-start__rate {
+        margin-right: 0.3em !important;
+      }
+      .full-start-new__rate-line .full-start__rate:last-child {
+        margin-right: 0 !important;
+      }
+
+      /* --- Приховування рядка під час завантаження --- */
+      .full-start-new__rate-line.lmp-is-loading-ratings > :not(#lmp-search-loader),
+      .full-start__rate-line.lmp-is-loading-ratings > :not(#lmp-search-loader) {
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transition: opacity 0.15s;
+      }
+
+      /* --- Вирівнювання іконок нагород --- */
+      .lmp-award-icon{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        line-height:1;
+        height:auto;
+        width:auto;
+        flex-shrink:0;
+      }
+      .lmp-award-icon img{
+        height:auto;
+        width:auto;
+        display:block;
+        object-fit:contain;
+      }
+      .lmp-award-icon--oscar img{height:var(--lmp-h-oscar);}
+      .lmp-award-icon--emmy  img{height:var(--lmp-h-emmy);}
+
+      /* --- Базові розміри іконок сервісів --- */
+      .rate--imdb    .source--name img{height:var(--lmp-h-imdb);}
+      .rate--mc      .source--name img{height:var(--lmp-h-mc);}
+      .rate--rt      .source--name img{height:var(--lmp-h-rt);}
+      .rate--popcorn .source--name img{height:var(--lmp-h-popcorn);}
+      .rate--tmdb    .source--name img{height:var(--lmp-h-tmdb);}
+      .rate--awards  .source--name img{height:var(--lmp-h-awards);}
+      .rate--avg     .source--name img{height:var(--lmp-h-avg);}
+
+      /* --- Вирівнювання іконок --- */
+      .full-start__rate .source--name{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+      }
+
+      /* --- Налаштування --- */
+      .settings-param__descr,.settings-param__subtitle{white-space:pre-line;}
+
+      /* --- Адаптив (Mobile) --- */
+      @media (max-width: 600px){
+        .full-start-new__rate-line{flex-wrap:wrap;}
+        .full-start__rate{
+          margin-right:.25em !important;
+          margin-bottom:.25em;
+          font-size:16px;
+          min-width:unset;
+        }
+        :root{
+          --lmp-h-imdb:14px; --lmp-h-mc:14px; --lmp-h-rt:16px;
+          --lmp-h-popcorn:16px; --lmp-h-tmdb:16px; --lmp-h-awards:14px;
+          --lmp-h-avg:14px; --lmp-h-oscar:14px; --lmp-h-emmy:16px;
+        }
+        .loading-dots-container{font-size:.8em; padding:.4em .8em;}
+        .lmp-award-icon{height:16px;}
+      }
+
+      /* --- Адаптив (Small Mobile) --- */
+      @media (max-width: 360px){
+        .full-start__rate{font-size:14px;}
+        :root{
+          --lmp-h-imdb:12px; --lmp-h-mc:12px; --lmp-h-rt:14px;
+          --lmp-h-popcorn:14px; --lmp-h-tmdb:14px; --lmp-h-awards:12px;
+          --lmp-h-avg:12px; --lmp-h-oscar:12px; --lmp-h-emmy:14px;
+        }
+        .lmp-award-icon{height:12px;}
+      }
+
+      /* Приховування стандартного рейтингу Кінопошуку */
+      .full-start__rate.rate--kp, .rate--kp{display:none!important;}
+    `;
+    
+    var st = document.createElement('style');
+    st.id = 'interface_mod_ratings_css';
     st.textContent = css;
     document.head.appendChild(st);
   })();
@@ -1280,6 +1595,151 @@ border: 0.2em solid #f6a5b0;
       }
     });
 
+    // Рейтинги: заголовок групи
+    add({
+      component: 'interface_mod_new',
+      param: {
+        name: 'ratings_group',
+        type: 'title'
+      },
+      field: {
+        name: Lampa.Lang.translate('interface_mod_new_ratings_group'),
+        description: Lampa.Lang.translate('interface_mod_new_ratings_desc')
+      }
+    });
+
+    // Рейтинги: нагороди
+    add({
+      component: 'interface_mod_new',
+      param: {
+        name: 'ratings_show_awards',
+        type: 'trigger',
+        values: '',
+        "default": RCFG_DEFAULT.ratings_show_awards
+      },
+      field: {
+        name: Lampa.Lang.translate('interface_mod_new_ratings_show_awards'),
+        description: Lampa.Lang.translate('interface_mod_new_ratings_show_awards_desc')
+      },
+      onRender: function(item) {}
+    });
+
+    // Рейтинги: середній рейтинг
+    add({
+      component: 'interface_mod_new',
+      param: {
+        name: 'ratings_show_average',
+        type: 'trigger',
+        values: '',
+        "default": RCFG_DEFAULT.ratings_show_average
+      },
+      field: {
+        name: Lampa.Lang.translate('interface_mod_new_ratings_show_average'),
+        description: Lampa.Lang.translate('interface_mod_new_ratings_show_average_desc')
+      },
+      onRender: function(item) {}
+    });
+
+    // Рейтинги: кольорові рейтинги
+    add({
+      component: 'interface_mod_new',
+      param: {
+        name: 'ratings_colorize_all',
+        type: 'trigger',
+        "default": RCFG_DEFAULT.ratings_colorize_all
+      },
+      field: {
+        name: Lampa.Lang.translate('interface_mod_new_ratings_colorize_all'),
+        description: Lampa.Lang.translate('interface_mod_new_ratings_colorize_all_desc')
+      },
+      onRender: function() {}
+    });
+    
+    // Рейтинги: IMDb
+    add({
+      component: 'interface_mod_new',
+      param: {
+        name: 'ratings_enable_imdb',
+        type: 'trigger',
+        "default": RCFG_DEFAULT.ratings_enable_imdb
+      },
+      field: {
+        name: Lampa.Lang.translate('interface_mod_new_ratings_enable_imdb'),
+        description: Lampa.Lang.translate('interface_mod_new_ratings_enable_imdb_desc')
+      }
+    });
+    
+    // Рейтинги: TMDB
+    add({
+      component: 'interface_mod_new',
+      param: {
+        name: 'ratings_enable_tmdb',
+        type: 'trigger',
+        "default": RCFG_DEFAULT.ratings_enable_tmdb
+      },
+      field: {
+        name: Lampa.Lang.translate('interface_mod_new_ratings_enable_tmdb'),
+        description: Lampa.Lang.translate('interface_mod_new_ratings_enable_tmdb_desc')
+      }
+    });
+    
+    // Рейтинги: Metacritic
+    add({
+      component: 'interface_mod_new',
+      param: {
+        name: 'ratings_enable_mc',
+        type: 'trigger',
+        "default": RCFG_DEFAULT.ratings_enable_mc
+      },
+      field: {
+        name: Lampa.Lang.translate('interface_mod_new_ratings_enable_mc'),
+        description: Lampa.Lang.translate('interface_mod_new_ratings_enable_mc_desc')
+      }
+    });
+    
+    // Рейтинги: Rotten Tomatoes
+    add({
+      component: 'interface_mod_new',
+      param: {
+        name: 'ratings_enable_rt',
+        type: 'trigger',
+        "default": RCFG_DEFAULT.ratings_enable_rt
+      },
+      field: {
+        name: Lampa.Lang.translate('interface_mod_new_ratings_enable_rt'),
+        description: Lampa.Lang.translate('interface_mod_new_ratings_enable_rt_desc')
+      }
+    });
+    
+    // Рейтинги: Popcornmeter
+    add({
+      component: 'interface_mod_new',
+      param: {
+        name: 'ratings_enable_popcorn',
+        type: 'trigger',
+        "default": RCFG_DEFAULT.ratings_enable_popcorn
+      },
+      field: {
+        name: Lampa.Lang.translate('interface_mod_new_ratings_enable_popcorn'),
+        description: Lampa.Lang.translate('interface_mod_new_ratings_enable_popcorn_desc')
+      }
+    });
+
+    // Рейтинги: кнопка очищення кешу
+    add({
+      component: 'interface_mod_new',
+      param: {
+        type: 'button',
+        component: 'ratings_clear_cache'
+      },
+      field: {
+        name: Lampa.Lang.translate('interface_mod_new_ratings_clear_cache')
+      },
+      onChange: function() {
+        lmpRatingsClearCache();
+      }
+    });
+
     /**
      * Переміщує групу "Інтерфейс +" відразу після групи "Інтерфейс"
      */
@@ -1409,6 +1869,44 @@ border: 0.2em solid #f6a5b0;
             case 'interface_mod_new_tor_seeds':
               settings.tor_seeds = getBool(key, true);
               if (window.runTorrentStyleRefresh) window.runTorrentStyleRefresh();
+              break;
+          }
+        }
+        
+        // Реагуємо на зміни налаштувань рейтингів
+        if (typeof key === 'string' && key.indexOf('ratings_') === 0) {
+          switch (key) {
+            case 'ratings_show_awards':
+              settings.ratings_show_awards = getBool(key, RCFG_DEFAULT.ratings_show_awards);
+              toggleAwards(settings.ratings_show_awards);
+              break;
+            case 'ratings_show_average':
+              settings.ratings_show_average = getBool(key, RCFG_DEFAULT.ratings_show_average);
+              toggleAverage(settings.ratings_show_average);
+              break;
+            case 'ratings_colorize_all':
+              settings.ratings_colorize_all = getBool(key, RCFG_DEFAULT.ratings_colorize_all);
+              applyRatingsStyles();
+              break;
+            case 'ratings_enable_imdb':
+              settings.ratings_enable_imdb = getBool(key, RCFG_DEFAULT.ratings_enable_imdb);
+              updateRatingsDisplay();
+              break;
+            case 'ratings_enable_tmdb':
+              settings.ratings_enable_tmdb = getBool(key, RCFG_DEFAULT.ratings_enable_tmdb);
+              updateRatingsDisplay();
+              break;
+            case 'ratings_enable_mc':
+              settings.ratings_enable_mc = getBool(key, RCFG_DEFAULT.ratings_enable_mc);
+              updateRatingsDisplay();
+              break;
+            case 'ratings_enable_rt':
+              settings.ratings_enable_rt = getBool(key, RCFG_DEFAULT.ratings_enable_rt);
+              updateRatingsDisplay();
+              break;
+            case 'ratings_enable_popcorn':
+              settings.ratings_enable_popcorn = getBool(key, RCFG_DEFAULT.ratings_enable_popcorn);
+              updateRatingsDisplay();
               break;
           }
         }
@@ -3010,58 +3508,1639 @@ border: 0.2em solid #f6a5b0;
     } catch (e) {}
   })();
 
-
   /* ============================================================
-   * ЗАПУСК
+   * РЕЙТИНГИ (ІНТЕГРОВАНИЙ ФУНКЦІОНАЛ rating_my.js)
    * ============================================================ */
-  function startPlugin() {
-    injectFallbackCss();
-    initInterfaceModSettingsUI();
-    newInfoPanel();
-    setupVoteColorsObserver();
 
-    if (settings.colored_ratings) updateVoteColors();
+  // Змінні для рейтингів
+  var __lmpRateLineObs = null;
+  var currentRatingsData = null;
+  var __lmpLastReqToken = null;
+  var CACHE_TIME = 3 * 24 * 60 * 60 * 1000; // 3 дні
+  var RATING_CACHE_KEY = 'lmp_enh_rating_cache';
+  var ID_MAPPING_CACHE = 'lmp_rating_id_cache';
 
-    setStatusBaseCssEnabled(settings.colored_status);
-    if (settings.colored_status) enableStatusColoring();
-    else disableStatusColoring(true);
+  // Мапінг вікових рейтингів
+  var AGE_RATINGS = {
+    'G': '3+',
+    'PG': '6+',
+    'PG-13': '13+',
+    'R': '17+',
+    'NC-17': '18+',
+    'TV-Y': '0+',
+    'TV-Y7': '7+',
+    'TV-G': '3+',
+    'TV-PG': '6+',
+    'TV-14': '14+',
+    'TV-MA': '17+'
+  };
 
-    setAgeBaseCssEnabled(settings.colored_age);
-    if (settings.colored_age) enableAgeColoring();
-    else disableAgeColoring(true);
+  /**
+   * Визначає тип картки (movie/tv)
+   */
+  function getCardType(card) {
+    var type = card.media_type || card.type;
+    if (type === 'movie' || type === 'tv') return type;
+    return card.name || card.original_name ? 'tv' : 'movie';
+  }
 
-    // Ініціалізуємо теми
-    window.__ifx_first_theme_apply = true;
-    applyTheme(settings.theme);
-    applyAnimations();
-    applyForAll();
-    removeFromSettingsMenu();
-    fixLang();
+  /**
+   * Повертає CSS-клас для кольору рейтингу
+   */
+  function getRatingClass(rating) {
+    var r = parseFloat(rating);
+    if (isNaN(r)) return 'rating--red';
+    if (r >= 8.0) return 'rating--green';
+    if (r >= 6.0) return 'rating--blue';
+    if (r >= 4.0) return 'rating--orange';
+    return 'rating--red';
+  }
 
-    wireFullCardEnhancers();
+  /**
+   * Генерує HTML для іконки сервісу
+   */
+  function iconImg(url, alt, sizePx, extraStyle) {
+    return '<img style="' +
+      'width:auto; display:inline-block; vertical-align:middle; ' +
+      'object-fit:contain; ' +
+      (extraStyle || '') + ' ' +
+      '" ' +
+      'src="' + url + '" alt="' + (alt || '') + '">';
+  }
 
-    if (settings.colored_buttons) {
-      // Запускаємо стратегію завантаження останнім
-      loadAsLast();
+  /**
+   * Генерує HTML для іконки Emmy
+   */
+  function emmyIconInline() {
+    return '<span class="lmp-award-icon lmp-award-icon--emmy"><img src="' + ICONS.emmy + '" alt="Emmy"></span>';
+  }
+
+  /**
+   * Генерує HTML для іконки Oscar
+   */
+  function oscarIconInline() {
+    return '<span class="lmp-award-icon lmp-award-icon--oscar"><img src="' + ICONS.oscar + '" alt="Oscar"></span>';
+  }
+
+  /**
+   * "Затемнює" рядок рейтингів
+   */
+  function dimRateLine(rateLine) {
+    if (!rateLine || !rateLine.length) return;
+    rateLine.addClass('lmp-is-loading-ratings');
+  }
+
+  /**
+   * Відновлює видимість рядка рейтингів
+   */
+  function undimRateLine(rateLine) {
+    if (!rateLine || !rateLine.length) return;
+    rateLine.removeClass('lmp-is-loading-ratings');
+  }
+
+  /**
+   * Додає анімацію завантаження ("Пошук...")
+   */
+  function addLoadingAnimation() {
+    var render = Lampa.Activity.active().activity.render();
+    if (!render || !render[0]) return;
+
+    if ($('#lmp-search-loader', render).length) return;
+
+    var loaderHtml =
+      '<div id="lmp-search-loader" class="loading-dots-container">' +
+      '<div class="loading-dots__text">Пошук…</div>' +
+      '<div class="loading-dots__dot"></div>' +
+      '<div class="loading-dots__dot"></div>' +
+      '<div class="loading-dots__dot"></div>' +
+      '</div>';
+
+    var realSel = '.full-start-new__rate-line:not([data-lmp-fake]), .full-start__rate-line:not([data-lmp-fake])';
+    var rateLine = $(realSel, render).first();
+    if (rateLine.length) {
+      rateLine.append(loaderHtml);
+      dimRateLine(rateLine);
+      return;
     }
-    
-    // Застосовуємо розмір кнопок
-    applyButtonSize();
-    
-    // Перший запуск стилів торентів
+
+    var fake = $(
+      '<div class="full-start-new__rate-line" ' +
+      '     id="lmp-loader-fake" data-lmp-fake="1" ' +
+      '     style="min-height:28px; display:flex; align-items:center;"></div>'
+    );
+
+    var anchor = $('.full-start-new__title, .full-start__title', render).first();
+    if (anchor.length) anchor.after(fake);
+    else $(render).append(fake);
+
+    fake.append(loaderHtml);
+
     try {
-      if (window.runTorrentStyleRefresh) window.runTorrentStyleRefresh();
+      if (__lmpRateLineObs) __lmpRateLineObs.disconnect();
+    } catch (_) {}
+    __lmpRateLineObs = new MutationObserver(function() {
+      var rl = $(realSel, render).first();
+      var loader = $('#lmp-search-loader', render);
+      if (rl.length && loader.length) {
+        rl.append(loader);
+        dimRateLine(rl);
+        $('#lmp-loader-fake', render).remove();
+        try {
+          __lmpRateLineObs.disconnect();
+        } catch (_) {}
+        __lmpRateLineObs = null;
+      }
+    });
+    __lmpRateLineObs.observe(render[0], {
+      childList: true,
+      subtree: true
+    });
+
+    setTimeout(function() {
+      if (__lmpRateLineObs) {
+        try {
+          __lmpRateLineObs.disconnect();
+        } catch (_) {}
+        __lmpRateLineObs = null;
+      }
+    }, 6000);
+  }
+
+  /**
+   * Прибирає анімацію завантаження
+   */
+  function removeLoadingAnimation() {
+    var render = Lampa.Activity.active().activity.render();
+    if (!render || !render[0]) return;
+
+    $('#lmp-search-loader', render).remove();
+    $('#lmp-loader-fake', render).remove();
+
+    var rl = $('.full-start-new__rate-line:not([data-lmp-fake]), .full-start__rate-line:not([data-lmp-fake])', render).first();
+    if (rl.length) undimRateLine(rl);
+
+    try {
+      if (__lmpRateLineObs) __lmpRateLineObs.disconnect();
+    } catch (_) {}
+    __lmpRateLineObs = null;
+  }
+
+  /**
+   * Отримує дані з кешу
+   */
+  function getCachedRatings(key) {
+    var cache = Lampa.Storage.get(RATING_CACHE_KEY) || {};
+    var item = cache[key];
+    if (!item) return null;
+    if (Date.now() - item.timestamp > CACHE_TIME) return null;
+    return item.data || null;
+  }
+
+  /**
+   * Зберігає дані в кеш
+   */
+  function saveCachedRatings(key, data) {
+    if (!data) return;
+    var cache = Lampa.Storage.get(RATING_CACHE_KEY) || {};
+    cache[key] = {
+      timestamp: Date.now(),
+      data: data
+    };
+    Lampa.Storage.set(RATING_CACHE_KEY, cache);
+  }
+
+  /**
+   * Парсить рядок нагород з OMDB
+   */
+  function parseAwards(awardsText) {
+    if (typeof awardsText !== 'string') return {
+      oscars: 0,
+      emmy: 0,
+      awards: 0
+    };
+
+    var result = {
+      oscars: 0,
+      emmy: 0,
+      awards: 0
+    };
+    var oscarMatch = awardsText.match(/Won (\d+) Oscars?/i);
+    if (oscarMatch && oscarMatch[1]) {
+      result.oscars = parseInt(oscarMatch[1], 10);
+    }
+    var emmyMatch = awardsText.match(/Won (\d+) Primetime Emmys?/i);
+    if (emmyMatch && emmyMatch[1]) {
+      result.emmy = parseInt(emmyMatch[1], 10);
+    }
+    var otherMatch = awardsText.match(/Another (\d+) wins?/i);
+    if (otherMatch && otherMatch[1]) {
+      result.awards = parseInt(otherMatch[1], 10);
+    }
+    if (result.awards === 0) {
+      var simpleMatch = awardsText.match(/(\d+) wins?/i);
+      if (simpleMatch && simpleMatch[1]) {
+        result.awards = parseInt(simpleMatch[1], 10);
+      }
+    }
+    return result;
+  }
+
+  /**
+   * FIX: Замінює "10.0" на "10"
+   */
+  (function() {
+    function fixTenIn(el) {
+      var t = (el.textContent || '').replace(/\u00A0/g, ' ').trim();
+      if (/^10(?:[.,]0+)?$/.test(t)) {
+        el.textContent = '10';
+      }
+    }
+
+    function scan(root) {
+      try {
+        var nodes = root.querySelectorAll('.full-start__rate > div:first-child');
+        for (var i = 0; i < nodes.length; i++) fixTenIn(nodes[i]);
+      } catch (e) {}
+    }
+
+    window.__lmpTenFixStart = function() {
+      try {
+        var render = Lampa && Lampa.Activity && Lampa.Activity.active() &&
+          Lampa.Activity.active().activity.render &&
+          Lampa.Activity.active().activity.render();
+        if (!render || !render[0]) return;
+
+        var target =
+          render[0].querySelector('.full-start-new__rate-line, .full-start__rate-line') ||
+          render[0];
+
+        scan(target);
+
+        var MObs = window.MutationObserver || window.WebKitMutationObserver;
+        if (!MObs) return;
+
+        if (window.__lmpTenObs) {
+          window.__lmpTenObs.disconnect();
+          window.__lmpTenObs = null;
+        }
+
+        var obs = new MObs(function(muts) {
+          for (var i = 0; i < muts.length; i++) {
+            var m = muts[i];
+            if (m.type === 'characterData') {
+              var p = m.target && m.target.parentNode;
+              if (p && p.nodeType === 1 && p.matches('.full-start__rate > div:first-child')) fixTenIn(p);
+            } else if (m.type === 'childList') {
+              var added = m.addedNodes || [];
+              for (var j = 0; j < added.length; j++) {
+                var n = added[j];
+                if (!n || n.nodeType !== 1) continue;
+                if (n.matches && n.matches('.full-start__rate > div:first-child')) fixTenIn(n);
+                if (n.querySelectorAll) {
+                  var inner = n.querySelectorAll('.full-start__rate > div:first-child');
+                  for (var k = 0; k < inner.length; k++) fixTenIn(inner[k]);
+                }
+              }
+            }
+          }
+        });
+
+        obs.observe(target, {
+          subtree: true,
+          childList: true,
+          characterData: true
+        });
+        window.__lmpTenObs = obs;
+      } catch (e) {}
+    };
+  })();
+
+  /* --- Функція для сповіщень (Toast) --- */
+  function lmpToast(msg) {
+    try {
+      if (Lampa && typeof Lampa.Noty === 'function') {
+        Lampa.Noty(msg);
+        return;
+      }
+      if (Lampa && Lampa.Noty && Lampa.Noty.show) {
+        Lampa.Noty.show(msg);
+        return;
+      }
+    } catch (e) {}
+    var id = 'lmp_toast';
+    var el = document.getElementById(id);
+    if (!el) {
+      el = document.createElement('div');
+      el.id = id;
+      el.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:2rem;padding:.6rem 1rem;background:rgba(0,0,0,.85);color:#fff;border-radius:.5rem;z-index:9999;font-size:14px;transition:opacity .2s;opacity:0';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.style.opacity = '1';
+    setTimeout(function() {
+      el.style.opacity = '0';
+    }, 1300);
+  }
+
+  /* --- Функція очищення кешу --- */
+  function lmpRatingsClearCache() {
+    try {
+      Lampa.Storage.set(RATING_CACHE_KEY, {});
+      Lampa.Storage.set(ID_MAPPING_CACHE, {});
+      lmpToast('Кеш рейтингів очищено');
+    } catch (e) {
+      console.error('LMP Ratings: clear cache error', e);
+      lmpToast('Помилка очищення кешу');
+    }
+  }
+
+  /**
+   * Отримує imdb_id з TMDB
+   */
+  function getImdbIdFromTmdb(tmdbId, type, callback) {
+    if (!tmdbId) return callback(null);
+
+    var preferredType = (type === 'movie') ? 'movie' : 'tv';
+    var altType = preferredType === 'movie' ? 'tv' : 'movie';
+
+    var cache = Lampa.Storage.get(ID_MAPPING_CACHE) || {};
+    var now = Date.now();
+
+    function fromCache(key) {
+      var item = cache[key];
+      if (!item) return null;
+      if (!item.imdb_id) return null;
+      if (now - item.timestamp > CACHE_TIME) return null;
+      return item.imdb_id;
+    }
+
+    var keyPreferred = preferredType + '_' + tmdbId;
+    var keyAlt = altType + '_' + tmdbId;
+
+    var cachedId = fromCache(keyPreferred) || fromCache(keyAlt);
+    if (cachedId) return callback(cachedId);
+
+    var tmdbKey = Lampa.TMDB.key();
+    var queue = [
+      'https://api.themoviedb.org/3/' + preferredType + '/' + tmdbId + '/external_ids?api_key=' + tmdbKey,
+      'https://api.themoviedb.org/3/' + preferredType + '/' + tmdbId + '?api_key=' + tmdbKey + '&append_to_response=external_ids',
+      'https://api.themoviedb.org/3/' + altType + '/' + tmdbId + '/external_ids?api_key=' + tmdbKey,
+      'https://api.themoviedb.org/3/' + altType + '/' + tmdbId + '?api_key=' + tmdbKey + '&append_to_response=external_ids'
+    ];
+
+    var makeRequest = function(u, success, error) {
+      new Lampa.Reguest().silent(u, success, function() {
+        new Lampa.Reguest().native(
+          u,
+          function(data) {
+            try {
+              success(typeof data === 'string' ? JSON.parse(data) : data);
+            } catch (e) {
+              error();
+            }
+          },
+          error,
+          false, {
+            dataType: 'json'
+          }
+        );
+      });
+    };
+
+    function extractImdbId(obj) {
+      if (!obj || typeof obj !== 'object') return null;
+      if (obj.imdb_id && typeof obj.imdb_id === 'string') return obj.imdb_id;
+      if (obj.external_ids && typeof obj.external_ids.imdb_id === 'string') return obj.external_ids.imdb_id;
+      return null;
+    }
+
+    function saveAndReturn(id) {
+      var payload = {
+        imdb_id: id,
+        timestamp: Date.now()
+      };
+      cache[keyPreferred] = payload;
+      cache[keyAlt] = payload;
+      Lampa.Storage.set(ID_MAPPING_CACHE, cache);
+      callback(id);
+    }
+
+    (function next() {
+      var url = queue.shift();
+      if (!url) return callback(null);
+
+      makeRequest(url, function(data) {
+        var imdbId = extractImdbId(data);
+        if (imdbId) saveAndReturn(imdbId);
+        else next();
+      }, function() {
+        next();
+      });
+    })();
+  }
+
+  /**
+   * Завантажує рейтинги з MDBList
+   */
+  function fetchMdbListRatings(card, callback) {
+    var key = LMP_ENH_CONFIG.apiKeys.mdblist;
+    if (!key) {
+      callback(null);
+      return;
+    }
+
+    var typeSegment = (card.type === 'tv') ? 'show' : card.type;
+    var url = 'https://api.mdblist.com/tmdb/' + typeSegment + '/' + card.id +
+      '?apikey=' + encodeURIComponent(key);
+
+    new Lampa.Reguest().silent(url, handleSuccess, handleFail);
+
+    function handleFail() {
+      new Lampa.Reguest().native(
+        url,
+        function(data) {
+          try {
+            handleSuccess(typeof data === 'string' ? JSON.parse(data) : data);
+          } catch (e) {
+            callback(null);
+          }
+        },
+        function() {
+          callback(null);
+        },
+        false, {
+          dataType: 'json'
+        }
+      );
+    }
+
+    function handleSuccess(response) {
+      if (!response || !response.ratings || !response.ratings.length) {
+        callback(null);
+        return;
+      }
+
+      var res = {
+        tmdb_display: null,
+        tmdb_for_avg: null,
+        imdb_display: null,
+        imdb_for_avg: null,
+        mc_user_display: null,
+        mc_user_for_avg: null,
+        mc_critic_display: null,
+        mc_critic_for_avg: null,
+        rt_display: null,
+        rt_for_avg: null,
+        rt_fresh: null,
+        popcorn_display: null,
+        popcorn_for_avg: null
+      };
+
+      function parseRawScore(rawVal) {
+        if (rawVal === null || rawVal === undefined) return null;
+        if (typeof rawVal === 'number') return rawVal;
+        if (typeof rawVal === 'string') {
+          if (rawVal.indexOf('%') !== -1) {
+            return parseFloat(rawVal.replace('%', ''));
+          }
+          if (rawVal.indexOf('/') !== -1) {
+            return parseFloat(rawVal.split('/')[0]);
+          }
+          return parseFloat(rawVal);
+        }
+        return null;
+      }
+
+      function isUserSource(src) {
+        return (
+          src.indexOf('user') !== -1 ||
+          src.indexOf('users') !== -1 ||
+          src.indexOf('metacriticuser') !== -1 ||
+          src.indexOf('metacritic_user') !== -1
+        );
+      }
+
+      response.ratings.forEach(function(r) {
+        var src = (r.source || '').toLowerCase();
+        var val = parseRawScore(r.value);
+        if (val === null || isNaN(val)) return;
+
+        if (src.indexOf('tmdb') !== -1) {
+          var tmdb10 = val > 10 ? (val / 10) : val;
+          res.tmdb_display = tmdb10.toFixed(1);
+          res.tmdb_for_avg = tmdb10;
+        }
+        if (src.indexOf('imdb') !== -1) {
+          var imdb10 = val > 10 ? (val / 10) : val;
+          res.imdb_display = imdb10.toFixed(1);
+          res.imdb_for_avg = imdb10;
+        }
+        if (src.indexOf('metacritic') !== -1 && isUserSource(src)) {
+          var user10 = val > 10 ? (val / 10) : val;
+          res.mc_user_display = user10.toFixed(1);
+          res.mc_user_for_avg = user10;
+        }
+        if (src.indexOf('metacritic') !== -1 && !isUserSource(src)) {
+          var critic10 = val > 10 ? (val / 10) : val;
+          res.mc_critic_display = critic10.toFixed(1);
+          res.mc_critic_for_avg = critic10;
+        }
+        if (src.indexOf('rotten') !== -1 || src.indexOf('tomato') !== -1) {
+          res.rt_display = String(Math.round(val));
+          res.rt_for_avg = val / 10;
+          res.rt_fresh = val >= 60;
+        }
+        if (src.indexOf('popcorn') !== -1 || src.indexOf('audience') !== -1) {
+          res.popcorn_display = String(Math.round(val));
+          res.popcorn_for_avg = val / 10;
+        }
+      });
+
+      res._mdblist_ratings = Array.isArray(response.ratings) ? response.ratings.slice() : [];
+
+      callback(res);
+    }
+  }
+
+  /**
+   * Завантажує рейтинги з OMDB
+   */
+  function fetchOmdbRatings(card, callback) {
+    var key = LMP_ENH_CONFIG.apiKeys.omdb;
+    if (!key || !card.imdb_id) {
+      callback(null);
+      return;
+    }
+
+    var typeParam = (card.type === 'tv') ? '&type=series' : '';
+    var url = 'https://www.omdbapi.com/?apikey=' + encodeURIComponent(key) +
+      '&i=' + encodeURIComponent(card.imdb_id) + typeParam;
+
+    new Lampa.Reguest().silent(url, function(data) {
+      if (!data || data.Response !== 'True') {
+        callback(null);
+        return;
+      }
+
+      var awardsParsed = parseAwards(data.Awards || '');
+      var rtScore = null;
+      var mcScore = null;
+
+      if (Array.isArray(data.Ratings)) {
+        data.Ratings.forEach(function(r) {
+          if (r.Source === 'Rotten Tomatoes') {
+            var v = parseInt((r.Value || '').replace('%', ''));
+            if (!isNaN(v)) rtScore = v;
+          }
+          if (r.Source === 'Metacritic') {
+            var m = parseInt((r.Value || '').split('/')[0]);
+            if (!isNaN(m)) mcScore = m;
+          }
+        });
+      }
+
+      var mc10 = (mcScore !== null && !isNaN(mcScore)) ?
+        (mcScore > 10 ? mcScore / 10 : mcScore) :
+        null;
+
+      var res = {
+        tmdb_display: null,
+        tmdb_for_avg: null,
+        imdb_display: data.imdbRating && data.imdbRating !== 'N/A' ? parseFloat(data.imdbRating).toFixed(1) : null,
+        imdb_for_avg: data.imdbRating && data.imdbRating !== 'N/A' ? parseFloat(data.imdbRating) : null,
+        mc_user_display: null,
+        mc_user_for_avg: null,
+        mc_critic_display: (mc10 !== null ? mc10.toFixed(1) : null),
+        mc_critic_for_avg: (mc10 !== null ? mc10 : null),
+        rt_display: (rtScore !== null && !isNaN(rtScore)) ? String(rtScore) : null,
+        rt_for_avg: (rtScore !== null && !isNaN(rtScore)) ? (rtScore / 10) : null,
+        rt_fresh: (rtScore !== null && !isNaN(rtScore)) ? (rtScore >= 60) : null,
+        popcorn_display: null,
+        popcorn_for_avg: null,
+        ageRating: data.Rated || null,
+        oscars: awardsParsed.oscars || 0,
+        emmy: awardsParsed.emmy || 0,
+        awards: awardsParsed.awards || 0
+      };
+
+      callback(res);
+    }, function() {
+      callback(null);
+    });
+  }
+
+  /**
+   * Змерджує результати MDBList та OMDB
+   */
+  function mergeRatings(mdb, omdb) {
+    mdb = mdb || {};
+    omdb = omdb || {};
+
+    var mc_display = null;
+    var mc_for_avg = null;
+
+    if (mdb.mc_user_display) {
+      mc_display = mdb.mc_user_display;
+      mc_for_avg = mdb.mc_user_for_avg;
+    } else if (mdb.mc_critic_display) {
+      mc_display = mdb.mc_critic_display;
+      mc_for_avg = mdb.mc_critic_for_avg;
+    } else if (omdb.mc_critic_display) {
+      mc_display = omdb.mc_critic_display;
+      mc_for_avg = omdb.mc_critic_for_avg;
+    }
+
+    var merged = {
+      tmdb_display: mdb.tmdb_display || null,
+      tmdb_for_avg: mdb.tmdb_for_avg || null,
+      imdb_display: mdb.imdb_display || omdb.imdb_display || null,
+      imdb_for_avg: mdb.imdb_for_avg || omdb.imdb_for_avg || null,
+      mc_display: mc_display || null,
+      mc_for_avg: (typeof mc_for_avg === 'number' ? mc_for_avg : null),
+      rt_display: mdb.rt_display || omdb.rt_display || null,
+      rt_for_avg: mdb.rt_for_avg || omdb.rt_for_avg || null,
+      rt_fresh: (mdb.rt_display || omdb.rt_display) ?
+        (mdb.rt_display ? mdb.rt_fresh : omdb.rt_fresh) :
+        null,
+      popcorn_display: mdb.popcorn_display || null,
+      popcorn_for_avg: mdb.popcorn_for_avg || null,
+      ageRating: omdb.ageRating || null,
+      oscars: omdb.oscars || 0,
+      emmy: omdb.emmy || 0,
+      awards: omdb.awards || 0,
+      _mdblist_ratings: Array.isArray(mdb._mdblist_ratings) ? mdb._mdblist_ratings.slice() : []
+    };
+
+    return merged;
+  }
+
+  /**
+   * Оновлює приховані елементи (вік, IMDb, TMDB)
+   */
+  function updateHiddenElements(data) {
+    var render = Lampa.Activity.active().activity.render();
+    if (!render || !render[0]) return;
+
+    var pgElement = $('.full-start__pg.hide', render);
+    if (pgElement.length && data.ageRating) {
+      var invalidRatings = ['N/A', 'Not Rated', 'Unrated'];
+      var isValid = invalidRatings.indexOf(data.ageRating) === -1;
+      if (isValid) {
+        var localized = AGE_RATINGS[data.ageRating] || data.ageRating;
+        pgElement.removeClass('hide').text(localized);
+      }
+    }
+
+    var imdbContainer = $('.rate--imdb', render);
+    if (imdbContainer.length) {
+      var cfg = getRatingsCfg();
+      if (!cfg.enableImdb || !data.imdb_display) {
+        imdbContainer.addClass('hide')
+          .removeClass('rating--green rating--blue rating--orange rating--red');
+      } else {
+        imdbContainer.removeClass('hide');
+        var imdbDivs = imdbContainer.find('> div');
+        if (imdbDivs.length >= 2) {
+          imdbDivs.eq(0).text(parseFloat(data.imdb_display).toFixed(1));
+          imdbDivs.eq(1).addClass('source--name').html(iconImg(ICONS.imdb, 'IMDb', 22));
+        }
+        imdbContainer.removeClass('rating--green rating--blue rating--orange rating--red');
+        if (cfg.colorizeAll && data.imdb_for_avg && !isNaN(data.imdb_for_avg)) {
+          imdbContainer.addClass(getRatingClass(parseFloat(data.imdb_for_avg)));
+        }
+      }
+    }
+
+    var tmdbContainer = $('.rate--tmdb', render);
+    if (tmdbContainer.length) {
+      var cfg = getRatingsCfg();
+      if (!cfg.enableTmdb || !data.tmdb_display) {
+        tmdbContainer.addClass('hide')
+          .removeClass('rating--green rating--blue rating--orange rating--red');
+      } else {
+        var tmdbDivs = tmdbContainer.find('> div');
+        if (tmdbDivs.length >= 2) {
+          tmdbDivs.eq(0).text(parseFloat(data.tmdb_display).toFixed(1));
+          tmdbDivs.eq(1).addClass('source--name').html(iconImg(ICONS.tmdb, 'TMDB', 24));
+        }
+        tmdbContainer.removeClass('hide rating--green rating--blue rating--orange rating--red');
+        if (cfg.colorizeAll && data.tmdb_for_avg && !isNaN(data.tmdb_for_avg)) {
+          tmdbContainer.addClass(getRatingClass(parseFloat(data.tmdb_for_avg)));
+        }
+      }
+    }
+  }
+
+  /**
+   * Застосовує "золотий" колір до нагород
+   */
+  function applyAwardsColor(rateLine, cfg) {
+    var $tiles = rateLine.find('.rate--awards, .rate--oscars, .rate--emmy');
+    $tiles.removeClass('rating--green rating--blue rating--orange rating--red');
+
+    if (cfg && cfg.colorizeAll) {
+      $tiles.addClass('rate--gold');
+    } else {
+      $tiles.removeClass('rate--gold');
+    }
+  }
+
+  /**
+   * Вставляє нові бейджі (MC, RT, Popcorn, Awards)
+   */
+  function insertRatings(data) {
+    var render = Lampa.Activity.active().activity.render();
+    if (!render) return;
+
+    var rateLine = $('.full-start-new__rate-line:not([data-lmp-fake]), .full-start__rate-line:not([data-lmp-fake])', render);
+    if (!rateLine.length) return;
+
+    var cfg = getRatingsCfg();
+
+    (function() {
+      var cont = $('.rate--mc', rateLine);
+      if (!cfg.enableMc) {
+        cont.remove();
+        return;
+      }
+
+      var mcVal = null;
+      if (data.mc_user_for_avg && !isNaN(data.mc_user_for_avg)) {
+        mcVal = parseFloat(data.mc_user_for_avg);
+      } else if (data.mc_critic_for_avg && !isNaN(data.mc_critic_for_avg)) {
+        mcVal = parseFloat(data.mc_critic_for_avg);
+      } else if (data.mc_for_avg && !isNaN(data.mc_for_avg)) {
+        mcVal = parseFloat(data.mc_for_avg);
+      } else if (data.mc_display && !isNaN(parseFloat(data.mc_display))) {
+        var md = parseFloat(data.mc_display);
+        mcVal = (md > 10) ? (md / 10) : md;
+      }
+
+      if (mcVal == null || isNaN(mcVal)) {
+        cont.remove();
+        return;
+      }
+
+      var mcText = mcVal.toFixed(1);
+
+      if (!cont.length) {
+        cont = $(
+          '<div class="full-start__rate rate--mc">' +
+          '<div>' + mcText + '</div>' +
+          '<div class="source--name"></div>' +
+          '</div>'
+        );
+        cont.find('.source--name').html(iconImg(ICONS.metacritic, 'Metacritic', 22));
+
+        var afterImdb = $('.rate--imdb', rateLine);
+        if (afterImdb.length) cont.insertAfter(afterImdb);
+        else rateLine.append(cont);
+      } else {
+        cont.find('> div').eq(0).text(mcText);
+      }
+
+      cont.removeClass('rating--green rating--blue rating--orange rating--red');
+      if (cfg.colorizeAll) cont.addClass(getRatingClass(mcVal));
+    })();
+
+    (function() {
+      var cont = $('.rate--rt', rateLine);
+      if (!cfg.enableRt) {
+        cont.remove();
+        return;
+      }
+
+      var rtVal = null;
+      if (data.rt_for_avg && !isNaN(data.rt_for_avg)) rtVal = parseFloat(data.rt_for_avg);
+      else if (data.rt_display && !isNaN(parseFloat(data.rt_display))) {
+        var rtd = parseFloat(data.rt_display);
+        rtVal = (rtd > 10) ? (rtd / 10) : rtd;
+      }
+
+      if (rtVal == null || isNaN(rtVal)) {
+        cont.remove();
+        return;
+      }
+
+      var rtText = rtVal.toFixed(1);
+      var rtIconUrl = data.rt_fresh ? ICONS.rotten_good : ICONS.rotten_bad;
+      var extra = data.rt_fresh ? 'border-radius:4px;' : '';
+
+      if (!cont.length) {
+        cont = $(
+          '<div class="full-start__rate rate--rt">' +
+          '<div>' + rtText + '</div>' +
+          '<div class="source--name"></div>' +
+          '</div>'
+        );
+        cont.find('.source--name').html(iconImg(rtIconUrl, 'Rotten Tomatoes', 22, extra));
+
+        var afterMc = $('.rate--mc', rateLine);
+        if (afterMc.length) cont.insertAfter(afterMc);
+        else {
+          var afterImdb2 = $('.rate--imdb', rateLine);
+          if (afterImdb2.length) cont.insertAfter(afterImdb2);
+          else rateLine.prepend(cont);
+        }
+      } else {
+        cont.find('> div').eq(0).text(rtText);
+        cont.find('.source--name').html(iconImg(rtIconUrl, 'Rotten Tomatoes', 22, extra));
+      }
+
+      cont.removeClass('rating--green rating--blue rating--orange rating--red');
+      if (cfg.colorizeAll) cont.addClass(getRatingClass(rtVal));
+    })();
+
+    (function() {
+      var cont = $('.rate--popcorn', rateLine);
+      if (!cfg.enablePop) {
+        cont.remove();
+        return;
+      }
+
+      var pcVal = null;
+      if (data.popcorn_for_avg && !isNaN(data.popcorn_for_avg)) pcVal = parseFloat(data.popcorn_for_avg);
+      else if (data.popcorn_display && !isNaN(parseFloat(data.popcorn_display))) {
+        var pcd = parseFloat(data.popcorn_display);
+        pcVal = (pcd > 10) ? (pcd / 10) : pcd;
+      }
+
+      if (pcVal == null || isNaN(pcVal)) {
+        cont.remove();
+        return;
+      }
+
+      var pcText = pcVal.toFixed(1);
+
+      if (!cont.length) {
+        cont = $(
+          '<div class="full-start__rate rate--popcorn">' +
+          '<div>' + pcText + '</div>' +
+          '<div class="source--name"></div>' +
+          '</div>'
+        );
+        cont.find('.source--name').html(iconImg(ICONS.popcorn, 'Audience', 22));
+
+        var anchors = rateLine.find('.rate--rt, .rate--mc, .rate--tmdb, .rate--imdb');
+        if (anchors.length) cont.insertAfter(anchors.last());
+        else rateLine.prepend(cont);
+      } else {
+        cont.find('> div').eq(0).text(pcText);
+        cont.find('.source--name').html(iconImg(ICONS.popcorn, 'Audience', 22));
+      }
+
+      cont.removeClass('rating--green rating--blue rating--orange rating--red');
+      if (cfg.colorizeAll) cont.addClass(getRatingClass(pcVal));
+    })();
+
+    if (data.awards && data.awards > 0 && !$('.rate--awards', rateLine).length) {
+      var awardsElement = $(
+        '<div class="full-start__rate rate--awards rate--gold">' +
+        '<div>' + data.awards + '</div>' +
+        '<div class="source--name"></div>' +
+        '</div>'
+      );
+      awardsElement.find('.source--name')
+        .html(iconImg(ICONS.awards, 'Awards', 20))
+        .attr('title', Lampa.Lang.translate('awards_other_label'));
+      rateLine.prepend(awardsElement);
+    }
+
+    if (data.emmy && data.emmy > 0 && !$('.rate--emmy', rateLine).length) {
+      var emmyElement = $(
+        '<div class="full-start__rate rate--emmy rate--gold">' +
+        '<div>' + data.emmy + '</div>' +
+        '<div class="source--name"></div>' +
+        '</div>'
+      );
+      emmyElement.find('.source--name')
+        .html(emmyIconInline())
+        .attr('title', Lampa.Lang.translate('emmy_label'));
+      rateLine.prepend(emmyElement);
+    }
+
+    if (data.oscars && data.oscars > 0 && !$('.rate--oscars', rateLine).length) {
+      var oscarsElement = $(
+        '<div class="full-start__rate rate--oscars rate--gold">' +
+        '<div>' + data.oscars + '</div>' +
+        '<div class="source--name"></div>' +
+        '</div>'
+      );
+      oscarsElement.find('.source--name')
+        .html(oscarIconInline())
+        .attr('title', Lampa.Lang.translate('oscars_label'));
+      rateLine.prepend(oscarsElement);
+    }
+
+    try {
+      applyAwardsColor(rateLine, cfg);
     } catch (e) {}
   }
 
-  // Запуск плагіну при готовності Lampa
-  if (window.appready) {
-    startPlugin();
-  } else {
-    Lampa.Listener.follow('app', function (e) {
-      if (e.type === 'ready') startPlugin();
+  /**
+   * Розраховує та вставляє середній рейтинг (AVG)
+   */
+  function calculateAverageRating(data) {
+    var render = Lampa.Activity.active().activity.render();
+    if (!render) return;
+
+    var rateLine = $('.full-start-new__rate-line:not([data-lmp-fake]), .full-start__rate-line:not([data-lmp-fake])', render);
+    if (!rateLine.length) return;
+
+    var cfg = getRatingsCfg();
+
+    $('.rate--avg', rateLine).remove();
+    if (!cfg.showAverage) {
+      try {
+        applyAwardsColor(rateLine, cfg);
+      } catch (e) {}
+      removeLoadingAnimation();
+      undimRateLine(rateLine);
+      return;
+    }
+
+    var parts = [];
+    if (cfg.enableTmdb && data.tmdb_for_avg && !isNaN(data.tmdb_for_avg)) parts.push(parseFloat(data.tmdb_for_avg));
+    if (cfg.enableImdb && data.imdb_for_avg && !isNaN(data.imdb_for_avg)) parts.push(parseFloat(data.imdb_for_avg));
+
+    if (cfg.enableMc) {
+      if (data.mc_user_for_avg && !isNaN(data.mc_user_for_avg)) {
+        parts.push(parseFloat(data.mc_user_for_avg));
+      } else if (data.mc_critic_for_avg && !isNaN(data.mc_critic_for_avg)) {
+        parts.push(parseFloat(data.mc_critic_for_avg));
+      } else if (data.mc_for_avg && !isNaN(data.mc_for_avg)) {
+        parts.push(parseFloat(data.mc_for_avg));
+      }
+    }
+
+    if (cfg.enableRt && data.rt_for_avg && !isNaN(data.rt_for_avg)) parts.push(parseFloat(data.rt_for_avg));
+    if (cfg.enablePop && data.popcorn_for_avg && !isNaN(data.popcorn_for_avg)) parts.push(parseFloat(data.popcorn_for_avg));
+
+    if (!parts.length) {
+      removeLoadingAnimation();
+      undimRateLine(rateLine);
+      return;
+    }
+
+    var sum = 0;
+    for (var i = 0; i < parts.length; i++) sum += parts[i];
+    var avg = sum / parts.length;
+    var colorClass = cfg.colorizeAll ? getRatingClass(avg) : '';
+
+    var avgElement = $(
+      '<div class="full-start__rate rate--avg ' + colorClass + '">' +
+      '<div>' + avg.toFixed(1) + '</div>' +
+      '<div class="source--name"></div>' +
+      '</div>'
+    );
+
+    var starHtml = iconImg(ICONS.total_star, 'AVG', 20);
+    avgElement.find('.source--name').html(starHtml);
+
+    var firstRate = $('.full-start__rate:first', rateLine);
+    if (firstRate.length) firstRate.before(avgElement);
+    else rateLine.prepend(avgElement);
+
+    try {
+      applyAwardsColor(rateLine, getRatingsCfg());
+    } catch (e) {}
+
+    removeLoadingAnimation();
+    undimRateLine(rateLine);
+  }
+
+  /**
+   * Головна функція, що запускає весь процес рейтингів
+   */
+  function fetchAdditionalRatings(card) {
+    var render = Lampa.Activity.active().activity.render();
+    if (!render) return;
+
+    var normalizedCard = {
+      id: card.id,
+      imdb_id: card.imdb_id || card.imdb || null,
+      title: card.title || card.name || '',
+      original_title: card.original_title || card.original_name || '',
+      type: getCardType(card),
+      release_date: card.release_date || card.first_air_date || '',
+      vote: card.vote_average || card.vote || null
+    };
+
+    var cardKeyForToken = (normalizedCard.type || getCardType(normalizedCard)) + '_' + (normalizedCard.imdb_id || normalizedCard.id || '');
+    var reqToken = cardKeyForToken + '_' + Date.now();
+    __lmpLastReqToken = reqToken;
+
+    function renderAll() {
+      if (reqToken !== __lmpLastReqToken) return;
+      if (!currentRatingsData) {
+        removeLoadingAnimation();
+        return;
+      }
+
+      updateHiddenElements(currentRatingsData);
+      insertRatings(currentRatingsData);
+      calculateAverageRating(currentRatingsData);
+
+      applyRatingsStyles();
+    }
+
+    function proceedWithImdbId() {
+      var cacheKeyBase = normalizedCard.imdb_id || normalizedCard.id;
+      var cacheKey = cacheKeyBase ? (normalizedCard.type + '_' + cacheKeyBase) : null;
+
+      var cached = cacheKey ? getCachedRatings(cacheKey) : null;
+      if (cached) {
+        currentRatingsData = cached;
+        renderAll();
+        return;
+      }
+
+      addLoadingAnimation();
+
+      var pending = 2;
+      var mdbRes = null;
+      var omdbRes = null;
+
+      function oneDone() {
+        pending--;
+        if (pending !== 0) return;
+
+        currentRatingsData = mergeRatings(mdbRes, omdbRes);
+
+        if (
+          (!currentRatingsData.tmdb_display || !currentRatingsData.tmdb_for_avg) &&
+          normalizedCard.vote != null
+        ) {
+          var tm = parseFloat(normalizedCard.vote);
+          if (!isNaN(tm)) {
+            if (tm > 10) tm = tm / 10;
+            if (tm < 0) tm = 0;
+            if (tm > 10) tm = 10;
+            currentRatingsData.tmdb_for_avg = tm;
+            currentRatingsData.tmdb_display = tm.toFixed(1);
+          }
+        }
+
+        if (
+          cacheKey &&
+          currentRatingsData && (
+            currentRatingsData.tmdb_display ||
+            currentRatingsData.imdb_display ||
+            currentRatingsData.mc_display ||
+            currentRatingsData.rt_display ||
+            currentRatingsData.popcorn_display ||
+            currentRatingsData.oscars ||
+            currentRatingsData.emmy ||
+            currentRatingsData.awards
+          )
+        ) {
+          saveCachedRatings(cacheKey, currentRatingsData);
+        }
+
+        renderAll();
+      }
+
+      fetchMdbListRatings(normalizedCard, function(r1) {
+        mdbRes = r1 || {};
+        oneDone();
+      });
+      fetchOmdbRatings(normalizedCard, function(r2) {
+        omdbRes = r2 || {};
+        oneDone();
+      });
+    }
+
+    if (!normalizedCard.imdb_id) {
+      getImdbIdFromTmdb(normalizedCard.id, normalizedCard.type, function(imdb_id) {
+        normalizedCard.imdb_id = imdb_id;
+        proceedWithImdbId();
+      });
+    } else {
+      proceedWithImdbId();
+    }
+  }
+
+  /**
+   * Отримує актуальні налаштування рейтингів
+   */
+  function getRatingsCfg() {
+    return {
+      showAwards: settings.ratings_show_awards,
+      showAverage: settings.ratings_show_average,
+      colorizeAll: settings.ratings_colorize_all,
+      enableImdb: settings.ratings_enable_imdb,
+      enableTmdb: settings.ratings_enable_tmdb,
+      enableMc: settings.ratings_enable_mc,
+      enableRt: settings.ratings_enable_rt,
+      enablePop: settings.ratings_enable_popcorn
+    };
+  }
+
+  /**
+   * Ховає/показує блоки з нагородами
+   */
+  function toggleAwards(showAwards) {
+    var nodes = document.querySelectorAll('.rate--oscars, .rate--emmy, .rate--awards');
+    nodes.forEach(function(n) {
+      n.style.display = showAwards ? '' : 'none';
     });
   }
+
+  /**
+   * Ховає/показує блок середнього рейтингу
+   */
+  function toggleAverage(showAverage) {
+    var nodes = document.querySelectorAll('.rate--avg');
+    nodes.forEach(function(n) {
+      n.style.display = showAverage ? '' : 'none';
+    });
+  }
+
+  /**
+   * Головна функція стилізації рейтингів
+   */
+  function applyRatingsStyles() {
+    toggleAwards(settings.ratings_show_awards);
+    toggleAverage(settings.ratings_show_average);
+  }
+
+  /**
+   * Оновлює відображення рейтингів
+   */
+  function updateRatingsDisplay() {
+    if (currentRatingsData) {
+      updateHiddenElements(currentRatingsData);
+      insertRatings(currentRatingsData);
+      calculateAverageRating(currentRatingsData);
+    }
+    applyRatingsStyles();
+  }
+
+  // Debounce-обробник для resize
+  var reapplyOnResize = (function() {
+    var t;
+    return function() {
+      clearTimeout(t);
+      t = setTimeout(function() {
+        applyRatingsStyles();
+      }, 150);
+    };
+  })();
+
+  /**
+   * Встановлює дефолтні значення для тумблерів рейтингів
+   */
+  function ensureDefaultToggles() {
+    if (typeof Lampa.Storage.get('ratings_show_awards') === 'undefined') {
+      Lampa.Storage.set('ratings_show_awards', true);
+    }
+    if (typeof Lampa.Storage.get('ratings_show_average') === 'undefined') {
+      Lampa.Storage.set('ratings_show_average', true);
+    }
+  }
+
+  /**
+   * "Живе" оновлення стилів при зміні в меню
+   */
+  function attachLiveSettingsHandlers() {
+    var scheduleApply = (function() {
+      var t;
+      return function() {
+        clearTimeout(t);
+        t = setTimeout(function() {
+          try {
+            updateRatingsDisplay();
+          } catch (e) {}
+        }, 150);
+      };
+    })();
+
+    function onDomChange(e) {
+      var t = e.target;
+      if (!t) return;
+      var n = (t.getAttribute('name') || t.getAttribute('data-name') || '');
+      if (n && n.indexOf('ratings_') === 0) scheduleApply();
+    }
+
+    document.addEventListener('input', onDomChange, true);
+    document.addEventListener('change', onDomChange, true);
+    document.addEventListener('click', function(e) {
+      var el = e.target.closest('[data-name^="ratings_"],[name^="ratings_"]');
+      if (el) scheduleApply();
+    }, true);
+    document.addEventListener('keyup', onDomChange, true);
+  }
+
+  /* ============================================================
+   * ЗАПУСК РЕЙТИНГІВ
+   * ============================================================ */
+  function startRatingsPlugin() {
+    window.combined_ratings_plugin = true;
+    Lampa.Listener.follow('full', function(e) {
+      if (e.type === 'complite') {
+        setTimeout(function() {
+          fetchAdditionalRatings(e.data.movie || e.object || {});
+          __lmpTenFixStart();
+        }, 500);
+      }
+    });
+  }
+
+  /* ============================================================
+   * СТИЛІ ТОРРЕНТІВ ЯК У TORRENT_STYLES.JS (без рамок)
+   * ============================================================ */
+  (function () {
+    try {
+      // Thresholds
+      var TH = {
+        seeds: {
+          danger_below: 5,
+          good_from: 10,
+          top_from: 20
+        },
+        bitrate: {
+          warn_from: 50,
+          danger_from: 100
+        },
+        size: {
+          mid_from_gb: 50,
+          high_from_gb: 100,
+          top_from_gb: 200
+        },
+        debounce_ms: 60
+      };
+
+      var styles = {
+        '.torrent-item__details': {
+          'font-size': '0.9em'
+        },
+        // Base badge look (emerald theme)
+        '.torrent-item__bitrate > span.ts-bitrate, .torrent-item__seeds > span.ts-seeds, .torrent-item__grabs > span.ts-grabs, .torrent-item__size.ts-size': {
+          'display': 'inline-flex',
+          '-webkit-box-align': 'center',
+          '-webkit-align-items': 'center',
+          '-moz-box-align': 'center',
+          '-ms-flex-align': 'center',
+          'align-items': 'center',
+          '-webkit-box-pack': 'center',
+          '-webkit-justify-content': 'center',
+          '-moz-box-pack': 'center',
+          '-ms-flex-pack': 'center',
+          'justify-content': 'center',
+          'box-sizing': 'border-box',
+          'min-height': '1.7em',
+          'padding': '0.15em 0.45em',
+          'border-radius': '0.5em',
+          'font-weight': '700',
+          'font-size': '0.9em',
+          'line-height': '1',
+          'white-space': 'nowrap',
+          'vertical-align': 'middle',
+          'font-variant-numeric': 'tabular-nums'
+        },
+
+        // Tighten spacing so everything fits on one row
+        '.torrent-item__bitrate, .torrent-item__grabs, .torrent-item__seeds': {
+          'margin-right': '0.55em'
+        },
+
+        // Seeds
+        '.torrent-item__seeds > span.ts-seeds': {
+          color: '#5cd4b0',
+          'background-color': 'rgba(92, 212, 176, 0.14)',
+          border: '0.15em solid rgba(92, 212, 176, 0.90)',
+          'box-shadow': '0 0 0.75em rgba(92, 212, 176, 0.28)'
+        },
+        // Low seeds (danger) — soft red (emerald palette)
+        '.torrent-item__seeds > span.ts-seeds.low-seeds': {
+          color: '#ff5f6d',
+          'background-color': 'rgba(255, 95, 109, 0.14)',
+          border: '0.15em solid rgba(255, 95, 109, 0.82)',
+          'box-shadow': '0 0 0.65em rgba(255, 95, 109, 0.26)',
+          'text-shadow': '0 0 0.25em rgba(255, 95, 109, 0.25)'
+        },
+        // 10..19 (good) — emerald
+        '.torrent-item__seeds > span.ts-seeds.good-seeds': {
+          color: '#43cea2',
+          'background-color': 'rgba(67, 206, 162, 0.16)',
+          border: '0.15em solid rgba(67, 206, 162, 0.92)',
+          'box-shadow': '0 0 0.9em rgba(67, 206, 162, 0.34)'
+        },
+        '.torrent-item__seeds > span.ts-seeds.high-seeds': {
+          color: '#ffc371',
+          background: 'linear-gradient(135deg, rgba(255, 195, 113, 0.28), rgba(67, 206, 162, 0.10))',
+          border: '0.15em solid rgba(255, 195, 113, 0.92)',
+          'box-shadow': '0 0 0.95em rgba(255, 195, 113, 0.38)',
+          'text-shadow': '0 0 0.25em rgba(255, 195, 113, 0.25)'
+        },
+
+        // Grabs/Peers (download) — theme blue
+        '.torrent-item__grabs > span.ts-grabs': {
+          color: '#4db6ff',
+          'background-color': 'rgba(77, 182, 255, 0.12)',
+          border: '0.15em solid rgba(77, 182, 255, 0.82)',
+          'box-shadow': '0 0 0.35em rgba(77, 182, 255, 0.16)'
+        },
+        '.torrent-item__grabs > span.ts-grabs.high-grabs': {
+          color: '#4db6ff',
+          background: 'linear-gradient(135deg, rgba(77, 182, 255, 0.18), rgba(52, 152, 219, 0.10))',
+          border: '0.15em solid rgba(77, 182, 255, 0.92)',
+          'box-shadow': '0 0 0.55em rgba(77, 182, 255, 0.22)'
+        },
+
+        // Bitrate — light emerald accent
+        '.torrent-item__bitrate > span.ts-bitrate': {
+          color: '#5cd4b0',
+          'background-color': 'rgba(67, 206, 162, 0.10)',
+          border: '0.15em solid rgba(92, 212, 176, 0.78)',
+          'box-shadow': '0 0 0.45em rgba(92, 212, 176, 0.20)'
+        },
+        // 50..100 Mbps (gold)
+        '.torrent-item__bitrate > span.ts-bitrate.high-bitrate': {
+          color: '#ffc371',
+          background: 'linear-gradient(135deg, rgba(255, 195, 113, 0.28), rgba(67, 206, 162, 0.10))',
+          border: '0.15em solid rgba(255, 195, 113, 0.92)',
+          'box-shadow': '0 0 0.95em rgba(255, 195, 113, 0.38)',
+          'text-shadow': '0 0 0.25em rgba(255, 195, 113, 0.25)'
+        },
+        // >100 Mbps (danger)
+        '.torrent-item__bitrate > span.ts-bitrate.very-high-bitrate': {
+          color: '#ff5f6d',
+          background: 'linear-gradient(135deg, rgba(255, 95, 109, 0.28), rgba(67, 206, 162, 0.08))',
+          border: '0.15em solid rgba(255, 95, 109, 0.92)',
+          'box-shadow': '0 0 1.05em rgba(255, 95, 109, 0.40)',
+          'text-shadow': '0 0 0.25em rgba(255, 95, 109, 0.25)'
+        },
+
+        // Size — tiered
+        '.torrent-item__size.ts-size': {
+          color: '#5cd4b0',
+          'background-color': 'rgba(92, 212, 176, 0.12)',
+          border: '0.15em solid rgba(92, 212, 176, 0.82)',
+          'box-shadow': '0 0 0.7em rgba(92, 212, 176, 0.26)',
+          'font-weight': '700'
+        },
+        // 50..100GB: emerald
+        '.torrent-item__size.ts-size.mid-size': {
+          color: '#43cea2',
+          'background-color': 'rgba(67, 206, 162, 0.16)',
+          border: '0.15em solid rgba(67, 206, 162, 0.92)',
+          'box-shadow': '0 0 0.9em rgba(67, 206, 162, 0.34)'
+        },
+        // 100..200GB: gold
+        '.torrent-item__size.ts-size.high-size': {
+          color: '#ffc371',
+          background: 'linear-gradient(135deg, rgba(255, 195, 113, 0.28), rgba(67, 206, 162, 0.10))',
+          border: '0.15em solid rgba(255, 195, 113, 0.95)',
+          'box-shadow': '0 0 1.05em rgba(255, 195, 113, 0.40)',
+          'text-shadow': '0 0 0.25em rgba(255, 195, 113, 0.22)'
+        },
+        // >200GB: red (danger)
+        '.torrent-item__size.ts-size.top-size': {
+          color: '#ff5f6d',
+          background: 'linear-gradient(135deg, rgba(255, 95, 109, 0.28), rgba(67, 206, 162, 0.08))',
+          border: '0.15em solid rgba(255, 95, 109, 0.95)',
+          'box-shadow': '0 0 1.1em rgba(255, 95, 109, 0.42)',
+          'text-shadow': '0 0 0.25em rgba(255, 95, 109, 0.22)'
+        },
+
+        '.torrent-item.selector.focus': {
+          'box-shadow': '0 0 0 0.3em rgba(67, 206, 162, 0.4)'
+        },
+        '.torrent-serial.selector.focus': {
+          'box-shadow': '0 0 0 0.25em rgba(67, 206, 162, 0.4)'
+        },
+        '.torrent-file.selector.focus': {
+          'box-shadow': '0 0 0 0.25em rgba(67, 206, 162, 0.4)'
+        },
+        '.torrent-item.focus::after': {
+          border: '0.24em solid #5cd4b0',
+          'box-shadow': '0 0 0.6em rgba(92, 212, 176, 0.18)',
+          'border-radius': '0.9em'
+        },
+        '.scroll__body': {
+          margin: '5px'
+        }
+      };
+
+      function injectTorrentStyles() {
+        var styleId = 'interface_mod_torrent_styles';
+        var oldStyle = document.getElementById(styleId);
+        if (oldStyle) oldStyle.remove();
+        
+        var css = Object.keys(styles)
+          .map(function (selector) {
+            var props = styles[selector];
+            var rules = Object.keys(props)
+              .map(function (prop) {
+                return prop + ': ' + props[prop] + ' !important';
+              })
+              .join('; ');
+            return selector + ' { ' + rules + ' }';
+          })
+          .join('\n');
+        
+        var style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = css;
+        document.head.appendChild(style);
+      }
+
+      function tsParseFloat(text) {
+        var t = ((text || '') + '').trim();
+        var m = t.match(/(\d+(?:[.,]\d+)?)/);
+        return m ? (parseFloat(m[1].replace(',', '.')) || 0) : 0;
+      }
+
+      function tsParseInt(text) {
+        var t = ((text || '') + '').trim();
+        var v = parseInt(t, 10);
+        return isNaN(v) ? 0 : v;
+      }
+
+      function tsApplyTier(el, classesToClear, classToAdd) {
+        try {
+          for (var i = 0; i < classesToClear.length; i++) el.classList.remove(classesToClear[i]);
+          if (classToAdd) el.classList.add(classToAdd);
+        } catch (e) { }
+      }
+
+      function tsParseSizeToGb(text) {
+        try {
+          var t = ((text || '') + '').replace(/\u00A0/g, ' ').trim();
+          var m = t.match(/(\d+(?:[.,]\d+)?)\s*(kb|mb|gb|tb|кб|мб|гб|тб)/i);
+          if (!m) return null;
+
+          var num = parseFloat((m[1] || '0').replace(',', '.')) || 0;
+          var unit = (m[2] || '').toLowerCase();
+          var gb = 0;
+
+          if (unit === 'tb' || unit === 'тб') gb = num * 1024;
+          else if (unit === 'gb' || unit === 'гб') gb = num;
+          else if (unit === 'mb' || unit === 'мб') gb = num / 1024;
+          else if (unit === 'kb' || unit === 'кб') gb = num / (1024 * 1024);
+          else gb = 0;
+
+          return gb;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function updateTorrentStylesInternal() {
+        try {
+          document.querySelectorAll('.torrent-item__seeds span').forEach(function (span) {
+            var value = tsParseInt(span.textContent);
+            span.classList.add('ts-seeds');
+
+            var seedTier = '';
+            if (value < TH.seeds.danger_below) seedTier = 'low-seeds';
+            else if (value >= TH.seeds.top_from) seedTier = 'high-seeds';
+            else if (value >= TH.seeds.good_from) seedTier = 'good-seeds';
+            tsApplyTier(span, ['low-seeds', 'good-seeds', 'high-seeds'], seedTier);
+          });
+
+          document.querySelectorAll('.torrent-item__bitrate span').forEach(function (span) {
+            var value = tsParseFloat(span.textContent);
+            span.classList.add('ts-bitrate');
+
+            var brTier = '';
+            if (value > TH.bitrate.danger_from) brTier = 'very-high-bitrate';
+            else if (value >= TH.bitrate.warn_from) brTier = 'high-bitrate';
+            tsApplyTier(span, ['high-bitrate', 'very-high-bitrate'], brTier);
+          });
+
+          document.querySelectorAll('.torrent-item__grabs span').forEach(function (span) {
+            var value = tsParseInt(span.textContent);
+            span.classList.add('ts-grabs');
+            tsApplyTier(span, ['high-grabs'], value > 10 ? 'high-grabs' : '');
+          });
+
+          document.querySelectorAll('.torrent-item__size').forEach(function (el) {
+            var text = (el.textContent || '');
+            el.classList.add('ts-size');
+
+            var gb = tsParseSizeToGb(text);
+            if (gb === null) {
+              tsApplyTier(el, ['mid-size', 'high-size', 'top-size'], '');
+              return;
+            }
+
+            var szTier = '';
+            if (gb > TH.size.top_from_gb) szTier = 'top-size';
+            else if (gb >= TH.size.high_from_gb) szTier = 'high-size';
+            else if (gb >= TH.size.mid_from_gb) szTier = 'mid-size';
+            tsApplyTier(el, ['mid-size', 'high-size', 'top-size'], szTier);
+          });
+        } catch (e) {
+          console.error('Torrent styles update error:', e);
+        }
+      }
+
+      var tsUpdateTimer = null;
+      function scheduleUpdate(delayMs) {
+        try {
+          if (tsUpdateTimer) clearTimeout(tsUpdateTimer);
+        } catch (e) { }
+
+        var ms = typeof delayMs === 'number' ? delayMs : TH.debounce_ms;
+        tsUpdateTimer = setTimeout(function () {
+          tsUpdateTimer = null;
+          updateTorrentStylesInternal();
+        }, ms);
+      }
+
+      function observeTorrentsDom() {
+        try {
+          var observer = new MutationObserver(function (mutations) {
+            var needsUpdate = false;
+            for (var i = 0; i < mutations.length; i++) {
+              var mutation = mutations[i];
+              if (mutation.addedNodes && mutation.addedNodes.length) {
+                needsUpdate = true;
+                break;
+              }
+              if (mutation.type === 'characterData' ||
+                (mutation.type === 'childList' && mutation.target &&
+                  (mutation.target.classList &&
+                    (mutation.target.classList.contains('torrent-item__bitrate') ||
+                      mutation.target.classList.contains('torrent-item__seeds') ||
+                      mutation.target.classList.contains('torrent-item__grabs') ||
+                      mutation.target.classList.contains('torrent-item__size'))))) {
+                needsUpdate = true;
+                break;
+              }
+            }
+            if (needsUpdate) scheduleUpdate();
+          });
+
+          observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            characterData: true
+          });
+          scheduleUpdate(0);
+        } catch (e) {
+          console.error('Torrent styles observer error:', e);
+          scheduleUpdate(0);
+        }
+      }
+
+      // Ініціалізація стилів торентів
+      injectTorrentStyles();
+      observeTorrentsDom();
+      
+      // Перше оновлення
+      setTimeout(function() {
+        updateTorrentStylesInternal();
+      }, 500);
+      
+    } catch (e) {
+      console.error('Torrent styles initialization error:', e);
+    }
+  })();
+
+  /* Torrent toggles overrides */
+  // Цей блок динамічно вмикає/вимикає стилі з torrents+mod
+  // на основі налаштувань з "Інтерфейс +"
+  (function () {
+    // Власна реалізація getBool, щоб бути незалежним
+    function getBool(key, def) {
+      var v = Lampa.Storage.get(key);
+      if (v === true || v === false) return v;
+      if (v === 'true') return true;
+      if (v === 'false') return false;
+      if (v == null) return def;
+      return !!v;
+    }
+
+    function apply() {
+      var s = document.getElementById('torr_mod_overrides');
+      if (!s) {
+        s = document.createElement('style');
+        s.id = 'torr_mod_overrides';
+        document.head.appendChild(s);
+      }
+      
+      // Отримуємо налаштування з "Інтерфейс +"
+      var ef = getBool('interface_mod_new_tor_frame', true),
+          eb = getBool('interface_mod_new_tor_bitrate', true),
+          es = getBool('interface_mod_new_tor_seeds', true);
+          
+      var css = '';
+      
+      // Якщо налаштування вимкнені, додаємо CSS, який "скидає" стилі
+      if (!eb) css += '.torrent-item__bitrate span.low-bitrate, .torrent-item__bitrate span.medium-bitrate, .torrent-item__bitrate span.high-bitrate{ color: inherit !important; font-weight: inherit !important; }\n';
+      if (!es) css += '.torrent-item__seeds span.low-seeds, .torrent-item__seeds span.medium-seeds, .torrent-item__seeds span.high-seeds{ color: inherit !important; font-weight: inherit !important; }\n';
+      if (!ef) css += '.torrent-item.low-seeds, .torrent-item.medium-seeds, .torrent-item.high-seeds{ border: none !important; }\n';
+      
+      s.textContent = css;
+    }
+    
+    // Робимо функцію глобальною, щоб її міг викликати основний плагін
+    window.runTorrentStyleRefresh = apply;
+    setTimeout(apply, 0); // Перший запуск
+  })();
 
   /* BEGIN torrents+mod */
   (function () {
@@ -3464,398 +5543,67 @@ border: 0.2em solid #f6a5b0;
   /* END torrents+mod ==== */
 
   /* ============================================================
-   * СТИЛІ ТОРРЕНТІВ ЯК У TORRENT_STYLES.JS (без рамок)
+   * ЗАПУСК
    * ============================================================ */
-  (function () {
-    try {
-      // Thresholds
-      var TH = {
-        seeds: {
-          danger_below: 5,
-          good_from: 10,
-          top_from: 20
-        },
-        bitrate: {
-          warn_from: 50,
-          danger_from: 100
-        },
-        size: {
-          mid_from_gb: 50,
-          high_from_gb: 100,
-          top_from_gb: 200
-        },
-        debounce_ms: 60
-      };
+  function startPlugin() {
+    injectFallbackCss();
+    initInterfaceModSettingsUI();
+    newInfoPanel();
+    setupVoteColorsObserver();
 
-      var styles = {
-        '.torrent-item__details': {
-          'font-size': '0.9em'
-        },
-        // Base badge look (emerald theme)
-        '.torrent-item__bitrate > span.ts-bitrate, .torrent-item__seeds > span.ts-seeds, .torrent-item__grabs > span.ts-grabs, .torrent-item__size.ts-size': {
-          'display': 'inline-flex',
-          '-webkit-box-align': 'center',
-          '-webkit-align-items': 'center',
-          '-moz-box-align': 'center',
-          '-ms-flex-align': 'center',
-          'align-items': 'center',
-          '-webkit-box-pack': 'center',
-          '-webkit-justify-content': 'center',
-          '-moz-box-pack': 'center',
-          '-ms-flex-pack': 'center',
-          'justify-content': 'center',
-          'box-sizing': 'border-box',
-          'min-height': '1.7em',
-          'padding': '0.15em 0.45em',
-          'border-radius': '0.5em',
-          'font-weight': '700',
-          'font-size': '0.9em',
-          'line-height': '1',
-          'white-space': 'nowrap',
-          'vertical-align': 'middle',
-          'font-variant-numeric': 'tabular-nums'
-        },
+    if (settings.colored_ratings) updateVoteColors();
 
-        // Tighten spacing so everything fits on one row
-        '.torrent-item__bitrate, .torrent-item__grabs, .torrent-item__seeds': {
-          'margin-right': '0.55em'
-        },
+    setStatusBaseCssEnabled(settings.colored_status);
+    if (settings.colored_status) enableStatusColoring();
+    else disableStatusColoring(true);
 
-        // Seeds
-        '.torrent-item__seeds > span.ts-seeds': {
-          color: '#5cd4b0',
-          'background-color': 'rgba(92, 212, 176, 0.14)',
-          border: '0.15em solid rgba(92, 212, 176, 0.90)',
-          'box-shadow': '0 0 0.75em rgba(92, 212, 176, 0.28)'
-        },
-        // Low seeds (danger) — soft red (emerald palette)
-        '.torrent-item__seeds > span.ts-seeds.low-seeds': {
-          color: '#ff5f6d',
-          'background-color': 'rgba(255, 95, 109, 0.14)',
-          border: '0.15em solid rgba(255, 95, 109, 0.82)',
-          'box-shadow': '0 0 0.65em rgba(255, 95, 109, 0.26)',
-          'text-shadow': '0 0 0.25em rgba(255, 95, 109, 0.25)'
-        },
-        // 10..19 (good) — emerald
-        '.torrent-item__seeds > span.ts-seeds.good-seeds': {
-          color: '#43cea2',
-          'background-color': 'rgba(67, 206, 162, 0.16)',
-          border: '0.15em solid rgba(67, 206, 162, 0.92)',
-          'box-shadow': '0 0 0.9em rgba(67, 206, 162, 0.34)'
-        },
-        '.torrent-item__seeds > span.ts-seeds.high-seeds': {
-          color: '#ffc371',
-          background: 'linear-gradient(135deg, rgba(255, 195, 113, 0.28), rgba(67, 206, 162, 0.10))',
-          border: '0.15em solid rgba(255, 195, 113, 0.92)',
-          'box-shadow': '0 0 0.95em rgba(255, 195, 113, 0.38)',
-          'text-shadow': '0 0 0.25em rgba(255, 195, 113, 0.25)'
-        },
+    setAgeBaseCssEnabled(settings.colored_age);
+    if (settings.colored_age) enableAgeColoring();
+    else disableAgeColoring(true);
 
-        // Grabs/Peers (download) — theme blue
-        '.torrent-item__grabs > span.ts-grabs': {
-          color: '#4db6ff',
-          'background-color': 'rgba(77, 182, 255, 0.12)',
-          border: '0.15em solid rgba(77, 182, 255, 0.82)',
-          'box-shadow': '0 0 0.35em rgba(77, 182, 255, 0.16)'
-        },
-        '.torrent-item__grabs > span.ts-grabs.high-grabs': {
-          color: '#4db6ff',
-          background: 'linear-gradient(135deg, rgba(77, 182, 255, 0.18), rgba(52, 152, 219, 0.10))',
-          border: '0.15em solid rgba(77, 182, 255, 0.92)',
-          'box-shadow': '0 0 0.55em rgba(77, 182, 255, 0.22)'
-        },
+    // Ініціалізуємо теми
+    window.__ifx_first_theme_apply = true;
+    applyTheme(settings.theme);
+    applyAnimations();
+    applyForAll();
+    removeFromSettingsMenu();
+    fixLang();
 
-        // Bitrate — light emerald accent
-        '.torrent-item__bitrate > span.ts-bitrate': {
-          color: '#5cd4b0',
-          'background-color': 'rgba(67, 206, 162, 0.10)',
-          border: '0.15em solid rgba(92, 212, 176, 0.78)',
-          'box-shadow': '0 0 0.45em rgba(92, 212, 176, 0.20)'
-        },
-        // 50..100 Mbps (gold)
-        '.torrent-item__bitrate > span.ts-bitrate.high-bitrate': {
-          color: '#ffc371',
-          background: 'linear-gradient(135deg, rgba(255, 195, 113, 0.28), rgba(67, 206, 162, 0.10))',
-          border: '0.15em solid rgba(255, 195, 113, 0.92)',
-          'box-shadow': '0 0 0.95em rgba(255, 195, 113, 0.38)',
-          'text-shadow': '0 0 0.25em rgba(255, 195, 113, 0.25)'
-        },
-        // >100 Mbps (danger)
-        '.torrent-item__bitrate > span.ts-bitrate.very-high-bitrate': {
-          color: '#ff5f6d',
-          background: 'linear-gradient(135deg, rgba(255, 95, 109, 0.28), rgba(67, 206, 162, 0.08))',
-          border: '0.15em solid rgba(255, 95, 109, 0.92)',
-          'box-shadow': '0 0 1.05em rgba(255, 95, 109, 0.40)',
-          'text-shadow': '0 0 0.25em rgba(255, 95, 109, 0.25)'
-        },
+    wireFullCardEnhancers();
 
-        // Size — tiered
-        '.torrent-item__size.ts-size': {
-          color: '#5cd4b0',
-          'background-color': 'rgba(92, 212, 176, 0.12)',
-          border: '0.15em solid rgba(92, 212, 176, 0.82)',
-          'box-shadow': '0 0 0.7em rgba(92, 212, 176, 0.26)',
-          'font-weight': '700'
-        },
-        // 50..100GB: emerald
-        '.torrent-item__size.ts-size.mid-size': {
-          color: '#43cea2',
-          'background-color': 'rgba(67, 206, 162, 0.16)',
-          border: '0.15em solid rgba(67, 206, 162, 0.92)',
-          'box-shadow': '0 0 0.9em rgba(67, 206, 162, 0.34)'
-        },
-        // 100..200GB: gold
-        '.torrent-item__size.ts-size.high-size': {
-          color: '#ffc371',
-          background: 'linear-gradient(135deg, rgba(255, 195, 113, 0.28), rgba(67, 206, 162, 0.10))',
-          border: '0.15em solid rgba(255, 195, 113, 0.95)',
-          'box-shadow': '0 0 1.05em rgba(255, 195, 113, 0.40)',
-          'text-shadow': '0 0 0.25em rgba(255, 195, 113, 0.22)'
-        },
-        // >200GB: red (danger)
-        '.torrent-item__size.ts-size.top-size': {
-          color: '#ff5f6d',
-          background: 'linear-gradient(135deg, rgba(255, 95, 109, 0.28), rgba(67, 206, 162, 0.08))',
-          border: '0.15em solid rgba(255, 95, 109, 0.95)',
-          'box-shadow': '0 0 1.1em rgba(255, 95, 109, 0.42)',
-          'text-shadow': '0 0 0.25em rgba(255, 95, 109, 0.22)'
-        },
-
-        '.torrent-item.selector.focus': {
-          'box-shadow': '0 0 0 0.3em rgba(67, 206, 162, 0.4)'
-        },
-        '.torrent-serial.selector.focus': {
-          'box-shadow': '0 0 0 0.25em rgba(67, 206, 162, 0.4)'
-        },
-        '.torrent-file.selector.focus': {
-          'box-shadow': '0 0 0 0.25em rgba(67, 206, 162, 0.4)'
-        },
-        '.torrent-item.focus::after': {
-          border: '0.24em solid #5cd4b0',
-          'box-shadow': '0 0 0.6em rgba(92, 212, 176, 0.18)',
-          'border-radius': '0.9em'
-        },
-        '.scroll__body': {
-          margin: '5px'
-        }
-      };
-
-      function injectTorrentStyles() {
-        var styleId = 'interface_mod_torrent_styles';
-        var oldStyle = document.getElementById(styleId);
-        if (oldStyle) oldStyle.remove();
-        
-        var css = Object.keys(styles)
-          .map(function (selector) {
-            var props = styles[selector];
-            var rules = Object.keys(props)
-              .map(function (prop) {
-                return prop + ': ' + props[prop] + ' !important';
-              })
-              .join('; ');
-            return selector + ' { ' + rules + ' }';
-          })
-          .join('\n');
-        
-        var style = document.createElement('style');
-        style.id = styleId;
-        style.textContent = css;
-        document.head.appendChild(style);
-      }
-
-      function tsParseFloat(text) {
-        var t = ((text || '') + '').trim();
-        var m = t.match(/(\d+(?:[.,]\d+)?)/);
-        return m ? (parseFloat(m[1].replace(',', '.')) || 0) : 0;
-      }
-
-      function tsParseInt(text) {
-        var t = ((text || '') + '').trim();
-        var v = parseInt(t, 10);
-        return isNaN(v) ? 0 : v;
-      }
-
-      function tsApplyTier(el, classesToClear, classToAdd) {
-        try {
-          for (var i = 0; i < classesToClear.length; i++) el.classList.remove(classesToClear[i]);
-          if (classToAdd) el.classList.add(classToAdd);
-        } catch (e) { }
-      }
-
-      function tsParseSizeToGb(text) {
-        try {
-          var t = ((text || '') + '').replace(/\u00A0/g, ' ').trim();
-          var m = t.match(/(\d+(?:[.,]\d+)?)\s*(kb|mb|gb|tb|кб|мб|гб|тб)/i);
-          if (!m) return null;
-
-          var num = parseFloat((m[1] || '0').replace(',', '.')) || 0;
-          var unit = (m[2] || '').toLowerCase();
-          var gb = 0;
-
-          if (unit === 'tb' || unit === 'тб') gb = num * 1024;
-          else if (unit === 'gb' || unit === 'гб') gb = num;
-          else if (unit === 'mb' || unit === 'мб') gb = num / 1024;
-          else if (unit === 'kb' || unit === 'кб') gb = num / (1024 * 1024);
-          else gb = 0;
-
-          return gb;
-        } catch (e) {
-          return null;
-        }
-      }
-
-      function updateTorrentStylesInternal() {
-        try {
-          document.querySelectorAll('.torrent-item__seeds span').forEach(function (span) {
-            var value = tsParseInt(span.textContent);
-            span.classList.add('ts-seeds');
-
-            var seedTier = '';
-            if (value < TH.seeds.danger_below) seedTier = 'low-seeds';
-            else if (value >= TH.seeds.top_from) seedTier = 'high-seeds';
-            else if (value >= TH.seeds.good_from) seedTier = 'good-seeds';
-            tsApplyTier(span, ['low-seeds', 'good-seeds', 'high-seeds'], seedTier);
-          });
-
-          document.querySelectorAll('.torrent-item__bitrate span').forEach(function (span) {
-            var value = tsParseFloat(span.textContent);
-            span.classList.add('ts-bitrate');
-
-            var brTier = '';
-            if (value > TH.bitrate.danger_from) brTier = 'very-high-bitrate';
-            else if (value >= TH.bitrate.warn_from) brTier = 'high-bitrate';
-            tsApplyTier(span, ['high-bitrate', 'very-high-bitrate'], brTier);
-          });
-
-          document.querySelectorAll('.torrent-item__grabs span').forEach(function (span) {
-            var value = tsParseInt(span.textContent);
-            span.classList.add('ts-grabs');
-            tsApplyTier(span, ['high-grabs'], value > 10 ? 'high-grabs' : '');
-          });
-
-          document.querySelectorAll('.torrent-item__size').forEach(function (el) {
-            var text = (el.textContent || '');
-            el.classList.add('ts-size');
-
-            var gb = tsParseSizeToGb(text);
-            if (gb === null) {
-              tsApplyTier(el, ['mid-size', 'high-size', 'top-size'], '');
-              return;
-            }
-
-            var szTier = '';
-            if (gb > TH.size.top_from_gb) szTier = 'top-size';
-            else if (gb >= TH.size.high_from_gb) szTier = 'high-size';
-            else if (gb >= TH.size.mid_from_gb) szTier = 'mid-size';
-            tsApplyTier(el, ['mid-size', 'high-size', 'top-size'], szTier);
-          });
-        } catch (e) {
-          console.error('Torrent styles update error:', e);
-        }
-      }
-
-      var tsUpdateTimer = null;
-      function scheduleUpdate(delayMs) {
-        try {
-          if (tsUpdateTimer) clearTimeout(tsUpdateTimer);
-        } catch (e) { }
-
-        var ms = typeof delayMs === 'number' ? delayMs : TH.debounce_ms;
-        tsUpdateTimer = setTimeout(function () {
-          tsUpdateTimer = null;
-          updateTorrentStylesInternal();
-        }, ms);
-      }
-
-      function observeTorrentsDom() {
-        try {
-          var observer = new MutationObserver(function (mutations) {
-            var needsUpdate = false;
-            for (var i = 0; i < mutations.length; i++) {
-              var mutation = mutations[i];
-              if (mutation.addedNodes && mutation.addedNodes.length) {
-                needsUpdate = true;
-                break;
-              }
-              if (mutation.type === 'characterData' ||
-                (mutation.type === 'childList' && mutation.target &&
-                  (mutation.target.classList &&
-                    (mutation.target.classList.contains('torrent-item__bitrate') ||
-                      mutation.target.classList.contains('torrent-item__seeds') ||
-                      mutation.target.classList.contains('torrent-item__grabs') ||
-                      mutation.target.classList.contains('torrent-item__size'))))) {
-                needsUpdate = true;
-                break;
-              }
-            }
-            if (needsUpdate) scheduleUpdate();
-          });
-
-          observer.observe(document.body, {
-            childList: true,
-            subtree: true,
-            characterData: true
-          });
-          scheduleUpdate(0);
-        } catch (e) {
-          console.error('Torrent styles observer error:', e);
-          scheduleUpdate(0);
-        }
-      }
-
-      // Ініціалізація стилів торентів
-      injectTorrentStyles();
-      observeTorrentsDom();
-      
-      // Перше оновлення
-      setTimeout(function() {
-        updateTorrentStylesInternal();
-      }, 500);
-      
-    } catch (e) {
-      console.error('Torrent styles initialization error:', e);
-    }
-  })();
-
-  /* Torrent toggles overrides */
-  // Цей блок динамічно вмикає/вимикає стилі з torrents+mod
-  // на основі налаштувань з "Інтерфейс +"
-  (function () {
-    // Власна реалізація getBool, щоб бути незалежним
-    function getBool(key, def) {
-      var v = Lampa.Storage.get(key);
-      if (v === true || v === false) return v;
-      if (v === 'true') return true;
-      if (v === 'false') return false;
-      if (v == null) return def;
-      return !!v;
-    }
-
-    function apply() {
-      var s = document.getElementById('torr_mod_overrides');
-      if (!s) {
-        s = document.createElement('style');
-        s.id = 'torr_mod_overrides';
-        document.head.appendChild(s);
-      }
-      
-      // Отримуємо налаштування з "Інтерфейс +"
-      var ef = getBool('interface_mod_new_tor_frame', true),
-          eb = getBool('interface_mod_new_tor_bitrate', true),
-          es = getBool('interface_mod_new_tor_seeds', true);
-          
-      var css = '';
-      
-      // Якщо налаштування вимкнені, додаємо CSS, який "скидає" стилі
-      if (!eb) css += '.torrent-item__bitrate span.low-bitrate, .torrent-item__bitrate span.medium-bitrate, .torrent-item__bitrate span.high-bitrate{ color: inherit !important; font-weight: inherit !important; }\n';
-      if (!es) css += '.torrent-item__seeds span.low-seeds, .torrent-item__seeds span.medium-seeds, .torrent-item__seeds span.high-seeds{ color: inherit !important; font-weight: inherit !important; }\n';
-      if (!ef) css += '.torrent-item.low-seeds, .torrent-item.medium-seeds, .torrent-item.high-seeds{ border: none !important; }\n';
-      
-      s.textContent = css;
+    if (settings.colored_buttons) {
+      // Запускаємо стратегію завантаження останнім
+      loadAsLast();
     }
     
-    // Робимо функцію глобальною, щоб її міг викликати основний плагін
-    window.runTorrentStyleRefresh = apply;
-    setTimeout(apply, 0); // Перший запуск
-  })();
+    // Застосовуємо розмір кнопок
+    applyButtonSize();
+    
+    // Ініціалізація рейтингів
+    ensureDefaultToggles();
+    attachLiveSettingsHandlers();
+    window.LampaRatings = window.LampaRatings || {};
+    window.LampaRatings.applyStyles = applyRatingsStyles;
+    window.LampaRatings.getConfig = getRatingsCfg;
+    applyRatingsStyles();
+    
+    if (!window.combined_ratings_plugin) {
+      startRatingsPlugin();
+    }
+    
+    // Перший запуск стилів торентів
+    try {
+      if (window.runTorrentStyleRefresh) window.runTorrentStyleRefresh();
+    } catch (e) {}
+  }
+
+  // Запуск плагіну при готовності Lampa
+  if (window.appready) {
+    startPlugin();
+  } else {
+    Lampa.Listener.follow('app', function (e) {
+      if (e.type === 'ready') startPlugin();
+    });
+  }
+
 })();
