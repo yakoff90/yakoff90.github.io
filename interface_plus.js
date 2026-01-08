@@ -195,36 +195,6 @@
       uk: 'Увімкнути анімації інтерфейсу'
     },
 
-    // Переклад TV (з themes_ua_loader.js)
-    interface_mod_new_translate_tv: {
-      en: 'Translate TV',
-      uk: 'Перекладати TV'
-    },
-    interface_mod_new_translate_tv_desc: {
-      en: 'Change TV caption',
-      uk: 'Змінювати напис TV'
-    },
-
-    // Макет картки (з themes_ua_loader.js)
-    interface_mod_new_incardtemplate: {
-      en: 'Card content layout',
-      uk: 'Макет вмісту картки'
-    },
-    interface_mod_new_incardtemplate_desc: {
-      en: 'Change card template',
-      uk: 'Змінити шаблон картки'
-    },
-
-    // Великі кнопки (з themes_ua_loader.js)
-    interface_mod_new_bigbuttons: {
-      en: 'Large buttons in card',
-      uk: 'Великі кнопки в картці'
-    },
-    interface_mod_new_bigbuttons_desc: {
-      en: 'Show large buttons in full card',
-      uk: 'Показувати великі кнопки в повній картці'
-    },
-
     // ОРИГІНАЛЬНА НАЗВА
     interface_mod_new_en_data: {
       en: 'Original title',
@@ -349,9 +319,11 @@
     // Налаштування тем (з themes_ua_loader.js)
     theme: Lampa.Storage.get('interface_mod_new_theme', 'mint_dark'),
     animations: getBool('interface_mod_new_animations', true),
-    translate_tv: getBool('interface_mod_new_translate_tv', true),
-    incardtemplate: getBool('interface_mod_new_incardtemplate', false),
-    bigbuttons: getBool('interface_mod_new_bigbuttons', false)
+
+    // Видалені налаштування
+    translate_tv: false,
+    incardtemplate: false,
+    bigbuttons: false
   };
 
   /**
@@ -947,17 +919,6 @@ border: 0.2em solid #f6a5b0;
 
     // Застосовуємо інші налаштування
     applyAnimations();
-    applyTranslateTV();
-    applyBigButtons();
-    
-    // Якщо це перше застосування, додаємо додаткові функції
-    if (window.__ifx_first_theme_apply !== false) {
-      window.__ifx_first_theme_apply = false;
-      applyForAll();
-      removeFromSettingsMenu();
-      fixLang();
-      applyInCardTemplate();
-    }
   }
 
   // Функція для виправлення мови
@@ -979,10 +940,7 @@ border: 0.2em solid #f6a5b0;
   function removeAdditionalSettings() {
     Lampa.Settings.listener.follow('open', function(e) {
       if (e.name == 'interface_mod_new') {
-        e.body.find('[data-name="interface_mod_new_animations"]').remove();
-        e.body.find('[data-name="interface_mod_new_translate_tv"]').remove();
-        e.body.find('[data-name="interface_mod_new_incardtemplate"]').remove();
-        e.body.find('[data-name="interface_mod_new_bigbuttons"]').remove();
+        // Видаляємо лише ті налаштування, які ще залишилися
       }
     });
   }
@@ -1050,14 +1008,6 @@ border: 0.2em solid #f6a5b0;
     $('body').append(Lampa.Template.get('forall_style_css', {}, true));
   }
 
-  // Застосовуємо альтернативний шаблон картки
-  function applyInCardTemplate() {
-    var incardtemplate = settings.incardtemplate;
-    if (incardtemplate) {
-      Lampa.Template.add('full_start_new', "<div class=\"full-start-new\">\n\n<div class=\"full-start-new__body\">\n<div class=\"full-start-new__left\">\n<div class=\"full-start-new__poster\">\n<img class=\"full-start-new__img full--poster\" />\n</div>\n</div>\n\n<div class=\"full-start-new__right\">\n<div class=\"full-start-new__head\"></div>\n<div class=\"full-start-new__title\">{title}</div>\n<div class=\"full-start__title-original\">{original_title}</div>\n<div class=\"full-start-new__tagline full--tagline\">{tagline}</div>\n<div class=\"full-start-new__rate-line\">\n<div class=\"full-start__rate rate--tmdb\"><div>{rating}</div><div class=\"source--name\">TMDB</div></div>\n<div class=\"full-start__rate rate--imdb hide\"><div></div><div class=\"source--name\">IMDb</div></div>\n<div class=\"full-start__rate rate--kp hide\"><div></div><div class=\"source--name\">Кинопоиск</div></div>\n\n<div class=\"full-start__pg hide\"></div>\n<div class=\"full-start__status hide\"></div>\n</div>\n<div class=\"full-start-new__details\"></div>\n<div class=\"full-start-new__reactions\">\n<div>#{reactions_none}</div>\n</div>\n\n<div class=\"full-start-new__buttons\">\n<div class=\"full-start__button selector button--play\">\n<svg width=\"28\" height=\"29\" viewBox=\"0 0 28 29\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<circle cx=\"14\" cy=\"14.5\" r=\"13\" stroke=\"currentColor\" stroke-width=\"2.7\"/>\n<path d=\"M18.0739 13.634C18.7406 14.0189 18.7406 14.9811 18.0739 15.366L11.751 19.0166C11.0843 19.4015 10.251 18.9204 10.251 18.1506L10.251 10.8494C10.251 10.0796 11.0843 9.5985 11.751 9.9834L18.0739 13.634Z\" fill=\"currentColor\"/>\n</svg>\n\n<span>#{title_watch}</span>\n</div>\n\n<div class=\"full-start__button view--torrent\">\n<svg xmlns=\"http://www.w3.org/2000/svg\"  viewBox=\"0 0 50 50\" width=\"50px\" height=\"50px\">\n<path d=\"M25,2C12.317,2,2,12.317,2,25s10.317,23,23,23s23-10.317,23-23S37.683,2,25,2z M40.5,30.963c-3.1,0-4.9-2.4-4.9-2.4 S34.1,35,27,35c-1.4,0-3.6-0.837-3.6-0.837l4.17,9.643C26.727,43.92,25.874,44,25,44c-2.157,0-4.222-0.377-6.155-1.039L9.237,16.851 c0,0-0.7-1.2,0.4-1.5c1.1-0.3,5.4-1.2,5.4-1.2s1.475-0.494,1.8,0.5c0.5,1.3,4.063,11.112,4.063,11.112S22.6,29,27.4,29 c4.7,0,5.9-3.437,5.7-3.937c-1.2-3-4.993-11.862-4.993-11.862s-0.6-1.1,0.8-1.4c1.4-0.3,3.8-0.7,3.8-0.7s1.105-0.163,1.6,0.8 c0.738,1.437,5.193,11.262,5.193,11.262s1.1,2.9,3.3,2.9c0.464,0,0.834-0.046,1.152-0.104c-0.082,1.635-0.348,3.221-0.817,4.722 C42.541,30.867,41.756,30.963,40.5,30.963z\" fill=\"currentColor\"/>\n</svg>\n\n<span>#{full_torrents}</span>\n</div>\n\n<div class=\"full-start__button selector view--trailer\">\n<svg height=\"70\" viewBox=\"0 0 80 70\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M71.2555 2.08955C74.6975 3.2397 77.4083 6.62804 78.3283 10.9306C80 18.7291 80 35 80 35C80 35 80 51.2709 78.3283 59.0694C77.4083 63.372 74.6975 66.7603 71.2555 67.9104C65.0167 70 40 70 40 70C40 70 14.9833 70 8.74453 67.9104C5.3025 66.7603 2.59172 63.372 1.67172 59.0694C0 51.2709 0 35 0 35C0 35 0 18.7291 1.67172 10.9306C2.59172 6.62804 5.3025 3.2395 8.74453 2.08955C14.9833 0 40 0 40 0C40 0 65.0167 0 71.2555 2.08955ZM55.5909 35.0004L29.9773 49.5714V20.4286L55.5909 35.0004Z\" fill=\"currentColor\"></path>\n</svg>\n\n<span>#{full_trailers}</span>\n</div>\n<div class=\"full-start__button selector button--book\">\n<svg width=\"21\" height=\"32\" viewBox=\"0 0 21 32\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M2 1.5H19C19.2761 1.5 19.5 1.72386 19.5 2V27.9618C19.5 28.3756 19.0261 28.6103 18.697 28.3595L12.6212 23.7303C11.3682 22.7757 9.63183 22.7757 8.37885 23.7303L2.30302 28.3595C1.9739 28.6103 1.5 28.3756 1.5 27.9618V2C1.5 1.72386 1.72386 1.5 2 1.5Z\" stroke=\"currentColor\" stroke-width=\"2.5\"/>\n</svg>\n\n<span>#{settings_input_links}</span>\n</div>\n\n<div class=\"full-start__button selector button--reaction\">\n<svg width=\"38\" height=\"34\" viewBox=\"0 0 38 34\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M37.208 10.9742C37.1364 10.8013 37.0314 10.6441 36.899 10.5117C36.7666 10.3794 36.6095 10.2744 36.4365 10.2028L12.0658 0.108375C11.7166 -0.0361828 11.3242 -0.0361227 10.9749 0.108542C10.6257 0.253206 10.3482 0.530634 10.2034 0.879836L0.108666 25.2507C0.0369593 25.4236 3.37953e-05 25.609 2.3187e-08 25.7962C-3.37489e-05 25.9834 0.0368249 26.1688 0.108469 26.3418C0.180114 26.5147 0.28514 26.6719 0.417545 26.8042C0.54995 26.9366 0.707139 27.0416 0.880127 27.1131L17.2452 33.8917C17.5945 34.0361 17.9869 34.0361 18.3362 33.8917L29.6574 29.2017C29.8304 29.1301 29.9875 29.0251 30.1199 28.8928C30.2523 28.7604 30.3573 28.6032 30.4289 28.4303L37.2078 12.065C37.2795 11.8921 37.3164 11.7068 37.3164 11.5196C37.3165 11.3325 37.2796 11.1471 37.208 10.9742ZM20.425 29.9407L21.8784 26.4316L25.3873 27.885L20.425 29.9407ZM28.3407 26.0222L21.6524 23.252C21.3031 23.1075 20.9107 23.1076 20.5615 23.2523C20.2123 23.3969 19.9348 23.6743 19.79 24.0235L17.0194 30.7123L3.28783 25.0247L12.2918 3.28773L34.0286 12.2912L28.3407 26.0222Z\" fill=\"currentColor\"/>\n<path d=\"M25.3493 16.976L24.258 14.3423L16.959 17.3666L15.7196 14.375L13.0859 15.4659L15.4161 21.0916L25.3493 16.976Z\" fill=\"currentColor\"/>\n</svg>                \n\n<span>#{title_reactions}</span>\n</div>\n\n<div class=\"full-start__button selector button--subscribe hide\">\n<svg width=\"25\" height=\"30\" viewBox=\"0 0 25 30\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M6.01892 24C6.27423 27.3562 9.07836 30 12.5 30C15.9216 30 18.7257 27.3562 18.981 24H15.9645C15.7219 25.6961 14.2632 27 12.5 27C10.7367 27 9.27804 25.6961 9.03542 24H6.01892Z\" fill=\"currentColor\"/>\n<path d=\"M3.81972 14.5957V10.2679C3.81972 5.41336 7.7181 1.5 12.5 1.5C17.2819 1.5 21.1803 5.41336 21.1803 10.2679V14.5957C21.1803 15.8462 21.5399 17.0709 22.2168 18.1213L23.0727 19.4494C24.2077 21.2106 22.9392 23.5 20.9098 23.5H4.09021C2.06084 23.5 0.792282 21.2106 1.9273 19.4494L2.78317 18.1213C3.46012 17.0709 3.81972 15.8462 3.81972 14.5957Z\" stroke=\"currentColor\" stroke-width=\"2.5\"/>\n</svg>\n\n<span>#{title_subscribe}</span>\n</div>\n\n<div class=\"full-start__button selector button--options\">\n<svg width=\"38\" height=\"10\" viewBox=\"0 0 38 10\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<circle cx=\"4.88968\" cy=\"4.98563\" r=\"4.75394\" fill=\"currentColor\"/>\n<circle cx=\"18.9746\" cy=\"4.98563\" r=\"4.75394\" fill=\"currentColor\"/>\n<circle cx=\"33.0596\" cy=\"4.98563\" r=\"4.75394\" fill=\"currentColor\"/>\n</svg>\n</div>\n\n</div>\n</div>\n</div>\n</div>");
-    }
-  }
-
   // Застосовуємо анімації
   function applyAnimations() {
     var animations = settings.animations;
@@ -1076,39 +1026,6 @@ border: 0.2em solid #f6a5b0;
         ".selectbox-item.focus,\n.settings-folder.focus,\n.settings-param.focus {\n transform: translateX(0.2em);\n}\n" +
       "</style>\n";
       $('body').append(animations_style);
-    }
-  }
-
-  // Застосовуємо переклад TV
-  function applyTranslateTV() {
-    var tv_caption = "СЕРІАЛ";
-    var translate_tv = settings.translate_tv;
-    var translate_tv_style;
-    $('#interface_mod_translate_tv').remove();
-    if (!translate_tv) {
-      translate_tv_style = "\n<style id=\"interface_mod_translate_tv\">\n " +
-        ".card__type  {\n  display: none;\n}\n " +
-        ".card--tv .card__type {\n  display: none;\n}\n" +
-      "</style>\n";
-      $('body').append(translate_tv_style);
-    } else {
-      translate_tv_style = "\n<style id=\"interface_mod_translate_tv\">\n " +
-        ".card--tv .card__type,\n.card__type {\n  display: none;\n}\n" +
-        ".card__type::after {\n  display: none;\n}" +
-      "</style>\n";
-      $('body').append(translate_tv_style);
-    }
-  }
-
-  // Застосовуємо великі кнопки
-  function applyBigButtons() {
-    var bigbuttons = settings.bigbuttons;
-    $('#interface_mod_bigbuttons').remove();
-    if (bigbuttons) {
-      var bigbuttons_style = "\n<style id=\"interface_mod_bigbuttons\">\n " +
-        ".full-start-new__buttons .full-start__button:not(.focus) span {\ndisplay: inline ;\n}\n@media screen and (max-width: 580px) {\n.full-start-new__buttons {\noverflow: auto;\n}\n.full-start-new__buttons .full-start__button:not(.focus) span {\ndisplay: none;\n}\n}\n" +
-      "</style>\n";
-      $('body').append(bigbuttons_style);
     }
   }
 
@@ -1234,51 +1151,6 @@ border: 0.2em solid #f6a5b0;
       }
     });
 
-    // Переклад TV
-    add({
-      component: 'interface_mod_new',
-      param: {
-        name: 'interface_mod_new_translate_tv',
-        type: 'trigger',
-        values: true,
-        default: true
-      },
-      field: {
-        name: Lampa.Lang.translate('interface_mod_new_translate_tv'),
-        description: Lampa.Lang.translate('interface_mod_new_translate_tv_desc')
-      }
-    });
-
-    // Макет картки
-    add({
-      component: 'interface_mod_new',
-      param: {
-        name: 'interface_mod_new_incardtemplate',
-        type: 'trigger',
-        values: true,
-        default: false
-      },
-      field: {
-        name: Lampa.Lang.translate('interface_mod_new_incardtemplate'),
-        description: Lampa.Lang.translate('interface_mod_new_incardtemplate_desc')
-      }
-    });
-
-    // Великі кнопки
-    add({
-      component: 'interface_mod_new',
-      param: {
-        name: 'interface_mod_new_bigbuttons',
-        type: 'trigger',
-        values: true,
-        default: false
-      },
-      field: {
-        name: Lampa.Lang.translate('interface_mod_new_bigbuttons'),
-        description: Lampa.Lang.translate('interface_mod_new_bigbuttons_desc')
-      }
-    });
-
     // Оригінальна назва
     add({
       component: 'interface_mod_new',
@@ -1339,7 +1211,7 @@ border: 0.2em solid #f6a5b0;
       }
     });
 
-    // Розмір кнопок
+    // Розмір кнопок (збільшені значення)
     add({
       component: 'interface_mod_new',
       param: {
@@ -1488,21 +1360,6 @@ border: 0.2em solid #f6a5b0;
               applyAnimations();
               break;
               
-            case 'interface_mod_new_translate_tv':
-              settings.translate_tv = getBool(key, true);
-              applyTranslateTV();
-              break;
-              
-            case 'interface_mod_new_incardtemplate':
-              settings.incardtemplate = getBool(key, false);
-              window.location.reload();
-              break;
-              
-            case 'interface_mod_new_bigbuttons':
-              settings.bigbuttons = getBool(key, false);
-              applyBigButtons();
-              break;
-              
             case 'interface_mod_new_en_data':
             case 'interface_mod_new_english_data':
               settings.en_data = getOriginalTitleEnabled();
@@ -1556,32 +1413,32 @@ border: 0.2em solid #f6a5b0;
   }
 
   /* ============================================================
-   * РОЗМІР КНОПОК ТА ІКОНОК
+   * РОЗМІР КНОПОК ТА ІКОНОК (ЗБІЛЬШЕНІ РОЗМІРИ)
    * ============================================================ */
   
-  // Функція для отримання розмірів іконок відповідно до розміру кнопок
+  // Функція для отримання розмірів іконок відповідно до розміру кнопок (збільшені значення)
   function getIconSizeForButtonSize() {
     switch (settings.button_size) {
       case 'small':
         return { 
-          width: '18', 
-          height: '18',
-          svgWidth: '1.4em',
-          svgHeight: '1.4em'
+          width: '22',      // збільшено з 18
+          height: '22',     // збільшено з 18
+          svgWidth: '1.6em', // збільшено з 1.4em
+          svgHeight: '1.6em' // збільшено з 1.4em
         };
       case 'large':
         return { 
-          width: '32', 
-          height: '32',
-          svgWidth: '2.2em',
-          svgHeight: '2.2em'
+          width: '34',      // збільшено з 32
+          height: '34',     // збільшено з 32
+          svgWidth: '2.4em', // збільшено з 2.2em
+          svgHeight: '2.4em' // збільшено з 2.2em
         };
       default: // normal
         return { 
-          width: '24', 
-          height: '24',
-          svgWidth: '1.8em',
-          svgHeight: '1.8em'
+          width: '28',      // збільшено з 24
+          height: '28',     // збільшено з 24
+          svgWidth: '2.0em', // збільшено з 1.8em
+          svgHeight: '2.0em' // збільшено з 1.8em
         };
     }
   }
@@ -1598,9 +1455,9 @@ border: 0.2em solid #f6a5b0;
       case 'small':
         css = `
           .full-start__button, .full-start-new__button {
-            min-height: 2.8em !important;
-            padding: 0.4em 1em !important;
-            font-size: 0.9em !important;
+            min-height: 3.0em !important;  /* збільшено з 2.8em */
+            padding: 0.5em 1.2em !important;  /* збільшено з 0.4em 1em */
+            font-size: 1.0em !important;  /* збільшено з 0.9em */
           }
           .full-start__button svg, .full-start-new__button svg {
             width: ${iconSize.svgWidth} !important;
@@ -1615,9 +1472,9 @@ border: 0.2em solid #f6a5b0;
       case 'large':
         css = `
           .full-start__button, .full-start-new__button {
-            min-height: 3.8em !important;
-            padding: 0.6em 1.4em !important;
-            font-size: 1.2em !important;
+            min-height: 4.0em !important;  /* збільшено з 3.8em */
+            padding: 0.7em 1.6em !important;  /* збільшено з 0.6em 1.4em */
+            font-size: 1.3em !important;  /* збільшено з 1.2em */
           }
           .full-start__button svg, .full-start-new__button svg {
             width: ${iconSize.svgWidth} !important;
@@ -1632,9 +1489,9 @@ border: 0.2em solid #f6a5b0;
       default: // normal
         css = `
           .full-start__button, .full-start-new__button {
-            min-height: 3.2em !important;
-            padding: 0.5em 1.2em !important;
-            font-size: 1em !important;
+            min-height: 3.5em !important;  /* збільшено з 3.2em */
+            padding: 0.6em 1.4em !important;  /* збільшено з 0.5em 1.2em */
+            font-size: 1.1em !important;  /* збільшено з 1.0em */
           }
           .full-start__button svg, .full-start-new__button svg {
             width: ${iconSize.svgWidth} !important;
@@ -3172,12 +3029,9 @@ border: 0.2em solid #f6a5b0;
     window.__ifx_first_theme_apply = true;
     applyTheme(settings.theme);
     applyAnimations();
-    applyTranslateTV();
-    applyBigButtons();
     applyForAll();
     removeFromSettingsMenu();
     fixLang();
-    applyInCardTemplate();
 
     wireFullCardEnhancers();
 
@@ -3999,626 +3853,4 @@ border: 0.2em solid #f6a5b0;
     window.runTorrentStyleRefresh = apply;
     setTimeout(apply, 0); // Перший запуск
   })();
-
-
-/* ============================================================
- * YEAR PILL + ALT EPISODE CARDS — STABLE FINAL v2 (NO MENU REORDER)
- * - year pill styles intact
- * - hide year ONLY on processed list/episode cards (not in full view)
- * - strip year from titles only on processed cards
- * ============================================================ */
-(function(){
-  // ---------- i18n ----------
-  Lampa.Lang.add({
-    ifx_year_on_cards:         { uk:'Показувати рік на картці', en:'Show year on card' },
-    ifx_year_on_cards_desc:    { uk:'Увімкнути/Вimкнути відображення року на постері', en:'Year displayed on the poster only' },
-
-    ifx_show_rating_on_cards:      { uk:'Показувати рейтинг на картці', en:'Show rating on card' },
-    ifx_show_rating_on_cards_desc: { uk:'Увімкнути/Вимкнути стандартний рейтинг на постері',
-                                   en:'Toggle the built-in rating badge on list posters' },
-      
-    ifx_alt_badges:      { uk:'Альтернативні мітки', en:'Alternative badges' },
-    ifx_alt_badges_desc: { uk:'Мітки "рік" і "рейтинг" у іншому стилі', en:'Year & Rating  alternative style' },
-      
-
-    
-    ifx_episode_alt_cards:     { uk:'Альтернативні "Найближчі епізоди"', en:'Alternative "Upcoming Episodes"' },
-    ifx_episode_alt_cards_desc:{ uk:'Компактний вигляд блоку "Найближчі епізоди"', en:'Compact view for the "Upcoming Episodes" block' },
-
-    ifx_episode_num_only:      { uk:'Показувати лише номер серії', en:'Show episode number only' },
-    ifx_episode_num_only_desc: { uk:'Завжди показувати номер серії у вигляді "Серія N" замість назви', en:'Always show "Episode N" instead of the title' }
-
-  
-  });
-
-
-
-  
-
-  // ---------- keys (усі дефолт: false) ----------
-  var KEY_YEAR = 'interface_mod_new_year_on_cards';
-  var KEY_ALT  = 'interface_mod_new_episode_alt_cards';
-  var KEY_NUM  = 'interface_mod_new_episode_numbers_only';
-  var KEY_RATING = 'interface_mod_new_rating_on_cards';
-
-  
-  var S = {
-    year_on:  (Lampa.Storage.get(KEY_YEAR, false)===true || Lampa.Storage.get(KEY_YEAR,'false')==='true'),
-    alt_ep:   (Lampa.Storage.get(KEY_ALT,  false)===true || Lampa.Storage.get(KEY_ALT, 'false')==='true'),
-    num_only: (Lampa.Storage.get(KEY_NUM,  false)===true || Lampa.Storage.get(KEY_NUM, 'false')==='true'),
-    show_rate:(Lampa.Storage.get(KEY_RATING,true)===true  || Lampa.Storage.get(KEY_RATING,'true')==='true')
-  
-  };
-
-  // ---------- settings UI (без перестановок) ----------
-  (function addSettings(){
-    var add = Lampa.SettingsApi.addParam;
-    add({ component:'interface_mod_new',
-      param:{ name: KEY_YEAR, type:'trigger', values:true, default:false },
-      field:{ name:Lampa.Lang.translate('ifx_year_on_cards'),
-              description:Lampa.Lang.translate('ifx_year_on_cards_desc') }
-    });
-    add({ component:'interface_mod_new',
-      param:{ name: KEY_RATING, type:'trigger', values:true, default:true },
-      field:{ name: Lampa.Lang.translate('ifx_show_rating_on_cards'),
-              description: Lampa.Lang.translate('ifx_show_rating_on_cards_desc') }
-    });
-    add({  component: 'interface_mod_new',
-      param: { name: 'interface_mod_new_alt_badges', type: 'trigger', values: true, default: false },
-      field: { name: Lampa.Lang.translate('ifx_alt_badges'),
-               description: Lampa.Lang.translate('ifx_alt_badges_desc') }
-    });
-    
-    
-    add({ component:'interface_mod_new',
-      param:{ name: KEY_ALT, type:'trigger', values:true, default:false },
-      field:{ name:Lampa.Lang.translate('ifx_episode_alt_cards'),
-              description:Lampa.Lang.translate('ifx_episode_alt_cards_desc') }
-    });
-    add({ component:'interface_mod_new',
-      param:{ name: KEY_NUM, type:'trigger', values:true, default:false },
-      field:{ name:Lampa.Lang.translate('ifx_episode_num_only'),
-              description:Lampa.Lang.translate('ifx_episode_num_only_desc') }
-    });
-
-    
-  })();
-
-  // ---------- CSS ----------
-  function ensureCss(){
-    var id = 'ifx_css_stable_final_v2';
-    if (document.getElementById(id)) return;
-    var st = document.createElement('style');
-    st.id = id;
-    st.textContent = `
-      /* Пігулка (як .card_vote) — наш власний бейдж року */
-      .ifx-pill{
-        background: rgba(0,0,0,.5);
-        color:#fff; font-size:1.3em; font-weight:700;
-        padding:.2em .5em; border-radius:1em; line-height:1;
-        white-space:nowrap;
-      }
-
-      /* Стек у правому нижньому, мінімальна щілина */
-      .ifx-corner-stack{
-        position:absolute; right:.3em; bottom:.3em;
-        display:flex; flex-direction:column; align-items:flex-end;
-        gap:2px; z-index:10; pointer-events:none;
-      }
-      .ifx-corner-stack > *{ pointer-events:auto; }
-
-      /* Коли переносимо рейтинґ у стек — робимо його пігулкою без absolute */
-      .ifx-corner-stack .card__vote, .ifx-corner-stack .card_vote{
-        position:static !important; right:auto !important; bottom:auto !important; top:auto !important; left:auto !important;
-        background: rgba(0,0,0,.5); color:#fff; font-size:1.3em; font-weight:700;
-        padding:.2em .5em; border-radius:1em; line-height:1;
-      }
-
-      /* Точки кріплення (для списків і епізодів) */
-      .card .card__view{ position:relative; }
-      .card-episode .full-episode{ position:relative; }
-
-      /* ALT mode: заголовок у ВЕРХНЬОМУ ЛІВОМУ куті */
-      body.ifx-ep-alt .card-episode .full-episode .card__title{
-        position:absolute; left:.7em; top:.7em; right:.7em; margin:0;
-        z-index:2; text-shadow:0 1px 2px rgba(0,0,0,.35);
-      }
-
-      /* ALT mode: ховаємо ВЕЛИКУ цифру та текстовий рік у тілі */
-      body.ifx-ep-alt .card-episode .full-episode__num{ display:none !important; }
-      body.ifx-ep-alt .card-episode .full-episode__body > .card__age{ display:none !important; }
-
-      /* NUM-ONLY: ховаємо велику цифру завжди (і для ALT, і для стандарту) */
-      body.ifx-num-only .card-episode .full-episode__num{ display:none !important; }
-
-      /* ЛОКАЛЬНЕ ховання текстових років тільки для оброблених карток.
-         Додаємо клас .ifx-hide-age саме на картки списків та епізодів.
-         Повні картки НЕ мають цього класу — там нічого не ховаємо. */
-      .ifx-hide-age .card__age{ display:none !important; }
-
-      /* Ховаємо штатний рейтинг повністю, коли вимкнено */
-      body.ifx-no-rate .card__view > .card__vote,
-      body.ifx-no-rate .card__view > .card_vote,
-      body.ifx-no-rate .ifx-corner-stack > .card__vote,
-      body.ifx-no-rate .ifx-corner-stack > .card_vote {
-      display: none !important;}
-
-    `;
-    document.head.appendChild(st);
-  }
-
-
-
-// Синхронізуємо ТІЛЬКИ кольори з якості (фон/текст).
-// Якщо нічого не знайдено — дефолт.
-function ifxSyncAltBadgeThemeFromQuality(){
-  try{
-    // Спершу сезонні мітки Quality, потім card__quality
-    var q = document.querySelector('.card--season-complete, .card--season-progress')
-         || document.querySelector('.card__quality');
-    var inner = q ? (q.querySelector('div') || q) : null;
-
-    var bg = 'rgba(61,161,141,0.9)'; // дефолтний зелений фон
-    var fg = '#FFFFFF';              // дефолтний білий текст
-
-    if (q){
-      var csQ = getComputedStyle(q);
-      if (csQ.backgroundColor) bg = csQ.backgroundColor;
-    }
-    if (inner){
-      var csI = getComputedStyle(inner);
-      if (csI.color) fg = csI.color;
-    }
-
-    var root = document.documentElement;
-    root.style.setProperty('--ifx-badge-bg', bg);
-    root.style.setProperty('--ifx-badge-color', fg);
-  }catch(e){}
-}
-
-// Ввімкнення CSS
-// Альтернативні мітки у фіксованому стилі.
-// ✅ Можеш змінювати значення у КОНСТАНТАХ нижче.
-function ensureAltBadgesCss(){
-  var st = document.getElementById('ifx_alt_badges_css');
-
-  /* ====== КОНСТАНТИ ДЛЯ ШВИДКОГО ТЮНІНГУ ====== */
-  var RIGHT_OFFSET  = '.3em';   // правий відступ (як у стандартного рейтингу/року)
-  var BOTTOM_OFFSET = '.50em';  // нижній відступ (залишаємо як у твоєму прикладі)
-  var RADIUS        = '0.3em';  // радіус заокруглення як у Quality+
-  var FONT_FAMILY   = "'Roboto Condensed','Arial Narrow',Arial,sans-serif";
-  var FONT_WEIGHT   = '700';
-  var FONT_SIZE     = '1.0em';  // РОЗМІР ШРИФТУ (твій приклад)
-  var PAD_Y         = '.19em';  // ВНУТРІШНІ ВІДСТУПИ (твій приклад)
-  var PAD_X         = '.39em';  // ВНУТРІШНІ ВІДСТУПИ (твій приклад)
-  var UPPERCASE     = true;     // true => uppercase, false => як є
-  /* ============================================ */
-
-  var css = `
-    body.ifx-alt-badges .card .card__view{ position:relative; }
-
-    /* Стек праворуч БЕЗ виступу; мінімальна «щілина» між рейтингом і роком */
-    body.ifx-alt-badges .ifx-corner-stack{
-      position:absolute; right:${RIGHT_OFFSET}; bottom:${BOTTOM_OFFSET};
-      margin-right:0;
-      display:flex; flex-direction:column; align-items:flex-end;
-      gap:0.5px; z-index:10; pointer-events:none;
-    }
-    body.ifx-alt-badges .ifx-corner-stack > *{ pointer-events:auto; }
-
-    /* Рейтинг у стеку та рік — однаковий вигляд */
-    body.ifx-alt-badges .ifx-corner-stack .card__vote,
-    body.ifx-alt-badges .ifx-corner-stack .card_vote,
-    body.ifx-alt-badges .ifx-corner-stack .ifx-year-pill{
-      position:static !important;
-      background: var(--ifx-badge-bg, rgba(61,161,141,0.9)) !important;
-      color: var(--ifx-badge-color, #FFFFFF) !important;
-      border-radius: ${RADIUS};
-      padding: ${PAD_Y} ${PAD_X} !important;         /* внутрішні відступи */
-      font-family: ${FONT_FAMILY};
-      font-weight: ${FONT_WEIGHT};
-      font-size: ${FONT_SIZE} !important;            /* розмір шрифту */
-      line-height: 1.2;
-      ${ UPPERCASE ? 'text-transform: uppercase;' : '' }
-      text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3);
-      box-sizing: border-box;
-      display: inline-flex; align-items: center;
-      white-space: nowrap;
-    }
-
-    /* Якщо року немає в стеку — стилізуємо окремо рейтинг у .card__view */
-    body.ifx-alt-badges .card__view > .card__vote,
-    body.ifx-alt-badges .card__view > .card_vote{
-      position:absolute !important;
-      right:${RIGHT_OFFSET} !important;
-      bottom:${BOTTOM_OFFSET} !important;
-      margin-right:0 !important;
-      background: var(--ifx-badge-bg, rgba(61,161,141,0.9)) !important;
-      color: var(--ifx-badge-color, #FFFFFF) !important;
-      border-radius: ${RADIUS};
-      padding: ${PAD_Y} ${PAD_X} !important;         /* внутрішні відступи */
-      font-family: ${FONT_FAMILY} !important;
-      font-weight: ${FONT_WEIGHT} !important;
-      font-size: ${FONT_SIZE} !important;            /* розмір шрифту */
-      line-height: 1.2;
-      ${ UPPERCASE ? 'text-transform: uppercase;' : '' }
-      text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3);
-      z-index: 11;
-      box-sizing: border-box;
-      display: inline-flex; align-items: center;
-      white-space: nowrap;
-    }
-  `;
-
-  if (st){ st.textContent = css; }
-  else { st = document.createElement('style'); st.id = 'ifx_alt_badges_css'; st.textContent = css; document.head.appendChild(st); }
-}
-  // ---------- ALT episode template ----------
-  var tplEpisodeOriginal = null;
-  var tplEpisodeAlt =
-    '<div class="card-episode selector layer--visible layer--render">\
-      <div class="card-episode__body">\
-        <div class="full-episode">\
-          <div class="full-episode__img"><img/></div>\
-          <div class="full-episode__body">\
-            <div class="card__title">{title}</div>\
-            <div class="card__age">{release_year}</div>\
-            <div class="full-episode__num">{num}</div>\
-            <div class="full-episode__name">{name}</div>\
-            <div class="full-episode__date">{date}</div>\
-          </div>\
-        </div>\
-      </div>\
-      <div class="card-episode__footer hide">\
-        <div class="card__imgbox">\
-          <div class="card__view"><img class="card__img"/></div>\
-        </div>\
-        <div class="card__left">\
-          <div class="card__title">{title}</div>\
-          <div class="card__age">{release_year}</div>\
-        </div>\
-      </div>\
-    </div>';
-
-  function setEpisodeAlt(on){
-    if (tplEpisodeOriginal === null){
-      try { tplEpisodeOriginal = Lampa.Template.get('card_episode', {}, true); } catch(e){ tplEpisodeOriginal = null; }
-    }
-    Lampa.Template.add('card_episode', on ? tplEpisodeAlt : (tplEpisodeOriginal || tplEpisodeAlt));
-    document.body.classList.toggle('ifx-ep-alt', !!on);
-    
-    // [!!!] ВИПРАВЛЕНО (з минулого разу):
-    // 'ifx-num-only' керується незалежно, базуючись лише на S.num_only
-    document.body.classList.toggle('ifx-num-only', S.num_only);
-    
-    try{ Lampa.Settings.update(); }catch(e){}
-  }
-
-  // ---------- helpers ----------
-  function episodeWord(){
-    var code = (Lampa.Lang && Lampa.Lang.code) || 'uk';
-    return code.indexOf('en')===0 ? 'Episode' : 'Серія';
-  }
-
-  // ВАЖЛИВО: спершу з даних, потім — з DOM (щоб не залежати від прихованих .card__age)
-  /* --- ОПТИМІЗАЦІЯ: Кешування року (WeakMap) + ПРАВИЛЬНИЙ рік серіалу --- */
-  var __ifx_yearCache = window.__ifx_yearCache || new WeakMap();
-  window.__ifx_yearCache = __ifx_yearCache;
-
-  /**
-   * Оригінальна логіка getYear (Тепер пріоритезує рік СЕРІАЛУ, ігноруючи рік ЕПІЗОДУ)
-   * Викликається щонайбільше 1 раз для кожної картки; результат кешується.
-   */
-  function __ifx_getYear_orig($root){
-    var d = $root.data() || {};
-    
-    // 1) Дані Lampa: Пріоритет - рік виходу СЕРІАЛУ або ФІЛЬМУ
-    
-    var y = (d.first_air_date || '').slice(0,4) // << Пріоритет #1: Рік виходу серіалу
-         || (d.release_date || '').slice(0,4) // << Пріоритет #2: Рік виходу фільму
-         || d.release_year // << Резерв
-         || d.year; // << Резерв
-    if (/^(19|20)\d{2}$/.test(String(y))) return String(y);
-
-    // 2) Текстовий рік з .card__age
-    //    (Lampa зазвичай ставить сюди рік СЕРІАЛУ, навіть на картках епізодів)
-    var ageTxt = ($root.find('.card__age').first().text() || '').trim();
-    var mAge = ageTxt.match(/(19|20)\d{2}/);
-    if (mAge) return mAge[0];
-
-    // 3) Назва: (2023) / [2023] або "— 2023" (як і було)
-    //    Це фолбек, якщо .card__age порожній, але в назві рік є.
-    var title = ($root.find('.card__title').first().text() || '').trim();
-    var mTitle =
-      title.match(/[\[\(]\s*((?:19|20)\d{2})\s*[\]\)]\s*$/) ||
-      title.match(/(?:[–—·\/-]\s*)((?:19|20)\d{2})\s*$/);
-    if (mTitle) return mTitle[1];
-    
-    
-
-    return '';
-  }
-
-  /**
-   * Головна функція 'getYear' із кешуванням
-   */
-  function getYear($root){
-    try{
-      var el = $root && $root[0];
-      // 1) З кешу (миттєво)
-      if (el && __ifx_yearCache.has(el)) return __ifx_yearCache.get(el);
-
-      // 2) Обчислення + кеш
-      var y = __ifx_getYear_orig($root) || '';
-      if (el) __ifx_yearCache.set(el, y);
-      return y;
-    }catch(e){
-      // У випадку помилки, просто викликати оригінал без кешування
-      return __ifx_getYear_orig($root);
-    }
-  }
-  /* --- Кінець блоку getYear --- */
-
-
-  function ensureStack($anchor){
-    var $stack = $anchor.children('.ifx-corner-stack');
-    if (!$stack.length) $stack = $('<div class="ifx-corner-stack"></div>').appendTo($anchor);
-    return $stack;
-  }
-
-  // Акуратно прибираємо рік у кінці назви: (2021) [2021] – 2021 · 2021 / 2021
-  function stripYear(txt){
-    var s = String(txt||'');
-    s = s.replace(/\s*\((19|20)\d{2}\)\s*$/,'');
-    s = s.replace(/\s*\[(19|20)\d{2}\]\s*$/,'');
-    s = s.replace(/\s*[–—\-·]\s*(19|20)\d{2}\s*$/,'');
-    s = s.replace(/\s*\/\s*(19|20)\d{2}\s*$/,'');
-    return s;
-  }
-
-  // Підчищаємо/повертаємо рік у заголовках ТІЛЬКИ для оброблених карток (які мають .ifx-hide-age)
-  function applyTitleYearHide($scope){
-    $scope = $scope || $(document.body);
-    // працюємо тільки в межах карток, де ми сховали текстові роки
-    var sel = '.ifx-hide-age .card__title';
-
-    $(sel).each(function(){
-      var $t = $(this);
-
-      // якщо всередині є .card__age — його вже ховає локальний клас; текст не чіпаємо
-      if ($t.find('.card__age').length){
-        var saved = $t.data('ifx-title-orig');
-        if (typeof saved === 'string'){ $t.text(saved); $t.removeData('ifx-title-orig'); }
-        return;
-      }
-
-      if (S.year_on){
-        var orig = $t.data('ifx-title-orig');
-        if (!orig) $t.data('ifx-title-orig', $t.text());
-        var base = orig || $t.text();
-        var stripped = stripYear(base);
-        if (stripped !== $t.text()) $t.text(stripped.trim());
-      } else {
-        var sv = $t.data('ifx-title-orig');
-        if (typeof sv === 'string'){ $t.text(sv); $t.removeData('ifx-title-orig'); }
-      }
-    });
-  }
-
-  // ---------- інʼєкції ----------
-  /* === керування видимістю рейтингу в списках === */
-  /* === рейтинг працює незалежно від "року" === */
-function applyListCard($card){
-  var $view = $card.find('.card__view').first();
-  if (!$view.length) return;
-
-  var $vote  = $view.find('.card__vote, .card_vote').first();
-  var $stack = ensureStack($view);
-
-// 1) Показ/приховування рейтингу — ЖОРСТКО
-var hardHide = !S.show_rate || document.body.classList.contains('ifx-no-rate');
-
-if ($vote.length){
-  if (hardHide){
-    // нічого не переносимо, просто ховаємо
-    $vote.addClass('ifx-vote-hidden').hide();
-  } else {
-    $vote.removeClass('ifx-vote-hidden').show();
-
-    // Переносимо в стек тільки якщо він використовується
-    var useStack = S.year_on || document.body.classList.contains('ifx-alt-badges');
-    if (useStack && !$vote.parent().is($stack)) $stack.prepend($vote);
-  }
-}
-
-  // 2) Рік на картці (додаємо/прибираємо бейдж та локальне приховування)
-  if (S.year_on){
-    if (!$stack.children('.ifx-year-pill').length){
-      var y = getYear($card);
-      if (y) $('<div class="ifx-pill ifx-year-pill"></div>').text(y).appendTo($stack);
-    }
-    $card.addClass('ifx-hide-age');
-  } else {
-    $stack.children('.ifx-year-pill').remove(); // при вимкненні року прибираємо наш бейдж
-    $card.removeClass('ifx-hide-age');
-  }
-}
-
-  
-
-  function applyEpisodeCard($ep){
-    var $full = $ep.find('.full-episode').first();
-    if (!$full.length) return;
-
-    var $stack = ensureStack($full);
-
-    if (!$stack.children('.ifx-year-pill').length){
-      var y = getYear($ep);
-      if (y) $('<div class="ifx-pill ifx-year-pill"></div>').text(y).appendTo($stack);
-    }
-
-    // ЛОКАЛЬНО ховаємо текстові роки й підчищаємо назву лише для цієї картки епізоду
-    if (S.year_on) $full.addClass('ifx-hide-age'); else $full.removeClass('ifx-hide-age');
-  }
-
-function injectAll($scope){
-  $scope = $scope || $(document.body);
-
-  // 1) Списки тайтлів: завжди проганяємо, щоб рейтинг працював незалежно від року
-  $scope.find('.card').each(function(){
-    var $c = $(this);
-    if ($c.closest('.full-start, .full-start-new, .full, .details').length) return; // не чіпаємо повну картку
-    applyListCard($c);
-  });
-
-  // 2) Картки епізодів: рік — тільки коли увімкнено; інакше чистимо
-  $scope.find('.card-episode').each(function(){
-    var $ep   = $(this);
-    var $full = $ep.find('.full-episode').first();
-
-    if (S.year_on){
-      applyEpisodeCard($ep);
-    } else {
-      $full.removeClass('ifx-hide-age');
-      $full.find('.ifx-year-pill').remove();
-    }
-  });
-
-  // 3) Інше
-  applyNumberOnly($scope);
-  applyTitleYearHide($scope);
-}   
-  
-  // ---------- «лише номер серії» (та ALT) ----------
-  function applyNumberOnly($scope){
-    $scope = $scope || $(document.body);
-    
-    // [!!!] ВИПРАВЛЕНО:
-    // Тепер 'force' залежить ТІЛЬКИ від S.num_only
-    var force = S.num_only;
-
-    $scope.find('.card-episode .full-episode').each(function(){
-      var $root = $(this);
-      var $name = $root.find('.full-episode__name').first();
-      if (!$name.length) return;
-
-      if (!force){
-        var orig = $name.data('ifx-orig');
-        if (typeof orig === 'string'){ $name.text(orig); $name.removeData('ifx-orig'); }
-        return;
-      }
-
-      var $num = $root.find('.full-episode__num').first();
-      var n = ($num.text()||'').trim();
-      if (!n){
-        var m = ($name.text()||'').match(/\d+/);
-        if (m) n = m[0];
-      }
-      if (!n) return;
-
-      if (!$name.data('ifx-orig')) $name.data('ifx-orig', $name.text());
-      $name.text(episodeWord() + ' ' + String(parseInt(n,10)));
-    });
-  }
-
-  // ---------- observers ----------
-  var mo = null;
-  var moDebounce = null; // OPTIMIZATION: Debounce timer
-  function enableObserver(){
-    if (mo) return;
-    mo = new MutationObserver(function(muts){
-      for (var i=0;i<muts.length;i++){
-        if (muts[i].addedNodes && muts[i].addedNodes.length){
-          // OPTIMIZATION: Debounce
-          if (moDebounce) clearTimeout(moDebounce);
-          moDebounce = setTimeout(function(){ injectAll($(document.body)); }, 200);
-          break;
-        }
-      }
-    });
-    try { mo.observe(document.body, {subtree:true, childList:true}); } catch(e){}
-  }
-  function disableObserver(){ if (mo){ try{ mo.disconnect(); }catch(e){} mo=null; } }
-
-  // ---------- react to settings ----------
-  if (!window.__ifx_storage_stable_final_v2){
-    window.__ifx_storage_stable_final_v2 = true;
-    var _prev = Lampa.Storage.set;
-    Lampa.Storage.set = function(k,v){
-      var r = _prev.apply(this, arguments);
-      if (typeof k==='string' && k.indexOf('interface_mod_new_')===0){
-        if (k===KEY_YEAR){
-          S.year_on = (v===true || v==='true' || Lampa.Storage.get(KEY_YEAR,'false')==='true');
-          ensureCss();
-          injectAll($(document.body));
-          
-          // [!!!] ВИПРАВЛЕНО:
-          // Умовне ввімкнення/вимкнення обсервера видалено.
-        }
-        if (k===KEY_ALT){
-          S.alt_ep = (v===true || v==='true' || Lampa.Storage.get(KEY_ALT,'false')==='true');
-          setEpisodeAlt(S.alt_ep);
-          setTimeout(function(){ injectAll($(document.body)); }, 50);
-        }
-        if (k===KEY_NUM){
-          S.num_only = (v===true || v==='true' || Lampa.Storage.get(KEY_NUM,'false')==='true');
-
-          // [!!!] ВИПРАВЛЕНО:
-          // Тепер логіка незалежна:
-          document.body.classList.toggle('ifx-num-only', S.num_only);
-          
-          applyNumberOnly($(document.body));
-        }
-        if (k==='interface_mod_new_alt_badges'){
-        var on = (v===true || v==='true' || Lampa.Storage.get('interface_mod_new_alt_badges','false')==='true');
-        ensureAltBadgesCss();
-        document.body.classList.toggle('ifx-alt-badges', on);
-        if (on) ifxSyncAltBadgeThemeFromQuality();
-        
-
-        }
-        if (k===KEY_RATING){
-          S.show_rate = (v===true || v==='true' || Lampa.Storage.get(KEY_RATING,'true')==='true');
-          // Перемальовуємо всі видимі картки списків із новим станом
-          // NEW: синхронізуємо клас для жорсткого приховування
-          document.body.classList.toggle('ifx-no-rate', !S.show_rate);
-
-          // Перемальовуємо всі видимі картки списків із новим станом
-  
-          injectAll($(document.body));
-        }
-
-      }
-      return r;
-    };
-  }
-
-  // ---------- boot ----------
-  function boot(){
-    ensureCss();
-    setEpisodeAlt(S.alt_ep);
-    
-    // [!!!] ВИПРАВЛЕНО:
-    // Обсервер (MutationObserver) тепер вмикається ЗАВЖДИ,
-    // а не тільки коли S.year_on === true.
-    enableObserver();
-    
-    injectAll($(document.body));
-   
-  // ALT badges: підключаємо CSS і застосовуємо стан тумблера
-  ensureAltBadgesCss();
-  var altOn = (Lampa.Storage.get('interface_mod_new_alt_badges', false)===true
-            || Lampa.Storage.get('interface_mod_new_alt_badges','false')==='true');
-  document.body.classList.toggle('ifx-alt-badges', altOn);
-  if (altOn) ifxSyncAltBadgeThemeFromQuality();
-
-  document.body.classList.toggle('ifx-no-rate', !S.show_rate);
-           
-  
-  }
-  if (window.appready) boot();
-  else Lampa.Listener.follow('app', function(e){ if (e.type==='ready') boot(); });
-})(); 
-  
-
 })();
