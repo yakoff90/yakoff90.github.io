@@ -1589,7 +1589,8 @@
     var render = Lampa.Activity.active().activity.render();
     if (!render) return;
 
-    refreshConfigFromStorage();
+    // Видалено виклик refreshConfigFromStorage() - він більше не потрібен
+    // refreshConfigFromStorage();
 
     var normalizedCard = {
       id: card.id,
@@ -1724,14 +1725,6 @@
       enableRt: enRT,
       enablePop: enPopcorn
     };
-  }
-
-  /**
-   * Синхронізує конфіг
-   */
-  function refreshConfigFromStorage() {
-    var cfg = getCfg();
-    return cfg;
   }
 
   /**
@@ -2038,7 +2031,8 @@
 
   initRatingsPluginUI();
 
-  refreshConfigFromStorage();
+  // Видалено виклик refreshConfigFromStorage()
+  // refreshConfigFromStorage();
 
   window.addEventListener('resize', reapplyOnResize);
   window.addEventListener('orientationchange', reapplyOnResize);
