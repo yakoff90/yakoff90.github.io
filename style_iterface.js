@@ -1,90 +1,182 @@
 (function () {
 	"use strict";
-	Lampa.Platform.tv();
+	
+	// Додаємо явний виклик TV режиму для Samsung
+	try {
+		if (typeof Lampa !== 'undefined' && Lampa.Platform && Lampa.Platform.tv) {
+			Lampa.Platform.tv();
+		}
+	} catch(e) {
+		console.log('Samsung TV Platform init error:', e);
+	}
 
-	if (typeof Lampa === "undefined") return;
-
-	if (!Lampa.Maker || !Lampa.Maker.map || !Lampa.Utils) return;
-	if (window.plugin_interface_ready_v3) return;
-
-	window.plugin_interface_ready_v3 = true;
-
-	var globalInfoCache = {};
-
-	Lampa.Storage.set("interface_size", "small");
-	Lampa.Storage.set("background", "false");
-
-	addStyles();
-	initializeSettings();
-
-	siStyleSetupVoteColorsObserver();
-	siStyleSetupVoteColorsForDetailPage();
-	setupPreloadObserver();
-
-	var mainMaker = Lampa.Maker.map("Main");
-	if (!mainMaker || !mainMaker.Items || !mainMaker.Create) return;
-
-	wrapMethod(mainMaker.Items, "onInit", function (originalMethod, args) {
-		this.__newInterfaceEnabled = shouldEnableInterface(this && this.object);
-
-		if (this.__newInterfaceEnabled) {
-			if (this.object) this.object.wide = false;
-			this.wide = false;
+	// Чекаємо повного завантаження Lampa
+	var initAttempts = 0;
+	var maxAttempts = 30;
+	
+	function initializePlugin() {
+		if (typeof Lampa === "undefined") {
+			if (initAttempts < maxAttempts) {
+				initAttempts++;
+				setTimeout(initializePlugin, 500);
+			}
+			return;
 		}
 
-		if (originalMethod) originalMethod.apply(this, args);
-	});
-
-	wrapMethod(mainMaker.Create, "onCreate", function (originalMethod, args) {
-		if (originalMethod) originalMethod.apply(this, args);
-		if (!this.__newInterfaceEnabled) return;
-
-		var state = getOrCreateState(this);
-		state.attach();
-	});
-
-	wrapMethod(mainMaker.Create, "onCreateAndAppend", function (originalMethod, args) {
-		var data = args && args[0];
-		if (this.__newInterfaceEnabled && data) {
-			data.wide = false;
-
-			if (!data.params) data.params = {};
-			if (!data.params.items) data.params.items = {};
-			data.params.items.view = 12;
-			data.params.items_per_row = 12;
-			data.items_per_row = 12;
-
-			extendResultsWithStyle(data);
+		if (!Lampa.Maker || !Lampa.Maker.map || !Lampa.Utils) {
+			if (initAttempts < maxAttempts) {
+				initAttempts++;
+				setTimeout(initializePlugin, 500);
+			}
+			return;
 		}
-		return originalMethod ? originalMethod.apply(this, args) : undefined;
-	});
+		
+		if (window.plugin_interface_ready_v3) return;
+		window.plugin_interface_ready_v3 = true;
 
-	wrapMethod(mainMaker.Items, "onAppend", function (originalMethod, args) {
-		if (originalMethod) originalMethod.apply(this, args);
-		if (!this.__newInterfaceEnabled) return;
+		console.log('Samsung TV Styled Interface plugin initializing...');
 
-		var element = args && args[0];
-		var data = args && args[1];
+		var globalInfoCache = {};
 
-		if (element && data) {
-			handleLineAppend(this, element, data);
+		// Ініціалізація налаштувань для Samsung TV
+		try {
+			if (Lampa.Storage) {
+				Lampa.Storage.set("interface_size", "small");
+				Lampa.Storage.set("background", "false");
+			}
+		} catch(e) {
+			console.log('Storage init error:', e);
 		}
-	});
 
-	wrapMethod(mainMaker.Items, "onDestroy", function (originalMethod, args) {
-		if (this.__newInterfaceState) {
-			this.__newInterfaceState.destroy();
-			delete this.__newInterfaceState;
+		addStyles();
+		initializeSettings();
+
+		// Запускаємо спостерігачі з затримкою для стабільності
+		setTimeout(function() {
+			try {
+				siStyleSetupVoteColorsObserver();
+				siStyleSetupVoteColorsForDetailPage();
+				setupPreloadObserver();
+			} catch(e) {
+				console.log('Observers init error:', e);
+			}
+		}, 1000);
+
+		// Отримуємо основний Maker з перевірками
+		var mainMaker = null;
+		try {
+			mainMaker = Lampa.Maker.map("Main");
+		} catch(e) {
+			console.log('Error getting Main Maker:', e);
 		}
-		delete this.__newInterfaceEnabled;
-		if (originalMethod) originalMethod.apply(this, args);
-	});
+		
+		if (!mainMaker || !mainMaker.Items || !mainMaker.Create) {
+			console.log('Main Maker not ready, retrying...');
+			setTimeout(initializePlugin, 1000);
+			return;
+		}
+
+		// Обгортка методу onInit
+		wrapMethod(mainMaker.Items, "onInit", function (originalMethod, args) {
+			try {
+				this.__newInterfaceEnabled = shouldEnableInterface(this && this.object);
+
+				if (this.__newInterfaceEnabled) {
+					if (this.object) this.object.wide = false;
+					this.wide = false;
+				}
+
+				if (originalMethod) originalMethod.apply(this, args);
+			} catch(e) {
+				console.log('onInit wrapper error:', e);
+				if (originalMethod) originalMethod.apply(this, args);
+			}
+		});
+
+		// Обгортка методу onCreate
+		wrapMethod(mainMaker.Create, "onCreate", function (originalMethod, args) {
+			try {
+				if (originalMethod) originalMethod.apply(this, args);
+				if (!this.__newInterfaceEnabled) return;
+
+				var state = getOrCreateState(this);
+				state.attach();
+			} catch(e) {
+				console.log('onCreate wrapper error:', e);
+			}
+		});
+
+		// Обгортка методу onCreateAndAppend
+		wrapMethod(mainMaker.Create, "onCreateAndAppend", function (originalMethod, args) {
+			try {
+				var data = args && args[0];
+				if (this.__newInterfaceEnabled && data) {
+					data.wide = false;
+
+					if (!data.params) data.params = {};
+					if (!data.params.items) data.params.items = {};
+					data.params.items.view = 12;
+					data.params.items_per_row = 12;
+					data.items_per_row = 12;
+
+					extendResultsWithStyle(data);
+				}
+				return originalMethod ? originalMethod.apply(this, args) : undefined;
+			} catch(e) {
+				console.log('onCreateAndAppend wrapper error:', e);
+				return originalMethod ? originalMethod.apply(this, args) : undefined;
+			}
+		});
+
+		// Обгортка методу onAppend
+		wrapMethod(mainMaker.Items, "onAppend", function (originalMethod, args) {
+			try {
+				if (originalMethod) originalMethod.apply(this, args);
+				if (!this.__newInterfaceEnabled) return;
+
+				var element = args && args[0];
+				var data = args && args[1];
+
+				if (element && data) {
+					handleLineAppend(this, element, data);
+				}
+			} catch(e) {
+				console.log('onAppend wrapper error:', e);
+			}
+		});
+
+		// Обгортка методу onDestroy
+		wrapMethod(mainMaker.Items, "onDestroy", function (originalMethod, args) {
+			try {
+				if (this.__newInterfaceState) {
+					this.__newInterfaceState.destroy();
+					delete this.__newInterfaceState;
+				}
+				delete this.__newInterfaceEnabled;
+				if (originalMethod) originalMethod.apply(this, args);
+			} catch(e) {
+				console.log('onDestroy wrapper error:', e);
+				if (originalMethod) originalMethod.apply(this, args);
+			}
+		});
+
+		console.log('Samsung TV Styled Interface plugin initialized successfully');
+	}
+
+	// Запускаємо ініціалізацію
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', function() {
+			setTimeout(initializePlugin, 1000);
+		});
+	} else {
+		setTimeout(initializePlugin, 1000);
+	}
 
 	function shouldEnableInterface(object) {
 		if (!object) return false;
 		if (window.innerWidth < 767) return false;
-		if (Lampa.Platform.screen("mobile")) return false;
-		if (object.title === "Обране") return false; // Змінено з "Избранное"
+		if (Lampa.Platform && Lampa.Platform.screen && Lampa.Platform.screen("mobile")) return false;
+		if (object.title === "Избранное" || object.title === "Обране") return false;
 		return true;
 	}
 
@@ -106,8 +198,10 @@
 
 		var bg1 = document.createElement("img");
 		bg1.className = "full-start__background";
+		bg1.setAttribute("loading", "eager"); // Для Samsung TV
 		var bg2 = document.createElement("img");
 		bg2.className = "full-start__background";
+		bg2.setAttribute("loading", "eager"); // Для Samsung TV
 
 		backgroundWrapper.appendChild(bg1);
 		backgroundWrapper.appendChild(bg2);
@@ -124,34 +218,68 @@
 			attach: function () {
 				if (this.attached) return;
 
-				var container = mainInstance.render(true);
+				var container = null;
+				try {
+					container = mainInstance.render(true);
+				} catch(e) {
+					console.log('Error getting container:', e);
+					return;
+				}
+				
 				if (!container) return;
 
 				container.classList.add("new-interface");
+				container.classList.add("samsung-tv-optimized"); // Додатковий клас для TV
 
 				if (!backgroundWrapper.parentElement) {
-					container.insertBefore(backgroundWrapper, container.firstChild || null);
-				}
-
-				var infoElement = infoPanel.render(true);
-				this.infoElement = infoElement;
-
-				if (infoElement && infoElement.parentNode !== container) {
-					if (backgroundWrapper.parentElement === container) {
-						container.insertBefore(infoElement, backgroundWrapper.nextSibling);
-					} else {
-						container.insertBefore(infoElement, container.firstChild || null);
+					try {
+						container.insertBefore(backgroundWrapper, container.firstChild || null);
+					} catch(e) {
+						console.log('Error inserting background:', e);
 					}
 				}
 
-				mainInstance.scroll.minus(infoElement);
+				var infoElement = null;
+				try {
+					infoElement = infoPanel.render(true);
+				} catch(e) {
+					console.log('Error rendering info panel:', e);
+					return;
+				}
+				
+				this.infoElement = infoElement;
+
+				if (infoElement && infoElement.parentNode !== container) {
+					try {
+						if (backgroundWrapper.parentElement === container) {
+							container.insertBefore(infoElement, backgroundWrapper.nextSibling);
+						} else {
+							container.insertBefore(infoElement, container.firstChild || null);
+						}
+					} catch(e) {
+						console.log('Error inserting info panel:', e);
+					}
+				}
+
+				try {
+					if (mainInstance.scroll && mainInstance.scroll.minus) {
+						mainInstance.scroll.minus(infoElement);
+					}
+				} catch(e) {
+					console.log('Error adjusting scroll:', e);
+				}
+				
 				this.attached = true;
 			},
 
 			update: function (data) {
 				if (!data) return;
-				infoPanel.update(data);
-				this.updateBackground(data);
+				try {
+					infoPanel.update(data);
+					this.updateBackground(data);
+				} catch(e) {
+					console.log('Error updating state:', e);
+				}
 			},
 
 			updateBackground: function (data) {
@@ -166,64 +294,114 @@
 					this._pendingImg = null;
 				}
 
-				var show_bg = Lampa.Storage.get("show_background", true);
-				var bg_resolution = Lampa.Storage.get("background_resolution", "original");
-				var backdropUrl = data && data.backdrop_path && show_bg ? Lampa.Api.img(data.backdrop_path, bg_resolution) : "";
+				var show_bg = true;
+				try {
+					show_bg = Lampa.Storage.get("show_background", true);
+				} catch(e) {}
+				
+				var bg_resolution = "original";
+				try {
+					bg_resolution = Lampa.Storage.get("background_resolution", "original");
+				} catch(e) {}
+				
+				var backdropUrl = "";
+				try {
+					if (data && data.backdrop_path && show_bg && Lampa.Api && Lampa.Api.img) {
+						backdropUrl = Lampa.Api.img(data.backdrop_path, bg_resolution);
+					}
+				} catch(e) {}
 
 				if (backdropUrl === this.backgroundLast) return;
 
 				this.backgroundTimer = setTimeout(function () {
-					if (!backdropUrl) {
-						bg1.classList.remove("active");
-						bg2.classList.remove("active");
-						self.backgroundLast = "";
-						return;
+					try {
+						if (!backdropUrl) {
+							bg1.classList.remove("active");
+							bg2.classList.remove("active");
+							self.backgroundLast = "";
+							return;
+						}
+
+						var nextLayer = bg1.classList.contains("active") ? bg2 : bg1;
+						var prevLayer = bg1.classList.contains("active") ? bg1 : bg2;
+
+						var img = new Image();
+						self._pendingImg = img;
+						
+						// Оптимізація для Samsung TV
+						img.setAttribute("decoding", "async");
+						img.setAttribute("loading", "eager");
+
+						img.onload = function () {
+							try {
+								if (self._pendingImg !== img) return;
+								if (backdropUrl !== self.backgroundLast) return;
+
+								self._pendingImg = null;
+								nextLayer.src = backdropUrl;
+								
+								// Використовуємо requestAnimationFrame для плавності
+								requestAnimationFrame(function() {
+									nextLayer.classList.add("active");
+								});
+
+								setTimeout(function () {
+									if (backdropUrl !== self.backgroundLast) return;
+									prevLayer.classList.remove("active");
+								}, 100);
+							} catch(e) {
+								console.log('Background image onload error:', e);
+							}
+						};
+
+						img.onerror = function() {
+							self._pendingImg = null;
+						};
+
+						self.backgroundLast = backdropUrl;
+						img.src = backdropUrl;
+					} catch(e) {
+						console.log('Background update error:', e);
 					}
-
-					var nextLayer = bg1.classList.contains("active") ? bg2 : bg1;
-					var prevLayer = bg1.classList.contains("active") ? bg1 : bg2;
-
-					var img = new Image();
-					self._pendingImg = img;
-
-					img.onload = function () {
-						if (self._pendingImg !== img) return;
-						if (backdropUrl !== self.backgroundLast) return;
-
-						self._pendingImg = null;
-						nextLayer.src = backdropUrl;
-						nextLayer.classList.add("active");
-
-						setTimeout(function () {
-							if (backdropUrl !== self.backgroundLast) return;
-							prevLayer.classList.remove("active");
-						}, 100);
-					};
-
-					self.backgroundLast = backdropUrl;
-					img.src = backdropUrl;
 				}, BACKGROUND_DEBOUNCE_DELAY);
 			},
 
 			reset: function () {
-				infoPanel.empty();
+				try {
+					infoPanel.empty();
+				} catch(e) {
+					console.log('Reset error:', e);
+				}
 			},
 
 			destroy: function () {
 				clearTimeout(this.backgroundTimer);
-				infoPanel.destroy();
+				try {
+					infoPanel.destroy();
+				} catch(e) {
+					console.log('Info panel destroy error:', e);
+				}
 
-				var container = mainInstance.render(true);
+				var container = null;
+				try {
+					container = mainInstance.render(true);
+				} catch(e) {}
+				
 				if (container) {
 					container.classList.remove("new-interface");
+					container.classList.remove("samsung-tv-optimized");
 				}
 
 				if (this.infoElement && this.infoElement.parentNode) {
-					this.infoElement.parentNode.removeChild(this.infoElement);
+					try {
+						this.infoElement.parentNode.removeChild(this.infoElement);
+					} catch(e) {}
 				}
 
 				if (backgroundWrapper && backgroundWrapper.parentNode) {
-					backgroundWrapper.parentNode.removeChild(backgroundWrapper);
+					try {
+						backgroundWrapper.parentNode.removeChild(backgroundWrapper);
+					} catch(e) {}
 				}
 
 				this.attached = false;
@@ -234,44 +412,59 @@
 	}
 
 	function initChildModeApiHook() {
-		if (!Lampa.TMDB || !Lampa.TMDB.api) return;
+		try {
+			if (!Lampa.TMDB || !Lampa.TMDB.api) return;
 
-		var originalApi = Lampa.TMDB.api;
+			var originalApi = Lampa.TMDB.api;
 
-		Lampa.TMDB.api = function (url) {
-			if (Lampa.Storage.get("child_mode", false)) {
-				if (url.indexOf("discover/") !== -1 || url.indexOf("trending/") !== -1 || url.indexOf("movie/popular") !== -1 || url.indexOf("movie/top_rated") !== -1 || url.indexOf("movie/now_playing") !== -1 || url.indexOf("movie/upcoming") !== -1 || url.indexOf("tv/popular") !== -1 || url.indexOf("tv/top_rated") !== -1 || url.indexOf("tv/on_the_air") !== -1 || url.indexOf("tv/airing_today") !== -1) {
-					if (url.indexOf("certification") === -1) {
-						var separator = url.indexOf("?") !== -1 ? "&" : "?";
-						url = url + separator + "certification_country=UA&certification.lte=16&include_adult=false"; // Змінено RU на UA
+			Lampa.TMDB.api = function (url) {
+				try {
+					if (Lampa.Storage.get("child_mode", false)) {
+						if (url.indexOf("discover/") !== -1 || url.indexOf("trending/") !== -1 || url.indexOf("movie/popular") !== -1 || url.indexOf("movie/top_rated") !== -1 || url.indexOf("movie/now_playing") !== -1 || url.indexOf("movie/upcoming") !== -1 || url.indexOf("tv/popular") !== -1 || url.indexOf("tv/top_rated") !== -1 || url.indexOf("tv/on_the_air") !== -1 || url.indexOf("tv/airing_today") !== -1) {
+							if (url.indexOf("certification") === -1) {
+								var separator = url.indexOf("?") !== -1 ? "&" : "?";
+								url = url + separator + "certification_country=RU&certification.lte=16&include_adult=false";
+							}
+						}
+						if (url.indexOf("include_adult") === -1 && url.indexOf("search/") !== -1) {
+							var separator = url.indexOf("?") !== -1 ? "&" : "?";
+							url = url + separator + "include_adult=false";
+						}
 					}
+				} catch(e) {
+					console.log('Child mode API hook error:', e);
 				}
-				if (url.indexOf("include_adult") === -1 && url.indexOf("search/") !== -1) {
-					var separator = url.indexOf("?") !== -1 ? "&" : "?";
-					url = url + separator + "include_adult=false";
-				}
-			}
-			return originalApi(url);
-		};
+				return originalApi(url);
+			};
+		} catch(e) {
+			console.log('Child mode init error:', e);
+		}
 	}
 
-	initChildModeApiHook();
+	// Викликаємо пізніше
+	setTimeout(initChildModeApiHook, 2000);
 
 	function extendResultsWithStyle(data) {
 		if (!data) return;
 
-		if (Array.isArray(data.results)) {
-			data.results.forEach(function (card) {
-				if (card.wide !== false) {
-					card.wide = false;
-				}
-			});
+		try {
+			if (Array.isArray(data.results)) {
+				data.results.forEach(function (card) {
+					if (card.wide !== false) {
+						card.wide = false;
+					}
+				});
 
-			Lampa.Utils.extendItemsParams(data.results, {
-				style: {
-					name: Lampa.Storage.get("wide_post") !== false ? "wide" : "small",
-				},
-			});
+				if (Lampa.Utils && Lampa.Utils.extendItemsParams) {
+					Lampa.Utils.extendItemsParams(data.results, {
+						style: {
+							name: Lampa.Storage.get("wide_post") !== false ? "wide" : "small",
+						},
+					});
+				}
+			}
+		} catch(e) {
+			console.log('Extend results error:', e);
 		}
 	}
 
@@ -279,51 +472,75 @@
 		if (!card || card.__newInterfaceCard) return;
 		if (typeof card.use !== "function" || !card.data) return;
 
-		card.__newInterfaceCard = true;
-		card.params = card.params || {};
-		card.params.style = card.params.style || {};
+		try {
+			card.__newInterfaceCard = true;
+			card.params = card.params || {};
+			card.params.style = card.params.style || {};
 
-		var targetStyle = Lampa.Storage.get("wide_post") !== false ? "wide" : "small";
-		card.params.style.name = targetStyle;
+			var targetStyle = "small";
+			try {
+				targetStyle = Lampa.Storage.get("wide_post") !== false ? "wide" : "small";
+			} catch(e) {}
+			
+			card.params.style.name = targetStyle;
 
-		if (card.render && typeof card.render === "function") {
-			var element = card.render(true);
-			if (element) {
-				var node = element.jquery ? element[0] : element;
-				if (node && node.classList) {
-					if (targetStyle === "wide") {
-						node.classList.add("card--wide");
-						node.classList.remove("card--small");
-					} else {
-						node.classList.add("card--small");
-						node.classList.remove("card--wide");
+			if (card.render && typeof card.render === "function") {
+				var element = card.render(true);
+				if (element) {
+					var node = element.jquery ? element[0] : element;
+					if (node && node.classList) {
+						if (targetStyle === "wide") {
+							node.classList.add("card--wide");
+							node.classList.remove("card--small");
+						} else {
+							node.classList.add("card--small");
+							node.classList.remove("card--wide");
+						}
 					}
 				}
 			}
-		}
 
-		card.use({
-			onFocus: function () {
-				state.update(card.data);
-			},
-			onHover: function () {
-				state.update(card.data);
-			},
-			onTouch: function () {
-				state.update(card.data);
-			},
-			onDestroy: function () {
-				delete card.__newInterfaceCard;
-			},
-		});
+			card.use({
+				onFocus: function () {
+					try {
+						state.update(card.data);
+					} catch(e) {
+						console.log('Card focus error:', e);
+					}
+				},
+				onHover: function () {
+					try {
+						state.update(card.data);
+					} catch(e) {
+						console.log('Card hover error:', e);
+					}
+				},
+				onTouch: function () {
+					try {
+						state.update(card.data);
+					} catch(e) {
+						console.log('Card touch error:', e);
+					}
+				},
+				onDestroy: function () {
+					delete card.__newInterfaceCard;
+				},
+			});
+		} catch(e) {
+			console.log('Handle card error:', e);
+		}
 	}
 
 	function getCardData(card, results, index) {
 		index = index || 0;
 
-		if (card && card.data) return card.data;
-		if (results && Array.isArray(results.results)) {
-			return results.results[index] || results.results[0];
+		try {
+			if (card && card.data) return card.data;
+			if (results && Array.isArray(results.results)) {
+				return results.results[index] || results.results[0];
+			}
+		} catch(e) {
+			console.log('Get card data error:', e);
 		}
 
 		return null;
@@ -332,501 +549,671 @@
 	function findCardData(element) {
 		if (!element) return null;
 
-		var node = element && element.jquery ? element[0] : element;
+		try {
+			var node = element && element.jquery ? element[0] : element;
 
-		while (node && !node.card_data) {
-			node = node.parentNode;
+			while (node && !node.card_data) {
+				node = node.parentNode;
+			}
+
+			return node && node.card_data ? node.card_data : null;
+		} catch(e) {
+			console.log('Find card data error:', e);
+			return null;
 		}
-
-		return node && node.card_data ? node.card_data : null;
 	}
 
 	function getFocusedCard(items) {
-		var container = items && typeof items.render === "function" ? items.render(true) : null;
-		if (!container || !container.querySelector) return null;
+		try {
+			var container = items && typeof items.render === "function" ? items.render(true) : null;
+			if (!container || !container.querySelector) return null;
 
-		var focusedElement = container.querySelector(".selector.focus") || container.querySelector(".focus");
-		return findCardData(focusedElement);
+			var focusedElement = container.querySelector(".selector.focus") || container.querySelector(".focus");
+			return findCardData(focusedElement);
+		} catch(e) {
+			console.log('Get focused card error:', e);
+			return null;
+		}
 	}
 
 	function handleLineAppend(items, line, data) {
 		if (line.__newInterfaceLine) return;
 		line.__newInterfaceLine = true;
 
-		var state = getOrCreateState(items);
+		try {
+			var state = getOrCreateState(items);
 
-		line.items_per_row = 12;
-		line.view = 12;
-		if (line.params) {
-			line.params.items_per_row = 12;
-			if (line.params.items) line.params.items.view = 12;
-		}
+			line.items_per_row = 12;
+			line.view = 12;
+			if (line.params) {
+				line.params.items_per_row = 12;
+				if (line.params.items) line.params.items.view = 12;
+			}
 
-		var processCard = function (card) {
-			handleCard(state, card);
-		};
+			var processCard = function (card) {
+				handleCard(state, card);
+			};
 
-		line.use({
-			onInstance: function (instance) {
-				processCard(instance);
-			},
-			onActive: function (card, results) {
-				var cardData = getCardData(card, results);
-				if (cardData) state.update(cardData);
-			},
-			onToggle: function () {
-				setTimeout(function () {
-					var focusedCard = getFocusedCard(line);
-					if (focusedCard) state.update(focusedCard);
-				}, 32);
-			},
-			onMore: function () {
-				state.reset();
-			},
-			onDestroy: function () {
-				state.reset();
-				delete line.__newInterfaceLine;
-			},
-		});
+			line.use({
+				onInstance: function (instance) {
+					processCard(instance);
+				},
+				onActive: function (card, results) {
+					try {
+						var cardData = getCardData(card, results);
+						if (cardData) state.update(cardData);
+					} catch(e) {
+						console.log('Line active error:', e);
+					}
+				},
+				onToggle: function () {
+					setTimeout(function () {
+						try {
+							var focusedCard = getFocusedCard(line);
+							if (focusedCard) state.update(focusedCard);
+						} catch(e) {
+							console.log('Line toggle error:', e);
+						}
+					}, 32);
+				},
+				onMore: function () {
+					state.reset();
+				},
+				onDestroy: function () {
+					state.reset();
+					delete line.__newInterfaceLine;
+				},
+			});
 
-		if (Array.isArray(line.items) && line.items.length) {
-			line.items.forEach(processCard);
-		}
+			if (Array.isArray(line.items) && line.items.length) {
+				line.items.forEach(processCard);
+			}
 
-		if (line.last) {
-			var lastCardData = findCardData(line.last);
-			if (lastCardData) state.update(lastCardData);
+			if (line.last) {
+				var lastCardData = findCardData(line.last);
+				if (lastCardData) state.update(lastCardData);
+			}
+		} catch(e) {
+			console.log('Handle line append error:', e);
 		}
 	}
 
 	function wrapMethod(object, methodName, wrapper) {
 		if (!object) return;
 
-		var originalMethod = typeof object[methodName] === "function" ? object[methodName] : null;
+		try {
+			var originalMethod = typeof object[methodName] === "function" ? object[methodName] : null;
 
-		object[methodName] = function () {
-			var args = Array.prototype.slice.call(arguments);
-			return wrapper.call(this, originalMethod, args);
-		};
+			object[methodName] = function () {
+				var args = Array.prototype.slice.call(arguments);
+				return wrapper.call(this, originalMethod, args);
+			};
+		} catch(e) {
+			console.log('Wrap method error:', e);
+		}
 	}
 
 	function addStyles() {
 		if (addStyles.added) return;
 		addStyles.added = true;
 
-		var styles = Lampa.Storage.get("wide_post") !== false ? getWideStyles() : getSmallStyles();
+		try {
+			var styles = "";
+			try {
+				var widePost = Lampa.Storage.get("wide_post");
+				styles = widePost !== false ? getWideStyles() : getSmallStyles();
+			} catch(e) {
+				styles = getWideStyles(); // За замовчуванням
+			}
 
-		Lampa.Template.add("new_interface_style_v3", styles);
-		$("body").append(Lampa.Template.get("new_interface_style_v3", {}, true));
+			if (Lampa.Template && Lampa.Template.add) {
+				Lampa.Template.add("new_interface_style_v3", styles);
+			}
+			
+			// Додаємо стилі безпосередньо в head
+			var styleElement = document.createElement('style');
+			styleElement.id = 'samsung-tv-styled-interface';
+			styleElement.textContent = styles;
+			
+			// Додаємо з перевірками
+			setTimeout(function() {
+				try {
+					if (!document.getElementById('samsung-tv-styled-interface')) {
+						document.head.appendChild(styleElement);
+					}
+				} catch(e) {
+					console.log('Error adding styles:', e);
+				}
+			}, 1000);
+			
+		} catch(e) {
+			console.log('Add styles error:', e);
+		}
 	}
 
 	function getWideStyles() {
-		return `<style>
-					.items-line__title .full-person__photo {
-						width: 1.8em !important;
-						height: 1.8em !important;
-					}
-					.items-line__title .full-person--svg .full-person__photo {
-						padding: 0.5em !important;
-						margin-right: 0.5em !important;
-					}
-					.items-line__title .full-person__photo {
-						margin-right: 0.5em !important;
-					}
-					.items-line {
-						padding-bottom: 4em !important;
-					}
-					.new-interface-info__head, .new-interface-info__details{ opacity: 0; transition: opacity 0.5s ease; min-height: 2.2em !important;}
-					.new-interface-info__head.visible, .new-interface-info__details.visible{ opacity: 1; }
-					.new-interface .card.card--wide {
-						width: 18.3em;
-					}
+		return `
+			<style id="samsung-tv-wide-styles">
+				.items-line__title .full-person__photo {
+					width: 1.8em !important;
+					height: 1.8em !important;
+				}
+				.items-line__title .full-person--svg .full-person__photo {
+					padding: 0.5em !important;
+					margin-right: 0.5em !important;
+				}
+				.items-line__title .full-person__photo {
+					margin-right: 0.5em !important;
+				}
+				.items-line {
+					padding-bottom: 4em !important;
+				}
+				.new-interface-info__head, .new-interface-info__details{ 
+					opacity: 0; 
+					transition: opacity 0.5s ease; 
+					min-height: 2.2em !important;
+				}
+				.new-interface-info__head.visible, .new-interface-info__details.visible{ 
+					opacity: 1; 
+				}
+				.new-interface .card.card--wide {
+					width: 18.3em;
+					-webkit-transform: translate3d(0,0,0);
+					transform: translate3d(0,0,0);
+				}
+				.new-interface .card.card--small {
+					width: 18.3em;
+					-webkit-transform: translate3d(0,0,0);
+					transform: translate3d(0,0,0);
+				}
+				.new-interface-info {
+					position: relative;
+					padding: 1.5em;
+					height: 27.5em;
+					-webkit-transform: translate3d(0,0,0);
+					transform: translate3d(0,0,0);
+				}
+				.new-interface-info__body {
+					position: absolute;
+					z-index: 9999999;
+					width: 80%;
+					padding-top: 1.1em;
+				}
+				.new-interface-info__head {
+					color: rgba(255, 255, 255, 0.6);
+					font-size: 1.3em;
+					min-height: 1em;
+				}
+				.new-interface-info__head span {
+					color: #fff;
+				}
+				.new-interface-info__title {
+					font-size: 4em;
+					font-weight: 600;
+					margin-bottom: 0.3em;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					display: -webkit-box;
+					-webkit-line-clamp: 1;
+					line-clamp: 1;
+					-webkit-box-orient: vertical;
+					margin-left: -0.03em;
+					line-height: 1.3;
+					-webkit-font-smoothing: antialiased;
+				}
+				.new-interface-info__details {
+					margin-top: 1.2em;
+					margin-bottom: 1.6em;
+					display: flex;
+					align-items: center;
+					flex-wrap: wrap;
+					min-height: 1.9em;
+					font-size: 1.3em;
+				}
+				.new-interface-info__split {
+					margin: 0 1em;
+					font-size: 0.7em;
+				}
+				.new-interface-info__description {
+					font-size: 1.4em;
+					font-weight: 310;
+					line-height: 1.3;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					display: -webkit-box;
+					-webkit-line-clamp: 3;
+					line-clamp: 3;
+					-webkit-box-orient: vertical;
+					width: 65%;
+					-webkit-font-smoothing: antialiased;
+				}
+				.new-interface .card-more__box {
+					padding-bottom: 95%;
+				}
+				.new-interface .full-start__background-wrapper {
+					position: absolute;
+					top: 0;
+					left: 0;
+					width: 100%;
+					height: 100%;
+					z-index: -1;
+					pointer-events: none;
+					-webkit-transform: translate3d(0,0,0);
+					transform: translate3d(0,0,0);
+				}
+				.new-interface .full-start__background {
+					position: absolute;
+					height: 108%;
+					width: 100%;
+					top: -5em;
+					left: 0;
+					opacity: 0;
+					object-fit: cover;
+					transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+					-webkit-transform: translate3d(0,0,0);
+					transform: translate3d(0,0,0);
+					image-rendering: -webkit-optimize-contrast;
+					image-rendering: crisp-edges;
+				}
+				.new-interface .full-start__background.active {
+					opacity: 0.5;
+				}
+				.new-interface .full-start__rate {
+					font-size: 1.3em;
+					margin-right: 0;
+				}
+				.new-interface .card__promo {
+					display: none;
+				}
+				.new-interface .card.card--wide + .card-more .card-more__box {
+					padding-bottom: 95%;
+				}
+				.new-interface .card.card--wide .card-watched {
+					display: none !important;
+				}
+				body.light--version .new-interface-info__body {
+					position: absolute;
+					z-index: 9999999;
+					width: 69%;
+					padding-top: 1.5em;
+				}
+				body.light--version .new-interface-info {
+					height: 25.3em;
+				}
+				body.advanced--animation:not(.no--animation) .new-interface .card.card--wide.focus .card__view {
+					animation: animation-card-focus 0.2s;
+				}
+				body.advanced--animation:not(.no--animation) .new-interface .card.card--wide.animate-trigger-enter .card__view {
+					animation: animation-trigger-enter 0.2s forwards;
+				}
+				body.advanced--animation:not(.no--animation) .new-interface .card.card--small.focus .card__view {
+					animation: animation-card-focus 0.2s;
+				}
+				body.advanced--animation:not(.no--animation) .new-interface .card.card--small.animate-trigger-enter .card__view {
+					animation: animation-trigger-enter 0.2s forwards;
+				}
+				.logo-moved-head { 
+					transition: opacity 0.4s ease; 
+				}
+				.logo-moved-separator { 
+					transition: opacity 0.4s ease; 
+				}
+				.samsung-tv-optimized .card__view {
+					-webkit-transform: translate3d(0,0,0);
+					transform: translate3d(0,0,0);
+					backface-visibility: hidden;
+					perspective: 1000px;
+					will-change: transform;
+				}
+				.samsung-tv-optimized .items-line {
+					-webkit-transform: translate3d(0,0,0);
+					transform: translate3d(0,0,0);
+				}
+				.samsung-tv-optimized {
+					-webkit-font-smoothing: antialiased;
+					text-rendering: optimizeLegibility;
+				}
+				/* Оптимізації для TV */
+				@media (max-width: 1920px) {
+					.new-interface .card.card--wide,
 					.new-interface .card.card--small {
-						width: 18.3em;
+						width: 16.3em;
 					}
-					.new-interface-info {
-						position: relative;
-						padding: 1.5em;
-						height: 27.5em;
+				}
+				@media (max-width: 1600px) {
+					.new-interface .card.card--wide,
+					.new-interface .card.card--small {
+						width: 14.3em;
 					}
-					.new-interface-info__body {
-						position: absolute;
-						z-index: 9999999;
-						width: 80%;
-						padding-top: 1.1em;
+				}
+				@media (max-width: 1366px) {
+					.new-interface .card.card--wide,
+					.new-interface .card.card--small {
+						width: 12.3em;
 					}
-					.new-interface-info__head {
-						color: rgba(255, 255, 255, 0.6);
-						font-size: 1.3em;
-						min-height: 1em;
-					}
-					.new-interface-info__head span {
-						color: #fff;
-					}
-					.new-interface-info__title {
-						font-size: 4em;
-						font-weight: 600;
-						margin-bottom: 0.3em;
-						overflow: hidden;
-						-o-text-overflow: '.';
-						text-overflow: '.';
-						display: -webkit-box;
-						-webkit-line-clamp: 1;
-						line-clamp: 1;
-						-webkit-box-orient: vertical;
-						margin-left: -0.03em;
-						line-height: 1.3;
-					}
-					.new-interface-info__details {
-						margin-top: 1.2em;
-						margin-bottom: 1.6em;
-						display: flex;
-						align-items: center;
-						flex-wrap: wrap;
-						min-height: 1.9em;
-						font-size: 1.3em;
-					}
-					.new-interface-info__split {
-						margin: 0 1em;
-						font-size: 0.7em;
-					}
-					.new-interface-info__description {
-						font-size: 1.4em;
-						font-weight: 310;
-						line-height: 1.3;
-						overflow: hidden;
-						-o-text-overflow: '.';
-						text-overflow: '.';
-						display: -webkit-box;
-						-webkit-line-clamp: 3;
-						line-clamp: 3;
-						-webkit-box-orient: vertical;
-						width: 65%;
-					}
-					.new-interface .card-more__box {
-						padding-bottom: 95%;
-					}
-					.new-interface .full-start__background-wrapper {
-						position: absolute;
-						top: 0;
-						left: 0;
-						width: 100%;
-						height: 100%;
-						z-index: -1;
-						pointer-events: none;
-					}
-					.new-interface .full-start__background {
-						position: absolute;
-						height: 108%;
-						width: 100%;
-						top: -5em;
-						left: 0;
-						opacity: 0;
-						object-fit: cover;
-						transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-					}
-					.new-interface .full-start__background.active {
-						opacity: 0.5;
-					}
-					.new-interface .full-start__rate {
-						font-size: 1.3em;
-						margin-right: 0;
-					}
-					.new-interface .card__promo {
-						display: none;
-					}
-					.new-interface .card.card--wide + .card-more .card-more__box {
-						padding-bottom: 95%;
-					}
-					.new-interface .card.card--wide .card-watched {
-						display: none !important;
-					}
-					body.light--version .new-interface-info__body {
-						position: absolute;
-						z-index: 9999999;
-						width: 69%;
-						padding-top: 1.5em;
-					}
-					body.light--version .new-interface-info {
-						height: 25.3em;
-					}
-					body.advanced--animation:not(.no--animation) .new-interface .card.card--wide.focus .card__view {
-						animation: animation-card-focus 0.2s;
-					}
-					body.advanced--animation:not(.no--animation) .new-interface .card.card--wide.animate-trigger-enter .card__view {
-						animation: animation-trigger-enter 0.2s forwards;
-					}
-					body.advanced--animation:not(.no--animation) .new-interface .card.card--small.focus .card__view {
-						animation: animation-card-focus 0.2s;
-					}
-					body.advanced--animation:not(.no--animation) .new-interface .card.card--small.animate-trigger-enter .card__view {
-						animation: animation-trigger-enter 0.2s forwards;
-					}
-					.logo-moved-head { transition: opacity 0.4s ease; }
-					.logo-moved-separator { transition: opacity 0.4s ease; }
-					${Lampa.Storage.get("hide_captions", true) ? ".card:not(.card--collection) .card__age, .card:not(.card--collection) .card__title { display: none !important; }" : ""}
-					/* Оптимізації для Samsung TV */
-					.new-interface .card__view {
-						-webkit-transform: translate3d(0,0,0);
-						transform: translate3d(0,0,0);
-						backface-visibility: hidden;
-						perspective: 1000px;
-					}
-					.new-interface-info__title, .new-interface-info__description {
-						text-rendering: optimizeLegibility;
-						-webkit-font-smoothing: antialiased;
-					}
-					.full-start__background {
-						image-rendering: -webkit-optimize-contrast;
-						image-rendering: crisp-edges;
-					}
-				</style>`;
+				}
+			</style>
+		`;
 	}
 
 	function getSmallStyles() {
-		return `<style>
-					.new-interface-info__head, .new-interface-info__details{ opacity: 0; transition: opacity 0.5s ease; min-height: 2.2em !important;}
-					.new-interface-info__head.visible, .new-interface-info__details.visible{ opacity: 1; }
-					.new-interface .card.card--wide{
-						width: 18.3em;
+		return `
+			<style id="samsung-tv-small-styles">
+				.new-interface-info__head, .new-interface-info__details{ 
+					opacity: 0; 
+					transition: opacity 0.5s ease; 
+					min-height: 2.2em !important;
+				}
+				.new-interface-info__head.visible, .new-interface-info__details.visible{ 
+					opacity: 1; 
+				}
+				.new-interface .card.card--wide{
+					width: 18.3em;
+					-webkit-transform: translate3d(0,0,0);
+					transform: translate3d(0,0,0);
+				}
+				.items-line__title .full-person__photo {
+					width: 1.8em !important;
+					height: 1.8em !important;
+				}
+				.items-line__title .full-person--svg .full-person__photo {
+					padding: 0.5em !important;
+					margin-right: 0.5em !important;
+				}
+				.items-line__title .full-person__photo {
+					margin-right: 0.5em !important;
+				}
+				.new-interface-info {
+					position: relative;
+					padding: 1.5em;
+					height: 19.8em;
+					-webkit-transform: translate3d(0,0,0);
+					transform: translate3d(0,0,0);
+				}
+				.new-interface-info__body {
+					position: absolute;
+					z-index: 9999999;
+					width: 80%;
+					padding-top: 0.2em;
+				}
+				.new-interface-info__head {
+					color: rgba(255, 255, 255, 0.6);
+					margin-bottom: 0.3em;
+					font-size: 1.2em;
+					min-height: 1em;
+				}
+				.new-interface-info__head span {
+					color: #fff;
+				}
+				.new-interface-info__title {
+					font-size: 3em;
+					font-weight: 600;
+					margin-bottom: 0.2em;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					display: -webkit-box;
+					-webkit-line-clamp: 1;
+					line-clamp: 1;
+					-webkit-box-orient: vertical;
+					margin-left: -0.03em;
+					line-height: 1.3;
+					-webkit-font-smoothing: antialiased;
+				}
+				.new-interface-info__details {
+					margin-top: 1.2em;
+					margin-bottom: 1.6em;
+					display: flex;
+					align-items: center;
+					flex-wrap: wrap;
+					min-height: 1.9em;
+					font-size: 1.2em;
+				}
+				.new-interface-info__split {
+					margin: 0 1em;
+					font-size: 0.7em;
+				}
+				.new-interface-info__description {
+					font-size: 1.3em;
+					font-weight: 310;
+					line-height: 1.3;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					display: -webkit-box;
+					-webkit-line-clamp: 2;
+					line-clamp: 2;
+					-webkit-box-orient: vertical;
+					width: 70%;
+					-webkit-font-smoothing: antialiased;
+				}
+				.new-interface .card-more__box {
+					padding-bottom: 150%;
+				}
+				.new-interface .full-start__background-wrapper {
+					position: absolute;
+					top: 0;
+					left: 0;
+					width: 100%;
+					height: 100%;
+					z-index: -1;
+					pointer-events: none;
+					-webkit-transform: translate3d(0,0,0);
+					transform: translate3d(0,0,0);
+				}
+				.new-interface .full-start__background {
+					position: absolute;
+					height: 108%;
+					width: 100%;
+					top: -5em;
+					left: 0;
+					opacity: 0;
+					object-fit: cover;
+					transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+					-webkit-transform: translate3d(0,0,0);
+					transform: translate3d(0,0,0);
+					image-rendering: -webkit-optimize-contrast;
+					image-rendering: crisp-edges;
+				}
+				.new-interface .full-start__background.active {
+					opacity: 0.5;
+				}
+				.new-interface .full-start__rate {
+					font-size: 1.2em;
+					margin-right: 0;
+				}
+				.new-interface .card__promo {
+					display: none;
+				}
+				.new-interface .card.card--wide + .card-more .card-more__box {
+					padding-bottom: 95%;
+				}
+				.new-interface .card.card--wide .card-watched {
+					display: none !important;
+				}
+				body.light--version .new-interface-info__body {
+					position: absolute;
+					z-index: 9999999;
+					width: 69%;
+					padding-top: 1.5em;
+				}
+				body.light--version .new-interface-info {
+					height: 25.3em;
+				}
+				body.advanced--animation:not(.no--animation) .new-interface .card.card--wide.focus .card__view {
+					animation: animation-card-focus 0.2s;
+				}
+				body.advanced--animation:not(.no--animation) .new-interface .card.card--wide.animate-trigger-enter .card__view {
+					animation: animation-trigger-enter 0.2s forwards;
+				}
+				body.advanced--animation:not(.no--animation) .new-interface .card.card--small.focus .card__view {
+					animation: animation-card-focus 0.2s;
+				}
+				body.advanced--animation:not(.no--animation) .new-interface .card.card--small.animate-trigger-enter .card__view {
+					animation: animation-trigger-enter 0.2s forwards;
+				}
+				.logo-moved-head { 
+					transition: opacity 0.4s ease; 
+				}
+				.logo-moved-separator { 
+					transition: opacity 0.4s ease; 
+				}
+				.samsung-tv-optimized .card__view {
+					-webkit-transform: translate3d(0,0,0);
+					transform: translate3d(0,0,0);
+					backface-visibility: hidden;
+					perspective: 1000px;
+					will-change: transform;
+				}
+				.samsung-tv-optimized .items-line {
+					-webkit-transform: translate3d(0,0,0);
+					transform: translate3d(0,0,0);
+				}
+				.samsung-tv-optimized {
+					-webkit-font-smoothing: antialiased;
+					text-rendering: optimizeLegibility;
+				}
+				/* Оптимізації для TV */
+				@media (max-width: 1920px) {
+					.new-interface .card.card--wide,
+					.new-interface .card.card--small {
+						width: 16.3em;
 					}
-					.items-line__title .full-person__photo {
-						width: 1.8em !important;
-						height: 1.8em !important;
+				}
+				@media (max-width: 1600px) {
+					.new-interface .card.card--wide,
+					.new-interface .card.card--small {
+						width: 14.3em;
 					}
-					.items-line__title .full-person--svg .full-person__photo {
-						padding: 0.5em !important;
-						margin-right: 0.5em !important;
+				}
+				@media (max-width: 1366px) {
+					.new-interface .card.card--wide,
+					.new-interface .card.card--small {
+						width: 12.3em;
 					}
-					.items-line__title .full-person__photo {
-						margin-right: 0.5em !important;
-					}
-					.new-interface-info {
-						position: relative;
-						padding: 1.5em;
-						height: 19.8em;
-					}
-					.new-interface-info__body {
-						position: absolute;
-						z-index: 9999999;
-						width: 80%;
-						padding-top: 0.2em;
-					}
-					.new-interface-info__head {
-						color: rgba(255, 255, 255, 0.6);
-						margin-bottom: 0.3em;
-						font-size: 1.2em;
-						min-height: 1em;
-					}
-					.new-interface-info__head span {
-						color: #fff;
-					}
-					.new-interface-info__title {
-						font-size: 3em;
-						font-weight: 600;
-						margin-bottom: 0.2em;
-						overflow: hidden;
-						-o-text-overflow: '.';
-						text-overflow: '.';
-						display: -webkit-box;
-						-webkit-line-clamp: 1;
-						line-clamp: 1;
-						-webkit-box-orient: vertical;
-						margin-left: -0.03em;
-						line-height: 1.3;
-					}
-					.new-interface-info__details {
-						margin-top: 1.2em;
-						margin-bottom: 1.6em;
-						display: flex;
-						align-items: center;
-						flex-wrap: wrap;
-						min-height: 1.9em;
-						font-size: 1.2em;
-					}
-					.new-interface-info__split {
-						margin: 0 1em;
-						font-size: 0.7em;
-					}
-					.new-interface-info__description {
-						font-size: 1.3em;
-						font-weight: 310;
-						line-height: 1.3;
-						overflow: hidden;
-						-o-text-overflow: '.';
-						text-overflow: '.';
-						display: -webkit-box;
-						-webkit-line-clamp: 2;
-						line-clamp: 2;
-						-webkit-box-orient: vertical;
-						width: 70%;
-					}
-					.new-interface .card-more__box {
-						padding-bottom: 150%;
-					}
-					.new-interface .full-start__background-wrapper {
-						position: absolute;
-						top: 0;
-						left: 0;
-						width: 100%;
-						height: 100%;
-						z-index: -1;
-						pointer-events: none;
-					}
-					.new-interface .full-start__background {
-						position: absolute;
-						height: 108%;
-						width: 100%;
-						top: -5em;
-						left: 0;
-						opacity: 0;
-						object-fit: cover;
-						transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-					}
-					.new-interface .full-start__background.active {
-						opacity: 0.5;
-					}
-					.new-interface .full-start__rate {
-						font-size: 1.2em;
-						margin-right: 0;
-					}
-					.new-interface .card__promo {
-						display: none;
-					}
-					.new-interface .card.card--wide + .card-more .card-more__box {
-						padding-bottom: 95%;
-					}
-					.new-interface .card.card--wide .card-watched {
-						display: none !important;
-					}
-					body.light--version .new-interface-info__body {
-						position: absolute;
-						z-index: 9999999;
-						width: 69%;
-						padding-top: 1.5em;
-					}
-					body.light--version .new-interface-info {
-						height: 25.3em;
-					}
-					body.advanced--animation:not(.no--animation) .new-interface .card.card--wide.focus .card__view {
-						animation: animation-card-focus 0.2s;
-					}
-					body.advanced--animation:not(.no--animation) .new-interface .card.card--wide.animate-trigger-enter .card__view {
-						animation: animation-trigger-enter 0.2s forwards;
-					}
-					body.advanced--animation:not(.no--animation) .new-interface .card.card--small.focus .card__view {
-						animation: animation-card-focus 0.2s;
-					}
-					body.advanced--animation:not(.no--animation) .new-interface .card.card--small.animate-trigger-enter .card__view {
-						animation: animation-trigger-enter 0.2s forwards;
-					}
-					.logo-moved-head { transition: opacity 0.4s ease; }
-					.logo-moved-separator { transition: opacity 0.4s ease; }
-					${Lampa.Storage.get("hide_captions", true) ? ".card:not(.card--collection) .card__age, .card:not(.card--collection) .card__title { display: none !important; }" : ""}
-					/* Оптимізації для Samsung TV */
-					.new-interface .card__view {
-						-webkit-transform: translate3d(0,0,0);
-						transform: translate3d(0,0,0);
-						backface-visibility: hidden;
-						perspective: 1000px;
-					}
-					.new-interface-info__title, .new-interface-info__description {
-						text-rendering: optimizeLegibility;
-						-webkit-font-smoothing: antialiased;
-					}
-					.full-start__background {
-						image-rendering: -webkit-optimize-contrast;
-						image-rendering: crisp-edges;
-					}
-				</style>`;
+				}
+			</style>
+		`;
 	}
 
 	function preloadData(data, silent) {
 		if (!data || !data.id) return;
-		var source = data.source || "tmdb";
-		if (source !== "tmdb" && source !== "cub") return;
+		
+		try {
+			var source = data.source || "tmdb";
+			if (source !== "tmdb" && source !== "cub") return;
 
-		var mediaType = data.media_type === "tv" || data.name ? "tv" : "movie";
-		var language = Lampa.Storage.get("language") || "uk"; // Змінено з "ru" на "uk"
-		var apiUrl = Lampa.TMDB.api(mediaType + "/" + data.id + "?api_key=" + Lampa.TMDB.key() + "&append_to_response=content_ratings,release_dates&language=" + language);
+			var mediaType = data.media_type === "tv" || data.name ? "tv" : "movie";
+			var language = "ru";
+			try {
+				language = Lampa.Storage.get("language") || "ru";
+			} catch(e) {}
+			
+			if (!Lampa.TMDB || !Lampa.TMDB.api || !Lampa.TMDB.key) return;
+			
+			var apiUrl = Lampa.TMDB.api(mediaType + "/" + data.id + "?api_key=" + Lampa.TMDB.key() + "&append_to_response=content_ratings,release_dates&language=" + language);
 
-		if (!globalInfoCache[apiUrl]) {
-			var network = new Lampa.Reguest();
-			network.silent(apiUrl, function (response) {
-				globalInfoCache[apiUrl] = response;
-			});
+			if (!globalInfoCache[apiUrl]) {
+				var network = new Lampa.Reguest();
+				network.silent(apiUrl, function (response) {
+					globalInfoCache[apiUrl] = response;
+				});
+			}
+		} catch(e) {
+			console.log('Preload data error:', e);
 		}
 	}
 
 	var preloadTimer = null;
 	function preloadAllVisibleCards() {
-		if (!Lampa.Storage.get("async_load", true)) return;
+		try {
+			if (!Lampa.Storage.get("async_load", true)) return;
 
-		clearTimeout(preloadTimer);
-		preloadTimer = setTimeout(function () {
-			var layer = $(".layer--visible");
-			if (!layer.length) return;
+			clearTimeout(preloadTimer);
+			preloadTimer = setTimeout(function () {
+				var layer = $(".layer--visible");
+				if (!layer.length) return;
 
-			var cards = layer.find(".card");
-			var count = 0;
+				var cards = layer.find(".card");
+				var count = 0;
 
-			cards.each(function () {
-				var data = findCardData(this);
-				if (data) {
-					preloadData(data, true);
-					count++;
-				}
-			});
-		}, 800);
+				cards.each(function () {
+					var data = findCardData(this);
+					if (data) {
+						preloadData(data, true);
+						count++;
+					}
+				});
+			}, 800);
+		} catch(e) {
+			console.log('Preload visible cards error:', e);
+		}
 	}
 
 	function setupPreloadObserver() {
-		var observer = new MutationObserver(function (mutations) {
-			if (!Lampa.Storage.get("async_load", true)) return;
+		try {
+			var observer = new MutationObserver(function (mutations) {
+				try {
+					if (!Lampa.Storage.get("async_load", true)) return;
 
-			var hasNewCards = false;
-			for (var i = 0; i < mutations.length; i++) {
-				var added = mutations[i].addedNodes;
-				for (var j = 0; j < added.length; j++) {
-					var node = added[j];
-					if (node.nodeType === 1) {
-						if (node.classList.contains("card") || node.querySelector(".card")) {
-							hasNewCards = true;
-							break;
+					var hasNewCards = false;
+					for (var i = 0; i < mutations.length; i++) {
+						var added = mutations[i].addedNodes;
+						for (var j = 0; j < added.length; j++) {
+							var node = added[j];
+							if (node.nodeType === 1) {
+								if (node.classList && (node.classList.contains("card") || node.querySelector(".card"))) {
+									hasNewCards = true;
+									break;
+								}
+							}
 						}
+						if (hasNewCards) break;
 					}
+
+					if (hasNewCards) {
+						preloadAllVisibleCards();
+					}
+				} catch(e) {
+					console.log('Mutation observer error:', e);
 				}
-				if (hasNewCards) break;
-			}
+			});
 
-			if (hasNewCards) {
-				preloadAllVisibleCards();
-			}
-		});
-
-		observer.observe(document.body, {
-			childList: true,
-			subtree: true,
-		});
+			observer.observe(document.body, {
+				childList: true,
+				subtree: true,
+			});
+		} catch(e) {
+			console.log('Setup preload observer error:', e);
+		}
 	}
+	
 	function InfoPanel() {
 		this.html = null;
 		this.timer = null;
 		this.fadeTimer = null;
-		this.network = new Lampa.Reguest();
+		this.network = null;
 		this.loaded = globalInfoCache;
 		this.currentUrl = null;
+		
+		try {
+			this.network = new Lampa.Reguest();
+		} catch(e) {
+			console.log('Network request init error:', e);
+		}
 	}
 
 	InfoPanel.prototype.create = function () {
-		this.html = $(`<div class="new-interface-info">
-							<div class="new-interface-info__body">
-								<div class="new-interface-info__head"></div>
-								<div class="new-interface-info__title"></div>
-								<div class="new-interface-info__details"></div>
-								<div class="new-interface-info__description"></div>
-							</div>
-						</div>`);
+		try {
+			this.html = $(`<div class="new-interface-info">
+								<div class="new-interface-info__body">
+									<div class="new-interface-info__head"></div>
+									<div class="new-interface-info__title"></div>
+									<div class="new-interface-info__details"></div>
+									<div class="new-interface-info__description"></div>
+								</div>
+							</div>`);
+		} catch(e) {
+			console.log('InfoPanel create error:', e);
+		}
 	};
 
 	InfoPanel.prototype.render = function (asElement) {
@@ -837,473 +1224,549 @@
 	InfoPanel.prototype.update = function (data) {
 		if (!data || !this.html) return;
 
-		this.lastRenderId = Date.now();
-		var currentRenderId = this.lastRenderId;
+		try {
+			this.lastRenderId = Date.now();
+			var currentRenderId = this.lastRenderId;
 
-		this.html.find(".new-interface-info__head,.new-interface-info__details").removeClass("visible");
+			this.html.find(".new-interface-info__head,.new-interface-info__details").removeClass("visible");
 
-		var title = this.html.find(".new-interface-info__title");
-		var desc = this.html.find(".new-interface-info__description");
+			var title = this.html.find(".new-interface-info__title");
+			var desc = this.html.find(".new-interface-info__description");
 
-		desc.text(data.overview || Lampa.Lang.translate("full_notext"));
+			desc.text(data.overview || "Нет описания");
 
-		clearTimeout(this.fadeTimer);
+			clearTimeout(this.fadeTimer);
 
-		Lampa.Background.change(Lampa.Api.img(data.backdrop_path, "original"));
+			try {
+				if (Lampa.Background && Lampa.Background.change && Lampa.Api && Lampa.Api.img) {
+					Lampa.Background.change(Lampa.Api.img(data.backdrop_path, "original"));
+				}
+			} catch(e) {}
 
-		this.load(data);
+			this.load(data);
 
-		if (Lampa.Storage.get("logo_show", true)) {
-			title.text(data.title || data.name || "");
-			title.css({ opacity: 1 });
-			this.showLogo(data, currentRenderId);
-		} else {
-			title.text(data.title || data.name || "");
-			title.css({ opacity: 1 });
+			var showLogo = true;
+			try {
+				showLogo = Lampa.Storage.get("logo_show", true);
+			} catch(e) {}
+			
+			if (showLogo) {
+				title.text(data.title || data.name || "");
+				title.css({ opacity: 1 });
+				this.showLogo(data, currentRenderId);
+			} else {
+				title.text(data.title || data.name || "");
+				title.css({ opacity: 1 });
+			}
+		} catch(e) {
+			console.log('InfoPanel update error:', e);
 		}
 	};
 
 	InfoPanel.prototype.showLogo = function (data, renderId) {
 		var _this = this;
 
-		var FADE_OUT_TEXT = 300;
-		var MORPH_HEIGHT = 400;
-		var FADE_IN_IMG = 400;
-		var TARGET_WIDTH = "7em";
-		var PADDING_TOP_EM = 0;
-		var PADDING_BOTTOM_EM = 0.2;
+		try {
+			var FADE_OUT_TEXT = 300;
+			var MORPH_HEIGHT = 400;
+			var FADE_IN_IMG = 400;
+			var TARGET_WIDTH = "7em";
+			var PADDING_TOP_EM = 0;
+			var PADDING_BOTTOM_EM = 0.2;
 
-		var title_elem = this.html.find(".new-interface-info__title");
-		var head_elem = this.html.find(".new-interface-info__head");
-		var details_elem = this.html.find(".new-interface-info__details");
-		var dom_title = title_elem[0];
+			var title_elem = this.html.find(".new-interface-info__title");
+			var head_elem = this.html.find(".new-interface-info__head");
+			var details_elem = this.html.find(".new-interface-info__details");
+			var dom_title = title_elem[0];
 
-		function animateHeight(element, start, end, duration, callback) {
-			var startTime = null;
-			function step(timestamp) {
-				if (!startTime) startTime = timestamp;
-				var progress = timestamp - startTime;
-				var percent = Math.min(progress / duration, 1);
-				var ease = 1 - Math.pow(1 - percent, 3);
-				element.style.height = start + (end - start) * ease + "px";
-				if (progress < duration) {
-					requestAnimationFrame(step);
+			function animateHeight(element, start, end, duration, callback) {
+				var startTime = null;
+				function step(timestamp) {
+					if (!startTime) startTime = timestamp;
+					var progress = timestamp - startTime;
+					var percent = Math.min(progress / duration, 1);
+					var ease = 1 - Math.pow(1 - percent, 3);
+					element.style.height = start + (end - start) * ease + "px";
+					if (progress < duration) {
+						requestAnimationFrame(step);
+					} else {
+						if (callback) callback();
+					}
+				}
+				requestAnimationFrame(step);
+			}
+
+			function animateOpacity(element, start, end, duration, callback) {
+				var startTime = null;
+				function step(timestamp) {
+					if (!startTime) startTime = timestamp;
+					var progress = timestamp - startTime;
+					var percent = Math.min(progress / duration, 1);
+					var ease = 1 - Math.pow(1 - percent, 3);
+					element.style.opacity = start + (end - start) * ease;
+					if (progress < duration) {
+						requestAnimationFrame(step);
+					} else {
+						if (callback) callback();
+					}
+				}
+				requestAnimationFrame(step);
+			}
+
+			function applyFinalStyles(img, text_height) {
+				img.style.marginTop = "0";
+				img.style.marginLeft = "0";
+				img.style.paddingTop = PADDING_TOP_EM + "em";
+				img.style.paddingBottom = PADDING_BOTTOM_EM + "em";
+
+				img.style.imageRendering = "-webkit-optimize-contrast";
+				img.style.imageRendering = "crisp-edges";
+
+				if (text_height) {
+					img.style.height = text_height + "px";
+					img.style.width = "auto";
+					img.style.maxWidth = "100%";
+					img.style.maxHeight = "none";
+				} else if (window.innerWidth < 768) {
+					img.style.width = "100%";
+					img.style.height = "auto";
+					img.style.maxWidth = "100%";
+					img.style.maxHeight = "none";
 				} else {
-					if (callback) callback();
+					img.style.width = TARGET_WIDTH;
+					img.style.height = "auto";
+					img.style.maxHeight = "none";
+					img.style.maxWidth = "100%";
 				}
-			}
-			requestAnimationFrame(step);
-		}
 
-		function animateOpacity(element, start, end, duration, callback) {
-			var startTime = null;
-			function step(timestamp) {
-				if (!startTime) startTime = timestamp;
-				var progress = timestamp - startTime;
-				var percent = Math.min(progress / duration, 1);
-				var ease = 1 - Math.pow(1 - percent, 3);
-				element.style.opacity = start + (end - start) * ease;
-				if (progress < duration) {
-					requestAnimationFrame(step);
-				} else {
-					if (callback) callback();
+				img.style.boxSizing = "border-box";
+				img.style.display = "block";
+				img.style.objectFit = "contain";
+				img.style.objectPosition = "left bottom";
+				img.style.transition = "none";
+				img.style.webkitTransform = "translate3d(0,0,0)";
+				img.style.transform = "translate3d(0,0,0)";
+			}
+
+			function moveHeadToDetails(animate) {
+				if (!head_elem.length || !details_elem.length) return;
+				if (details_elem.find(".logo-moved-head").length > 0) return;
+
+				var content = head_elem.html();
+				if (!content || content.trim() === "") return;
+
+				var new_item = $('<span class="logo-moved-head">' + content + "</span>");
+				var separator = $('<span class="new-interface-info__split logo-moved-separator">●</span>');
+
+				if (animate) {
+					new_item.css({ opacity: 0, transition: "none" });
+					separator.css({ opacity: 0, transition: "none" });
 				}
-			}
-			requestAnimationFrame(step);
-		}
 
-		function applyFinalStyles(img, text_height) {
-			img.style.marginTop = "0";
-			img.style.marginLeft = "0";
-			img.style.paddingTop = PADDING_TOP_EM + "em";
-			img.style.paddingBottom = PADDING_BOTTOM_EM + "em";
+				if (details_elem.children().length > 0) details_elem.append(separator);
+				details_elem.append(new_item);
 
-			img.style.imageRendering = "-webkit-optimize-contrast";
-
-			if (text_height) {
-				img.style.height = text_height + "px";
-				img.style.width = "auto";
-				img.style.maxWidth = "100%";
-				img.style.maxHeight = "none";
-			} else if (window.innerWidth < 768) {
-				img.style.width = "100%";
-				img.style.height = "auto";
-				img.style.maxWidth = "100%";
-				img.style.maxHeight = "none";
-			} else {
-				img.style.width = TARGET_WIDTH;
-				img.style.height = "auto";
-				img.style.maxHeight = "none";
-				img.style.maxWidth = "100%";
-			}
-
-			img.style.boxSizing = "border-box";
-			img.style.display = "block";
-			img.style.objectFit = "contain";
-			img.style.objectPosition = "left bottom";
-			img.style.transition = "none";
-		}
-
-		function moveHeadToDetails(animate) {
-			if (!head_elem.length || !details_elem.length) return;
-			if (details_elem.find(".logo-moved-head").length > 0) return;
-
-			var content = head_elem.html();
-			if (!content || content.trim() === "") return;
-
-			var new_item = $('<span class="logo-moved-head">' + content + "</span>");
-			var separator = $('<span class="new-interface-info__split logo-moved-separator">●</span>');
-
-			if (animate) {
-				new_item.css({ opacity: 0, transition: "none" });
-				separator.css({ opacity: 0, transition: "none" });
-			}
-
-			if (details_elem.children().length > 0) details_elem.append(separator);
-			details_elem.append(new_item);
-
-			if (animate) {
-				head_elem.css({
-					transition: "opacity " + FADE_OUT_TEXT / 1000 + "s ease",
-					opacity: "0",
-				});
-
-				setTimeout(function () {
-					new_item.css({ transition: "opacity " + FADE_IN_IMG / 1000 + "s ease", opacity: "1" });
-					separator.css({ transition: "opacity " + FADE_IN_IMG / 1000 + "s ease", opacity: "1" });
-				}, FADE_OUT_TEXT);
-			} else {
-				head_elem.css({ opacity: "0", transition: "none" });
-			}
-		}
-
-		function startLogoAnimation(img_url, fromCache) {
-			if (renderId && renderId !== _this.lastRenderId) return;
-
-			var img = new Image();
-			img.src = img_url;
-
-			var start_text_height = 0;
-			if (dom_title) start_text_height = dom_title.getBoundingClientRect().height;
-
-			if (fromCache) {
-				if (dom_title) start_text_height = dom_title.getBoundingClientRect().height;
-
-				moveHeadToDetails(false);
-				applyFinalStyles(img, start_text_height);
-
-				title_elem.empty().append(img);
-				title_elem.css({ opacity: "1", transition: "none" });
-
-				if (dom_title) {
-					dom_title.style.display = "block";
-					dom_title.style.height = "";
-					dom_title.style.transition = "none";
-				}
-				img.style.opacity = "1";
-				return;
-			}
-
-			applyFinalStyles(img, start_text_height);
-			img.style.opacity = "0";
-
-			img.onload = function () {
-				if (renderId && renderId !== _this.lastRenderId) return;
-
-				setTimeout(function () {
-					if (renderId && renderId !== _this.lastRenderId) return;
-
-					if (dom_title) start_text_height = dom_title.getBoundingClientRect().height;
-
-					moveHeadToDetails(true);
-
-					title_elem.css({
+				if (animate) {
+					head_elem.css({
 						transition: "opacity " + FADE_OUT_TEXT / 1000 + "s ease",
 						opacity: "0",
 					});
 
 					setTimeout(function () {
-						if (renderId && renderId !== _this.lastRenderId) return;
-
-						title_elem.empty();
-						title_elem.append(img);
-						title_elem.css({ opacity: "1", transition: "none" });
-
-						var target_container_height = dom_title.getBoundingClientRect().height;
-
-						dom_title.style.height = start_text_height + "px";
-						dom_title.style.display = "block";
-						dom_title.style.overflow = "hidden";
-						dom_title.style.boxSizing = "border-box";
-
-						void dom_title.offsetHeight;
-
-						dom_title.style.transition = "height " + MORPH_HEIGHT / 1000 + "s cubic-bezier(0.4, 0, 0.2, 1)";
-
-						requestAnimationFrame(function () {
-							if (renderId && renderId !== _this.lastRenderId) return;
-							dom_title.style.height = target_container_height + "px";
-
-							setTimeout(
-								function () {
-									if (renderId && renderId !== _this.lastRenderId) return;
-									img.style.transition = "opacity " + FADE_IN_IMG / 1000 + "s ease";
-									img.style.opacity = "1";
-								},
-								Math.max(0, MORPH_HEIGHT - 100),
-							);
-
-							setTimeout(
-								function () {
-									if (renderId && renderId !== _this.lastRenderId) return;
-									applyFinalStyles(img, start_text_height);
-									dom_title.style.height = "";
-								},
-								MORPH_HEIGHT + FADE_IN_IMG + 50,
-							);
-						});
+						new_item.css({ transition: "opacity " + FADE_IN_IMG / 1000 + "s ease", opacity: "1" });
+						separator.css({ transition: "opacity " + FADE_IN_IMG / 1000 + "s ease", opacity: "1" });
 					}, FADE_OUT_TEXT);
-				}, 200);
-			};
-
-			img.onerror = function () {
-				title_elem.css({ opacity: "1", transition: "none" });
-			};
-		}
-
-		if (data.id) {
-			var type = data.name ? "tv" : "movie";
-			var language = Lampa.Storage.get("language");
-			var cache_key = "logo_cache_v2_" + type + "_" + data.id + "_" + language;
-			var cached_url = Lampa.Storage.get(cache_key);
-
-			if (cached_url && cached_url !== "none") {
-				var img_cache = new Image();
-				img_cache.src = cached_url;
-
-				if (img_cache.complete) {
-					startLogoAnimation(cached_url, true);
 				} else {
-					startLogoAnimation(cached_url, false);
+					head_elem.css({ opacity: "0", transition: "none" });
 				}
-			} else {
-				var url = Lampa.TMDB.api(type + "/" + data.id + "/images?api_key=" + Lampa.TMDB.key() + "&include_image_language=" + language + ",en,null");
+			}
 
-				$.get(url, function (data_api) {
+			function startLogoAnimation(img_url, fromCache) {
+				if (renderId && renderId !== _this.lastRenderId) return;
+
+				var img = new Image();
+				img.src = img_url;
+				img.setAttribute("decoding", "async");
+				img.setAttribute("loading", "eager");
+
+				var start_text_height = 0;
+				if (dom_title) start_text_height = dom_title.getBoundingClientRect().height;
+
+				if (fromCache) {
+					if (dom_title) start_text_height = dom_title.getBoundingClientRect().height;
+
+					moveHeadToDetails(false);
+					applyFinalStyles(img, start_text_height);
+
+					title_elem.empty().append(img);
+					title_elem.css({ opacity: "1", transition: "none" });
+
+					if (dom_title) {
+						dom_title.style.display = "block";
+						dom_title.style.height = "";
+						dom_title.style.transition = "none";
+					}
+					img.style.opacity = "1";
+					return;
+				}
+
+				applyFinalStyles(img, start_text_height);
+				img.style.opacity = "0";
+
+				img.onload = function () {
 					if (renderId && renderId !== _this.lastRenderId) return;
 
-					var final_logo = null;
-					if (data_api.logos && data_api.logos.length > 0) {
-						for (var i = 0; i < data_api.logos.length; i++) {
-							if (data_api.logos[i].iso_639_1 == language) {
-								final_logo = data_api.logos[i].file_path;
-								break;
-							}
-						}
-						if (!final_logo) {
-							for (var j = 0; j < data_api.logos.length; j++) {
-								if (data_api.logos[j].iso_639_1 == "en") {
-									final_logo = data_api.logos[j].file_path;
+					setTimeout(function () {
+						if (renderId && renderId !== _this.lastRenderId) return;
+
+						if (dom_title) start_text_height = dom_title.getBoundingClientRect().height;
+
+						moveHeadToDetails(true);
+
+						title_elem.css({
+							transition: "opacity " + FADE_OUT_TEXT / 1000 + "s ease",
+							opacity: "0",
+						});
+
+						setTimeout(function () {
+							if (renderId && renderId !== _this.lastRenderId) return;
+
+							title_elem.empty();
+							title_elem.append(img);
+							title_elem.css({ opacity: "1", transition: "none" });
+
+							var target_container_height = dom_title.getBoundingClientRect().height;
+
+							dom_title.style.height = start_text_height + "px";
+							dom_title.style.display = "block";
+							dom_title.style.overflow = "hidden";
+							dom_title.style.boxSizing = "border-box";
+
+							void dom_title.offsetHeight;
+
+							dom_title.style.transition = "height " + MORPH_HEIGHT / 1000 + "s cubic-bezier(0.4, 0, 0.2, 1)";
+
+							requestAnimationFrame(function () {
+								if (renderId && renderId !== _this.lastRenderId) return;
+								dom_title.style.height = target_container_height + "px";
+
+								setTimeout(
+									function () {
+										if (renderId && renderId !== _this.lastRenderId) return;
+										img.style.transition = "opacity " + FADE_IN_IMG / 1000 + "s ease";
+										img.style.opacity = "1";
+									},
+									Math.max(0, MORPH_HEIGHT - 100),
+								);
+
+								setTimeout(
+									function () {
+										if (renderId && renderId !== _this.lastRenderId) return;
+										applyFinalStyles(img, start_text_height);
+										dom_title.style.height = "";
+									},
+									MORPH_HEIGHT + FADE_IN_IMG + 50,
+								);
+							});
+						}, FADE_OUT_TEXT);
+					}, 200);
+				};
+
+				img.onerror = function () {
+					title_elem.css({ opacity: "1", transition: "none" });
+				};
+			}
+
+			if (data.id) {
+				var type = data.name ? "tv" : "movie";
+				var language = "ru";
+				try {
+					language = Lampa.Storage.get("language") || "ru";
+				} catch(e) {}
+				
+				var cache_key = "logo_cache_v2_" + type + "_" + data.id + "_" + language;
+				var cached_url = null;
+				try {
+					cached_url = Lampa.Storage.get(cache_key);
+				} catch(e) {}
+
+				if (cached_url && cached_url !== "none") {
+					var img_cache = new Image();
+					img_cache.src = cached_url;
+
+					if (img_cache.complete) {
+						startLogoAnimation(cached_url, true);
+					} else {
+						startLogoAnimation(cached_url, false);
+					}
+				} else {
+					if (!Lampa.TMDB || !Lampa.TMDB.api || !Lampa.TMDB.key) return;
+					
+					var url = Lampa.TMDB.api(type + "/" + data.id + "/images?api_key=" + Lampa.TMDB.key() + "&include_image_language=" + language + ",en,null");
+
+					$.get(url, function (data_api) {
+						if (renderId && renderId !== _this.lastRenderId) return;
+
+						var final_logo = null;
+						if (data_api.logos && data_api.logos.length > 0) {
+							for (var i = 0; i < data_api.logos.length; i++) {
+								if (data_api.logos[i].iso_639_1 == language) {
+									final_logo = data_api.logos[i].file_path;
 									break;
 								}
 							}
+							if (!final_logo) {
+								for (var j = 0; j < data_api.logos.length; j++) {
+									if (data_api.logos[j].iso_639_1 == "en") {
+										final_logo = data_api.logos[j].file_path;
+										break;
+									}
+								}
+							}
+							if (!final_logo) final_logo = data_api.logos[0].file_path;
 						}
-						if (!final_logo) final_logo = data_api.logos[0].file_path;
-					}
 
-					if (final_logo) {
-						var img_url = Lampa.TMDB.image("/t/p/original" + final_logo.replace(".svg", ".png"));
-						Lampa.Storage.set(cache_key, img_url);
-						startLogoAnimation(img_url, false);
-					} else {
-						Lampa.Storage.set(cache_key, "none");
-					}
-				}).fail(function () {});
+						if (final_logo) {
+							var img_url = Lampa.TMDB.image("/t/p/original" + final_logo.replace(".svg", ".png"));
+							try {
+								Lampa.Storage.set(cache_key, img_url);
+							} catch(e) {}
+							startLogoAnimation(img_url, false);
+						} else {
+							try {
+								Lampa.Storage.set(cache_key, "none");
+							} catch(e) {}
+						}
+					}).fail(function () {});
+				}
 			}
+		} catch(e) {
+			console.log('Show logo error:', e);
 		}
 	};
 
 	InfoPanel.prototype.load = function (data) {
 		if (!data || !data.id) return;
 
-		var source = data.source || "tmdb";
-		if (source !== "tmdb" && source !== "cub") return;
+		try {
+			var source = data.source || "tmdb";
+			if (source !== "tmdb" && source !== "cub") return;
 
-		if (!Lampa.TMDB || typeof Lampa.TMDB.api !== "function" || typeof Lampa.TMDB.key !== "function") return;
+			if (!Lampa.TMDB || typeof Lampa.TMDB.api !== "function" || typeof Lampa.TMDB.key !== "function") return;
 
-		var mediaType = data.media_type === "tv" || data.name ? "tv" : "movie";
-		var language = Lampa.Storage.get("language");
-		var apiUrl = Lampa.TMDB.api(mediaType + "/" + data.id + "?api_key=" + Lampa.TMDB.key() + "&append_to_response=content_ratings,release_dates&language=" + language);
+			var mediaType = data.media_type === "tv" || data.name ? "tv" : "movie";
+			var language = "ru";
+			try {
+				language = Lampa.Storage.get("language") || "ru";
+			} catch(e) {}
+			
+			var apiUrl = Lampa.TMDB.api(mediaType + "/" + data.id + "?api_key=" + Lampa.TMDB.key() + "&append_to_response=content_ratings,release_dates&language=" + language);
 
-		this.currentUrl = apiUrl;
+			this.currentUrl = apiUrl;
 
-		if (this.loaded[apiUrl]) {
-			this.draw(this.loaded[apiUrl]);
-			return;
-		}
+			if (this.loaded[apiUrl]) {
+				this.draw(this.loaded[apiUrl]);
+				return;
+			}
 
-		clearTimeout(this.timer);
-		var self = this;
+			clearTimeout(this.timer);
+			var self = this;
 
-		this.timer = setTimeout(function () {
-			self.network.clear();
-			self.network.timeout(5000);
-			self.network.silent(apiUrl, function (response) {
-				self.loaded[apiUrl] = response;
-				if (self.currentUrl === apiUrl) {
-					self.draw(response);
+			this.timer = setTimeout(function () {
+				try {
+					if (self.network) {
+						self.network.clear();
+						self.network.timeout(5000);
+						self.network.silent(apiUrl, function (response) {
+							self.loaded[apiUrl] = response;
+							if (self.currentUrl === apiUrl) {
+								self.draw(response);
+							}
+						});
+					}
+				} catch(e) {
+					console.log('Network request error:', e);
 				}
-			});
-		}, 300);
+			}, 300);
+		} catch(e) {
+			console.log('InfoPanel load error:', e);
+		}
 	};
 
 	InfoPanel.prototype.draw = function (data) {
 		if (!data || !this.html) return;
 
-		if (data.overview) {
-			this.html.find(".new-interface-info__description").text(data.overview);
-		}
+		try {
+			if (data.overview) {
+				this.html.find(".new-interface-info__description").text(data.overview);
+			}
 
-		var year = ((data.release_date || data.first_air_date || "0000") + "").slice(0, 4);
+			var year = ((data.release_date || data.first_air_date || "0000") + "").slice(0, 4);
 
-		var rating = parseFloat((data.vote_average || 0) + "").toFixed(1);
+			var rating = parseFloat((data.vote_average || 0) + "").toFixed(1);
 
-		var headInfo = [];
-		var detailsInfo = [];
+			var headInfo = [];
+			var detailsInfo = [];
 
-		var countries = Lampa.Api.sources.tmdb.parseCountries(data);
-		if (countries.length > 2) countries = countries.slice(0, 2);
+			var countries = [];
+			try {
+				countries = Lampa.Api.sources.tmdb.parseCountries(data);
+			} catch(e) {}
+			
+			if (countries.length > 2) countries = countries.slice(0, 2);
 
-		var ageRating = Lampa.Api.sources.tmdb.parsePG(data);
+			var ageRating = "";
+			try {
+				ageRating = Lampa.Api.sources.tmdb.parsePG(data);
+			} catch(e) {}
 
-		var show_logo = Lampa.Storage.get("logo_show", true);
+			var show_logo = true;
+			try {
+				show_logo = Lampa.Storage.get("logo_show", true);
+			} catch(e) {}
 
-		if (Lampa.Storage.get("rat") !== false) {
-			if (rating > 0) {
-				var rate_style = "";
+			if (Lampa.Storage.get("rat") !== false) {
+				if (rating > 0) {
+					var rate_style = "";
 
-				if (Lampa.Storage.get("si_colored_ratings", true)) {
-					var vote_num = parseFloat(rating);
-					var color = "";
+					if (Lampa.Storage.get("si_colored_ratings", true)) {
+						var vote_num = parseFloat(rating);
+						var color = "";
 
-					if (vote_num >= 0 && vote_num <= 3) {
-						color = "red";
-					} else if (vote_num > 3 && vote_num < 6) {
-						color = "orange";
-					} else if (vote_num >= 6 && vote_num < 7) {
-						color = "cornflowerblue";
-					} else if (vote_num >= 7 && vote_num < 8) {
-						color = "darkmagenta";
-					} else if (vote_num >= 8 && vote_num <= 10) {
-						color = "lawngreen";
+						if (vote_num >= 0 && vote_num <= 3) {
+							color = "red";
+						} else if (vote_num > 3 && vote_num < 6) {
+							color = "orange";
+						} else if (vote_num >= 6 && vote_num < 7) {
+							color = "cornflowerblue";
+						} else if (vote_num >= 7 && vote_num < 8) {
+							color = "darkmagenta";
+						} else if (vote_num >= 8 && vote_num <= 10) {
+							color = "lawngreen";
+						}
+
+						if (color) rate_style = ' style="color: ' + color + '"';
 					}
 
-					if (color) rate_style = ' style="color: ' + color + '"';
-				}
-
-				detailsInfo.push('<div class="full-start__rate"' + rate_style + "><div>" + rating + "</div><div>TMDB</div></div>");
-			}
-		}
-
-		if (Lampa.Storage.get("ganr") !== false) {
-			if (data.genres && data.genres.length > 0) {
-				detailsInfo.push(
-					data.genres
-						.slice(0, 2)
-						.map(function (genre) {
-							return Lampa.Utils.capitalizeFirstLetter(genre.name);
-						})
-						.join(" | "),
-				);
-			}
-		}
-
-		if (Lampa.Storage.get("vremya") !== false) {
-			if (data.runtime) {
-				detailsInfo.push(Lampa.Utils.secondsToTime(data.runtime * 60, true));
-			}
-		}
-
-		if (Lampa.Storage.get("seas", false) && data.number_of_seasons) {
-			detailsInfo.push('<span class="full-start__pg" style="font-size: 0.9em;">Сезонів ' + data.number_of_seasons + "</span>");
-		}
-
-		if (Lampa.Storage.get("eps", false) && data.number_of_episodes) {
-			detailsInfo.push('<span class="full-start__pg" style="font-size: 0.9em;">Серій ' + data.number_of_episodes + "</span>");
-		}
-
-		if (Lampa.Storage.get("year_ogr") !== false) {
-			if (ageRating) {
-				detailsInfo.push('<span class="full-start__pg" style="font-size: 0.9em;">' + ageRating + "</span>");
-			}
-		}
-
-		if (Lampa.Storage.get("status") !== false) {
-			var statusText = "";
-
-			if (data.status) {
-				switch (data.status.toLowerCase()) {
-					case "released":
-						statusText = "Випущено";
-						break;
-					case "ended":
-						statusText = "Завершено";
-						break;
-					case "returning series":
-						statusText = "Триває";
-						break;
-					case "canceled":
-						statusText = "Скасовано";
-						break;
-					case "post production":
-						statusText = "Скоро";
-						break;
-					case "planned":
-						statusText = "Заплановано";
-						break;
-					case "in production":
-						statusText = "В процесі";
-						break;
-					default:
-						statusText = data.status;
-						break;
+					detailsInfo.push('<div class="full-start__rate"' + rate_style + "><div>" + rating + "</div><div>TMDB</div></div>");
 				}
 			}
 
-			if (statusText) {
-				detailsInfo.push('<span class="full-start__status" style="font-size: 0.9em;">' + statusText + "</span>");
+			if (Lampa.Storage.get("ganr") !== false) {
+				if (data.genres && data.genres.length > 0) {
+					detailsInfo.push(
+						data.genres
+							.slice(0, 2)
+							.map(function (genre) {
+								return genre.name;
+							})
+							.join(" | "),
+					);
+				}
 			}
+
+			if (Lampa.Storage.get("vremya") !== false) {
+				if (data.runtime) {
+					try {
+						detailsInfo.push(Lampa.Utils.secondsToTime(data.runtime * 60, true));
+					} catch(e) {
+						detailsInfo.push(data.runtime + " мин");
+					}
+				}
+			}
+
+			if (Lampa.Storage.get("seas", false) && data.number_of_seasons) {
+				detailsInfo.push('<span class="full-start__pg" style="font-size: 0.9em;">Сезонов ' + data.number_of_seasons + "</span>");
+			}
+
+			if (Lampa.Storage.get("eps", false) && data.number_of_episodes) {
+				detailsInfo.push('<span class="full-start__pg" style="font-size: 0.9em;">Эпизодов ' + data.number_of_episodes + "</span>");
+			}
+
+			if (Lampa.Storage.get("year_ogr") !== false) {
+				if (ageRating) {
+					detailsInfo.push('<span class="full-start__pg" style="font-size: 0.9em;">' + ageRating + "</span>");
+				}
+			}
+
+			if (Lampa.Storage.get("status") !== false) {
+				var statusText = "";
+
+				if (data.status) {
+					switch (data.status.toLowerCase()) {
+						case "released":
+							statusText = "Выпущенный";
+							break;
+						case "ended":
+							statusText = "Закончен";
+							break;
+						case "returning series":
+							statusText = "Онгоинг";
+							break;
+						case "canceled":
+							statusText = "Отменено";
+							break;
+						case "post production":
+							statusText = "Скоро";
+							break;
+						case "planned":
+							statusText = "Запланировано";
+							break;
+						case "in production":
+							statusText = "В производстве";
+							break;
+						default:
+							statusText = data.status;
+							break;
+					}
+				}
+
+				if (statusText) {
+					detailsInfo.push('<span class="full-start__status" style="font-size: 0.9em;">' + statusText + "</span>");
+				}
+			}
+
+			var yc = [];
+			if (year !== "0000") yc.push("<span>" + year + "</span>");
+			if (countries.length > 0) yc.push(countries.join(", "));
+
+			if (yc.length > 0) {
+				detailsInfo.push(yc.join(", "));
+			}
+
+			this.html
+				.find(".new-interface-info__head")
+				.empty()
+				.append(headInfo.join(", "))
+				.toggleClass("visible", headInfo.length > 0);
+			this.html.find(".new-interface-info__details").html(detailsInfo.join('<span class="new-interface-info__split">&#9679;</span>')).addClass("visible");
+		} catch(e) {
+			console.log('InfoPanel draw error:', e);
 		}
-
-		var yc = [];
-		if (year !== "0000") yc.push("<span>" + year + "</span>");
-		if (countries.length > 0) yc.push(countries.join(", "));
-
-		if (yc.length > 0) {
-			detailsInfo.push(yc.join(", "));
-		}
-
-		this.html
-			.find(".new-interface-info__head")
-			.empty()
-			.append(headInfo.join(", "))
-			.toggleClass("visible", headInfo.length > 0);
-		this.html.find(".new-interface-info__details").html(detailsInfo.join('<span class="new-interface-info__split">&#9679;</span>')).addClass("visible");
 	};
 
 	InfoPanel.prototype.empty = function () {
 		if (!this.html) return;
-		this.html.find(".new-interface-info__head,.new-interface-info__details").text("").removeClass("visible");
+		try {
+			this.html.find(".new-interface-info__head,.new-interface-info__details").text("").removeClass("visible");
+		} catch(e) {}
 	};
 
 	InfoPanel.prototype.destroy = function () {
 		clearTimeout(this.fadeTimer);
 		clearTimeout(this.timer);
-		this.network.clear();
+		try {
+			if (this.network) {
+				this.network.clear();
+			}
+		} catch(e) {}
+		
 		this.currentUrl = null;
 
 		if (this.html) {
-			this.html.remove();
+			try {
+				this.html.remove();
+			} catch(e) {}
 			this.html = null;
 		}
 	};
@@ -1319,350 +1782,378 @@
 	}
 
 	function siStyleApplyColorByRating(element) {
-		var $el = $(element);
-		var voteText = $el.text().trim();
+		try {
+			var $el = $(element);
+			var voteText = $el.text().trim();
 
-		if (/^\d+(\.\d+)?K$/.test(voteText)) return;
+			if (/^\d+(\.\d+)?K$/.test(voteText)) return;
 
-		var match = voteText.match(/(\d+(\.\d+)?)/);
-		if (!match) return;
+			var match = voteText.match(/(\d+(\.\d+)?)/);
+			if (!match) return;
 
-		var vote = parseFloat(match[0]);
-		var color = siStyleGetColorByRating(vote);
+			var vote = parseFloat(match[0]);
+			var color = siStyleGetColorByRating(vote);
 
-		if (color && Lampa.Storage.get("si_colored_ratings", true)) {
-			$el.css("color", color);
+			if (color && Lampa.Storage.get("si_colored_ratings", true)) {
+				$el.css("color", color);
 
-			if (Lampa.Storage.get("si_rating_border", false) && !$el.hasClass("card__vote")) {
-				if ($el.parent().hasClass("full-start__rate")) {
-					$el.parent().css("border", "1px solid " + color);
-					$el.css("border", "");
-				} else if ($el.hasClass("full-start__rate") || $el.hasClass("full-start-new__rate") || $el.hasClass("info__rate")) {
-					$el.css("border", "1px solid " + color);
+				if (Lampa.Storage.get("si_rating_border", false) && !$el.hasClass("card__vote")) {
+					if ($el.parent().hasClass("full-start__rate")) {
+						$el.parent().css("border", "1px solid " + color);
+						$el.css("border", "");
+					} else if ($el.hasClass("full-start__rate") || $el.hasClass("full-start-new__rate") || $el.hasClass("info__rate")) {
+						$el.css("border", "1px solid " + color);
+					} else {
+						$el.css("border", "");
+					}
 				} else {
 					$el.css("border", "");
+					if ($el.parent().hasClass("full-start__rate")) {
+						$el.parent().css("border", "");
+					}
 				}
 			} else {
+				$el.css("color", "");
 				$el.css("border", "");
 				if ($el.parent().hasClass("full-start__rate")) {
 					$el.parent().css("border", "");
 				}
 			}
-		} else {
-			$el.css("color", "");
-			$el.css("border", "");
-			if ($el.parent().hasClass("full-start__rate")) {
-				$el.parent().css("border", "");
-			}
+		} catch(e) {
+			console.log('Apply color by rating error:', e);
 		}
 	}
 
 	function siStyleUpdateVoteColors() {
-		if (!Lampa.Storage.get("si_colored_ratings", true)) return;
+		try {
+			if (!Lampa.Storage.get("si_colored_ratings", true)) return;
 
-		$(".card__vote").each(function () {
-			siStyleApplyColorByRating(this);
-		});
+			$(".card__vote").each(function () {
+				siStyleApplyColorByRating(this);
+			});
 
-		$(".full-start__rate, .full-start-new__rate").each(function () {
-			siStyleApplyColorByRating(this);
-		});
+			$(".full-start__rate, .full-start-new__rate").each(function () {
+				siStyleApplyColorByRating(this);
+			});
 
-		$(".info__rate, .card__imdb-rate, .card__kinopoisk-rate").each(function () {
-			siStyleApplyColorByRating(this);
-		});
+			$(".info__rate, .card__imdb-rate, .card__kinopoisk-rate").each(function () {
+				siStyleApplyColorByRating(this);
+			});
 
-		$(".rate--kp, .rate--imdb, .rate--cub").each(function () {
-			siStyleApplyColorByRating($(this).find("> div").eq(0));
-		});
+			$(".rate--kp, .rate--imdb, .rate--cub").each(function () {
+				siStyleApplyColorByRating($(this).find("> div").eq(0));
+			});
+		} catch(e) {
+			console.log('Update vote colors error:', e);
+		}
 	}
 
 	function siStyleSetupVoteColorsObserver() {
-		siStyleUpdateVoteColors();
+		try {
+			siStyleUpdateVoteColors();
 
-		var pendingUpdate = null;
-		var observer = new MutationObserver(function (mutations) {
-			if (!Lampa.Storage.get("si_colored_ratings", true)) return;
+			var pendingUpdate = null;
+			var observer = new MutationObserver(function (mutations) {
+				try {
+					if (!Lampa.Storage.get("si_colored_ratings", true)) return;
 
-			for (var i = 0; i < mutations.length; i++) {
-				var added = mutations[i].addedNodes;
-				for (var j = 0; j < added.length; j++) {
-					var node = added[j];
-					if (node.nodeType === 1) {
-						var $node = $(node);
-						$node.find(".card__vote, .full-start__rate, .full-start-new__rate, .info__rate, .card__imdb-rate, .card__kinopoisk-rate").each(function () {
-							siStyleApplyColorByRating(this);
-						});
-						$node.find(".rate--kp, .rate--imdb, .rate--cub").each(function () {
-							siStyleApplyColorByRating($(this).find("> div").eq(0));
-						});
-						if ($node.hasClass("card__vote") || $node.hasClass("full-start__rate") || $node.hasClass("info__rate")) {
-							siStyleApplyColorByRating(node);
-						}
-						if ($node.hasClass("rate--kp") || $node.hasClass("rate--imdb") || $node.hasClass("rate--cub")) {
-							siStyleApplyColorByRating($node.find("> div").eq(0));
+					for (var i = 0; i < mutations.length; i++) {
+						var added = mutations[i].addedNodes;
+						for (var j = 0; j < added.length; j++) {
+							var node = added[j];
+							if (node.nodeType === 1) {
+								var $node = $(node);
+								$node.find(".card__vote, .full-start__rate, .full-start-new__rate, .info__rate, .card__imdb-rate, .card__kinopoisk-rate").each(function () {
+									siStyleApplyColorByRating(this);
+								});
+								$node.find(".rate--kp, .rate--imdb, .rate--cub").each(function () {
+									siStyleApplyColorByRating($(this).find("> div").eq(0));
+								});
+								if ($node.hasClass("card__vote") || $node.hasClass("full-start__rate") || $node.hasClass("info__rate")) {
+									siStyleApplyColorByRating(node);
+								}
+								if ($node.hasClass("rate--kp") || $node.hasClass("rate--imdb") || $node.hasClass("rate--cub")) {
+									siStyleApplyColorByRating($node.find("> div").eq(0));
+								}
+							}
 						}
 					}
+				} catch(e) {
+					console.log('Vote colors observer mutation error:', e);
 				}
-			}
-		});
+			});
 
-		observer.observe(document.body, {
-			childList: true,
-			subtree: true,
-		});
+			observer.observe(document.body, {
+				childList: true,
+				subtree: true,
+			});
+		} catch(e) {
+			console.log('Setup vote colors observer error:', e);
+		}
 	}
 
 	function siStyleSetupVoteColorsForDetailPage() {
-		if (!window.Lampa || !Lampa.Listener) return;
+		try {
+			if (!window.Lampa || !Lampa.Listener) return;
 
-		Lampa.Listener.follow("full", function (data) {
-			if (data.type === "complite") {
-				siStyleUpdateVoteColors();
-			}
-		});
+			Lampa.Listener.follow("full", function (data) {
+				if (data.type === "complite") {
+					siStyleUpdateVoteColors();
+				}
+			});
 
-		Lampa.Listener.follow("activity", function (e) {
-			if (e.type === "active" || e.type === "start") {
-				setTimeout(preloadAllVisibleCards, 1000);
-			}
-		});
+			Lampa.Listener.follow("activity", function (e) {
+				if (e.type === "active" || e.type === "start") {
+					setTimeout(preloadAllVisibleCards, 1000);
+				}
+			});
 
-		Lampa.Listener.follow("target", function (e) {
-			if (e.target && $(e.target).hasClass("card")) {
-				preloadAllVisibleCards();
-			}
-		});
+			Lampa.Listener.follow("target", function (e) {
+				if (e.target && $(e.target).hasClass("card")) {
+					preloadAllVisibleCards();
+				}
+			});
+		} catch(e) {
+			console.log('Setup vote colors for detail page error:', e);
+		}
 	}
 
 	function initializeSettings() {
-		Lampa.Settings.listener.follow("open", function (event) {
-			if (event.name == "main") {
-				if (Lampa.Settings.main().render().find('[data-component="style_interface"]').length == 0) {
-					Lampa.SettingsApi.addComponent({
-						component: "style_interface",
-						name: "Стильний інтерфейс",
+		try {
+			Lampa.Settings.listener.follow("open", function (event) {
+				if (event.name == "main") {
+					if (Lampa.Settings.main().render().find('[data-component="style_interface"]').length == 0) {
+						Lampa.SettingsApi.addComponent({
+							component: "style_interface",
+							name: "Стильный интерфейс",
+						});
+					}
+
+					Lampa.Settings.main().update();
+					Lampa.Settings.main().render().find('[data-component="style_interface"]').addClass("hide");
+				}
+			});
+
+			Lampa.SettingsApi.addParam({
+				component: "interface",
+				param: {
+					name: "style_interface",
+					type: "static",
+					default: true,
+				},
+				field: {
+					name: "Стильный интерфейс",
+					description: "Настройки элементов",
+				},
+				onRender: function (item) {
+					item.css("opacity", "0");
+					requestAnimationFrame(function () {
+						item.insertAfter($('div[data-name="interface_size"]'));
+						item.css("opacity", "");
 					});
-				}
 
-				Lampa.Settings.main().update();
-				Lampa.Settings.main().render().find('[data-component="style_interface"]').addClass("hide");
-			}
-		});
+					item.on("hover:enter", function () {
+						Lampa.Settings.create("style_interface");
+						Lampa.Controller.enabled().controller.back = function () {
+							Lampa.Settings.create("interface");
+						};
+					});
+				},
+			});
 
-		Lampa.SettingsApi.addParam({
-			component: "interface",
-			param: {
-				name: "style_interface",
-				type: "static",
-				default: true,
-			},
-			field: {
-				name: "Стильний інтерфейс",
-				description: "Налаштування елементів",
-			},
-			onRender: function (item) {
-				item.css("opacity", "0");
-				requestAnimationFrame(function () {
-					item.insertAfter($('div[data-name="interface_size"]'));
-					item.css("opacity", "");
-				});
+			Lampa.SettingsApi.addParam({
+				component: "style_interface",
+				param: { name: "logo_show", type: "trigger", default: true },
+				field: { name: "Показывать логотип вместо названия" },
+			});
 
-				item.on("hover:enter", function () {
-					Lampa.Settings.create("style_interface");
-					Lampa.Controller.enabled().controller.back = function () {
-						Lampa.Settings.create("interface");
-					};
-				});
-			},
-		});
+			Lampa.SettingsApi.addParam({
+				component: "style_interface",
+				param: { name: "show_background", type: "trigger", default: true },
+				field: { name: "Отображать постеры на фоне" },
+				onChange: function (value) {
+					if (!value) {
+						$(".full-start__background").removeClass("active");
+					}
+				},
+			});
 
-		Lampa.SettingsApi.addParam({
-			component: "style_interface",
-			param: { name: "logo_show", type: "trigger", default: true },
-			field: { name: "Показувати логотип замість назви" },
-		});
+			Lampa.SettingsApi.addParam({
+				component: "style_interface",
+				param: { name: "status", type: "trigger", default: true },
+				field: { name: "Показывать статус фильма/сериала" },
+			});
 
-		Lampa.SettingsApi.addParam({
-			component: "style_interface",
-			param: { name: "show_background", type: "trigger", default: true },
-			field: { name: "Відображати постера на фоні" },
-			onChange: function (value) {
-				if (!value) {
-					$(".full-start__background").removeClass("active");
-				}
-			},
-		});
+			Lampa.SettingsApi.addParam({
+				component: "style_interface",
+				param: { name: "seas", type: "trigger", default: false },
+				field: { name: "Показывать количество сезонов" },
+			});
 
-		Lampa.SettingsApi.addParam({
-			component: "style_interface",
-			param: { name: "status", type: "trigger", default: true },
-			field: { name: "Показувати статус фільму/серіалу" },
-		});
+			Lampa.SettingsApi.addParam({
+				component: "style_interface",
+				param: { name: "eps", type: "trigger", default: false },
+				field: { name: "Показывать количество эпизодов" },
+			});
 
-		Lampa.SettingsApi.addParam({
-			component: "style_interface",
-			param: { name: "seas", type: "trigger", default: false },
-			field: { name: "Показувати кількість сезонів" },
-		});
+			Lampa.SettingsApi.addParam({
+				component: "style_interface",
+				param: { name: "year_ogr", type: "trigger", default: true },
+				field: { name: "Показывать возрастное ограничение" },
+			});
 
-		Lampa.SettingsApi.addParam({
-			component: "style_interface",
-			param: { name: "eps", type: "trigger", default: false },
-			field: { name: "Показувати кількість епізодів" },
-		});
+			Lampa.SettingsApi.addParam({
+				component: "style_interface",
+				param: { name: "vremya", type: "trigger", default: true },
+				field: { name: "Показывать время фильма" },
+			});
 
-		Lampa.SettingsApi.addParam({
-			component: "style_interface",
-			param: { name: "year_ogr", type: "trigger", default: true },
-			field: { name: "Показувати вікове обмеження" },
-		});
+			Lampa.SettingsApi.addParam({
+				component: "style_interface",
+				param: { name: "ganr", type: "trigger", default: true },
+				field: { name: "Показывать жанр фильма" },
+			});
 
-		Lampa.SettingsApi.addParam({
-			component: "style_interface",
-			param: { name: "vremya", type: "trigger", default: true },
-			field: { name: "Показувати час фільму" },
-		});
+			Lampa.SettingsApi.addParam({
+				component: "style_interface",
+				param: { name: "rat", type: "trigger", default: true },
+				field: { name: "Показывать рейтинг фильма" },
+			});
 
-		Lampa.SettingsApi.addParam({
-			component: "style_interface",
-			param: { name: "ganr", type: "trigger", default: true },
-			field: { name: "Показувати жанр фільму" },
-		});
+			Lampa.SettingsApi.addParam({
+				component: "style_interface",
+				param: { name: "si_colored_ratings", type: "trigger", default: true },
+				field: { name: "Цветные рейтинги" },
+				onChange: function (value) {
+					if (value) {
+						siStyleUpdateVoteColors();
+					} else {
+						$(".card__vote, .full-start__rate, .full-start-new__rate, .info__rate, .card__imdb-rate, .card__kinopoisk-rate").css("color", "").css("border", "");
+						$(".full-start__rate").css("border", "");
+					}
+				},
+			});
 
-		Lampa.SettingsApi.addParam({
-			component: "style_interface",
-			param: { name: "rat", type: "trigger", default: true },
-			field: { name: "Показувати рейтинг фільму" },
-		});
-
-		Lampa.SettingsApi.addParam({
-			component: "style_interface",
-			param: { name: "si_colored_ratings", type: "trigger", default: true },
-			field: { name: "Кольорові рейтинги" },
-			onChange: function (value) {
-				if (value) {
+			Lampa.SettingsApi.addParam({
+				component: "style_interface",
+				param: { name: "si_rating_border", type: "trigger", default: false },
+				field: { name: "Обводка рейтингов" },
+				onChange: function (value) {
 					siStyleUpdateVoteColors();
-				} else {
-					$(".card__vote, .full-start__rate, .full-start-new__rate, .info__rate, .card__imdb-rate, .card__kinopoisk-rate").css("color", "").css("border", "");
-					$(".full-start__rate").css("border", "");
-				}
-			},
-		});
+				},
+			});
 
-		Lampa.SettingsApi.addParam({
-			component: "style_interface",
-			param: { name: "si_rating_border", type: "trigger", default: false },
-			field: { name: "Обведення рейтингів" },
-			onChange: function (value) {
-				siStyleUpdateVoteColors();
-			},
-		});
+			Lampa.SettingsApi.addParam({
+				component: "style_interface",
+				param: { name: "child_mode", type: "trigger", default: false },
+				field: { name: "Детский режим", description: "Лампа будет перезагружена" },
+				onChange: function () {
+					window.location.reload();
+				},
+			});
 
-		Lampa.SettingsApi.addParam({
-			component: "style_interface",
-			param: { name: "child_mode", type: "trigger", default: false },
-			field: { name: "Дитячий режим", description: "Лампа буде перезавантажена" },
-			onChange: function () {
-				window.location.reload();
-			},
-		});
+			Lampa.SettingsApi.addParam({
+				component: "style_interface",
+				param: { name: "async_load", type: "trigger", default: true },
+				field: { name: "Включить асинхронную загрузку данных" },
+				onChange: function (value) {
+					if (value) preloadAllVisibleCards();
+				},
+			});
 
-		Lampa.SettingsApi.addParam({
-			component: "style_interface",
-			param: { name: "async_load", type: "trigger", default: true },
-			field: { name: "Увімкнути асинхронне завантаження даних" },
-			onChange: function (value) {
-				if (value) preloadAllVisibleCards();
-			},
-		});
+			Lampa.SettingsApi.addParam({
+				component: "style_interface",
+				param: { name: "background_resolution", type: "select", default: "original", values: { w300: "w300", w780: "w780", w1280: "w1280", original: "original" } },
+				field: { name: "Разрешение фона", description: "Качество загружаемых фоновых изображений" },
+			});
 
-		Lampa.SettingsApi.addParam({
-			component: "style_interface",
-			param: { name: "background_resolution", type: "select", default: "original", values: { w300: "w300", w780: "w780", w1280: "w1280", original: "original" } },
-			field: { name: "Роздільна здатність фону", description: "Якість завантажуваних фонових зображень" },
-		});
+			Lampa.SettingsApi.addParam({
+				component: "style_interface",
+				param: { name: "hide_captions", type: "trigger", default: true },
+				field: { name: "Скрывать названия и год", description: "Лампа будет перезагружена" },
+				onChange: function () {
+					window.location.reload();
+				},
+			});
 
-		Lampa.SettingsApi.addParam({
-			component: "style_interface",
-			param: { name: "hide_captions", type: "trigger", default: true },
-			field: { name: "Приховувати назви та рік", description: "Лампа буде перезавантажена" },
-			onChange: function () {
-				window.location.reload();
-			},
-		});
+			Lampa.SettingsApi.addParam({
+				component: "style_interface",
+				param: { name: "wide_post", type: "trigger", default: true },
+				field: { name: "Широкие постеры", description: "Лампа будет перезагружена" },
+				onChange: function () {
+					window.location.reload();
+				},
+			});
 
-		Lampa.SettingsApi.addParam({
-			component: "style_interface",
-			param: { name: "wide_post", type: "trigger", default: true },
-			field: { name: "Широкі постера", description: "Лампа буде перезавантажена" },
-			onChange: function () {
-				window.location.reload();
-			},
-		});
-
-		Lampa.SettingsApi.addParam({
-			component: "style_interface",
-			param: { name: "int_clear_logo_cache", type: "static" },
-			field: { name: "Очистити кеш логотипів", description: "Лампа буде перезавантажена" },
-			onRender: function (item) {
-				item.on("hover:enter", function () {
-					Lampa.Select.show({
-						title: "Очистити кеш логотипів?",
-						items: [{ title: "Так", confirm: true }, { title: "Ні" }],
-						onSelect: function (a) {
-							if (a.confirm) {
-								var keys = [];
-								for (var i = 0; i < localStorage.length; i++) {
-									var key = localStorage.key(i);
-									if (key.indexOf("logo_cache_v2_") !== -1) {
-										keys.push(key);
+			Lampa.SettingsApi.addParam({
+				component: "style_interface",
+				param: { name: "int_clear_logo_cache", type: "static" },
+				field: { name: "Очистить кеш логотипов", description: "Лампа будет перезагружена" },
+				onRender: function (item) {
+					item.on("hover:enter", function () {
+						Lampa.Select.show({
+							title: "Очистить кеш логотипов?",
+							items: [{ title: "Да", confirm: true }, { title: "Нет" }],
+							onSelect: function (a) {
+								if (a.confirm) {
+									var keys = [];
+									for (var i = 0; i < localStorage.length; i++) {
+										var key = localStorage.key(i);
+										if (key.indexOf("logo_cache_v2_") !== -1) {
+											keys.push(key);
+										}
 									}
+									keys.forEach(function (key) {
+										localStorage.removeItem(key);
+									});
+									window.location.reload();
+								} else {
+									Lampa.Controller.toggle("settings_component");
 								}
-								keys.forEach(function (key) {
-									localStorage.removeItem(key);
-								});
-								window.location.reload();
-							} else {
+							},
+							onBack: function () {
 								Lampa.Controller.toggle("settings_component");
-							}
-						},
-						onBack: function () {
-							Lampa.Controller.toggle("settings_component");
-						},
+							},
+						});
 					});
-				});
-			},
-		});
+				},
+			});
 
-		var initInterval = setInterval(function () {
-			if (typeof Lampa !== "undefined") {
-				clearInterval(initInterval);
-				if (!Lampa.Storage.get("int_plug", false)) {
-					setDefaultSettings();
+			var initInterval = setInterval(function () {
+				if (typeof Lampa !== "undefined") {
+					clearInterval(initInterval);
+					if (!Lampa.Storage.get("int_plug", false)) {
+						setDefaultSettings();
+					}
+				}
+			}, 200);
+
+			function setDefaultSettings() {
+				try {
+					Lampa.Storage.set("int_plug", "true");
+					Lampa.Storage.set("wide_post", "true");
+					Lampa.Storage.set("logo_show", "true");
+					Lampa.Storage.set("show_background", "true");
+					Lampa.Storage.set("background_resolution", "original");
+					Lampa.Storage.set("status", "true");
+					Lampa.Storage.set("seas", "false");
+					Lampa.Storage.set("eps", "false");
+					Lampa.Storage.set("year_ogr", "true");
+					Lampa.Storage.set("vremya", "true");
+					Lampa.Storage.set("ganr", "true");
+					Lampa.Storage.set("rat", "true");
+					Lampa.Storage.set("si_colored_ratings", "true");
+					Lampa.Storage.set("async_load", "true");
+					Lampa.Storage.set("hide_captions", "true");
+					Lampa.Storage.set("si_rating_border", "false");
+					Lampa.Storage.set("child_mode", "false");
+					Lampa.Storage.set("interface_size", "small");
+				} catch(e) {
+					console.log('Set default settings error:', e);
 				}
 			}
-		}, 200);
-
-		function setDefaultSettings() {
-			Lampa.Storage.set("int_plug", "true");
-			Lampa.Storage.set("wide_post", "true");
-			Lampa.Storage.set("logo_show", "true");
-			Lampa.Storage.set("show_background", "true");
-			Lampa.Storage.set("background_resolution", "original");
-			Lampa.Storage.set("status", "true");
-			Lampa.Storage.set("seas", "false");
-			Lampa.Storage.set("eps", "false");
-			Lampa.Storage.set("year_ogr", "true");
-			Lampa.Storage.set("vremya", "true");
-			Lampa.Storage.set("ganr", "true");
-			Lampa.Storage.set("rat", "true");
-			Lampa.Storage.set("si_colored_ratings", "true");
-			Lampa.Storage.set("async_load", "true");
-			Lampa.Storage.set("hide_captions", "true");
-			Lampa.Storage.set("si_rating_border", "false");
-			Lampa.Storage.set("child_mode", "false");
-			Lampa.Storage.set("interface_size", "small");
+		} catch(e) {
+			console.log('Initialize settings error:', e);
 		}
 	}
 
