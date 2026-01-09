@@ -1,3 +1,10 @@
+// Додайте цей код на початку оригінального файлу
+var API_BASE = 'https://dyvy.tv/api/v1';
+var REPLAY_BASE$1 = 'https://corsproxy.io/?https://a.maincast.tv/items'; // Змінений проксі
+
+// Альтернативні проксі сервери (спробуйте по черзі):
+// 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://a.maincast.tv/items')
+// 'https://cors-anywhere.herokuapp.com/https://a.maincast.tv/items'
 (function () {
   'use strict';
 
