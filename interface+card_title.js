@@ -3,6 +3,22 @@
 
     if (typeof Lampa === 'undefined') return;
 
+    // Перевірка на Samsung Smart TV
+    function isSamsungTV() {
+        const ua = navigator.userAgent.toLowerCase();
+        return ua.includes('samsung') || 
+               ua.includes('smarttv') || 
+               ua.includes('tizen') ||
+               ua.includes('web0s') ||
+               document.URL.includes('samsung') ||
+               navigator.vendor.includes('Samsung');
+    }
+
+    // Перевірка на 4K роздільну здатність
+    function is4KTV() {
+        return window.innerWidth >= 3840 || window.devicePixelRatio >= 2;
+    }
+
     function startPluginV3() {
         if (!Lampa.Maker || !Lampa.Maker.map || !Lampa.Utils) return;
         if (window.plugin_interface_ready_v3) return;
@@ -17,6 +33,12 @@
         wrap(mainMap.Items, 'onInit', function (original, args) {
             if (original) original.apply(this, args);
             this.__newInterfaceEnabled = shouldUseNewInterface(this && this.object);
+            
+            // Додаткові налаштування для TV
+            if (isSamsungTV()) {
+                this.__tvOptimized = true;
+                console.log('Samsung TV mode activated');
+            }
         });
 
         wrap(mainMap.Create, 'onCreate', function (original, args) {
@@ -48,13 +70,23 @@
                 delete this.__newInterfaceState;
             }
             delete this.__newInterfaceEnabled;
+            delete this.__tvOptimized;
             if (original) original.apply(this, args);
         });
+
+        // Оптимізація для TV
+        if (isSamsungTV()) {
+            optimizeForTV();
+        }
     }
 
     function shouldUseNewInterface(object) {
         if (!object) return false;
         if (!(object.source === 'tmdb' || object.source === 'cub')) return false;
+        
+        // Для Samsung TV завжди використовуємо новий інтерфейс
+        if (isSamsungTV()) return true;
+        
         if (window.innerWidth < 767) return false;
         if (typeof Lampa.Account !== 'undefined' && typeof Lampa.Account.hasPremium === 'function') {
             if (!Lampa.Account.hasPremium()) return false;
@@ -76,6 +108,12 @@
 
         const background = document.createElement('img');
         background.className = 'full-start__background';
+        
+        // Оптимізація для TV
+        if (isSamsungTV()) {
+            background.loading = 'eager';
+            background.decoding = 'async';
+        }
 
         const state = {
             main,
@@ -92,6 +130,14 @@
                 if (!container) return;
 
                 container.classList.add('new-interface');
+                
+                // Додатковий клас для TV
+                if (isSamsungTV()) {
+                    container.classList.add('samsung-tv');
+                    if (is4KTV()) {
+                        container.classList.add('tv-4k');
+                    }
+                }
 
                 if (!background.parentElement) {
                     container.insertBefore(background, container.firstChild || null);
@@ -118,24 +164,55 @@
                 this.updateBackground(data);
             },
             updateBackground(data) {
-                const path = data && data.backdrop_path ? Lampa.Api.img(data.backdrop_path, 'w1280') : '';
+                let path = '';
+                if (data && data.backdrop_path) {
+                    // Для TV використовуємо більшу роздільну здатність
+                    if (isSamsungTV()) {
+                        if (is4KTV()) {
+                            path = Lampa.Api.img(data.backdrop_path, 'original');
+                        } else {
+                            path = Lampa.Api.img(data.backdrop_path, 'w1920');
+                        }
+                    } else {
+                        path = Lampa.Api.img(data.backdrop_path, 'w1280');
+                    }
+                }
 
                 if (!path || path === this.backgroundLast) return;
 
                 clearTimeout(this.backgroundTimer);
 
+                // Зменшена затримка для TV
+                const delay = isSamsungTV() ? 300 : 1000;
+                
                 this.backgroundTimer = setTimeout(() => {
                     background.classList.remove('loaded');
 
-                    background.onload = () => background.classList.add('loaded');
-                    background.onerror = () => background.classList.remove('loaded');
+                    background.onload = () => {
+                        background.classList.add('loaded');
+                        // Оптимізація пам'яті для TV
+                        if (isSamsungTV()) {
+                            background.onload = null;
+                            background.onerror = null;
+                        }
+                    };
+                    
+                    background.onerror = () => {
+                        background.classList.remove('loaded');
+                        // Fallback для TV
+                        if (isSamsungTV() && data.poster_path) {
+                            setTimeout(() => {
+                                background.src = Lampa.Api.img(data.poster_path, 'w780');
+                            }, 1000);
+                        }
+                    };
 
                     this.backgroundLast = path;
 
                     setTimeout(() => {
                         background.src = this.backgroundLast;
-                    }, 300);
-                }, 1000);
+                    }, isSamsungTV() ? 150 : 300);
+                }, delay);
             },
             reset() {
                 info.empty();
@@ -145,7 +222,11 @@
                 info.destroy();
 
                 const container = main.render(true);
-                if (container) container.classList.remove('new-interface');
+                if (container) {
+                    container.classList.remove('new-interface');
+                    container.classList.remove('samsung-tv');
+                    container.classList.remove('tv-4k');
+                }
 
                 if (this.infoElement && this.infoElement.parentNode) {
                     this.infoElement.parentNode.removeChild(this.infoElement);
@@ -170,6 +251,11 @@
                     name: 'wide'
                 }
             });
+            
+            // Для TV обмежуємо кількість елементів для продуктивності
+            if (isSamsungTV() && element.results.length > 50) {
+                element.results = element.results.slice(0, 50);
+            }
         }
     }
 
@@ -181,13 +267,15 @@
 
         if (!element.isConnected) {
             clearTimeout(card.__newInterfaceLabelTimer);
-            card.__newInterfaceLabelTimer = setTimeout(() => updateCardTitle(card), 50);
+            card.__newInterfaceLabelTimer = setTimeout(() => updateCardTitle(card), isSamsungTV() ? 100 : 50);
             return;
         }
 
         clearTimeout(card.__newInterfaceLabelTimer);
 
-        const text = (card.data && (card.data.title || card.data.name || card.data.original_title || card.data.original_name)) ? (card.data.title || card.data.name || card.data.original_title || card.data.original_name).trim() : '';
+        const text = (card.data && (card.data.title || card.data.name || card.data.original_title || card.data.original_name)) 
+            ? (card.data.title || card.data.name || card.data.original_title || card.data.original_name).trim() 
+            : '';
 
         const seek = element.querySelector('.new-interface-card-title');
 
@@ -202,6 +290,12 @@
         if (!label) {
             label = document.createElement('div');
             label.className = 'new-interface-card-title';
+            
+            // Додаткові стилі для TV
+            if (isSamsungTV()) {
+                label.style.fontWeight = '600';
+                label.style.textShadow = '1px 1px 2px rgba(0,0,0,0.7)';
+            }
         }
 
         label.textContent = text;
@@ -224,12 +318,19 @@
 
         if (!card.params.style.name) card.params.style.name = 'wide';
 
+        // Оптимізація для TV
+        if (isSamsungTV()) {
+            card.params.noLazy = true; // Вимкнути lazy loading для TV
+        }
+
         card.use({
             onFocus() {
                 state.update(card.data);
             },
             onHover() {
-                state.update(card.data);
+                if (!isSamsungTV()) { // На TV часто hover не працює
+                    state.update(card.data);
+                }
             },
             onTouch() {
                 state.update(card.data);
@@ -299,7 +400,7 @@
                 setTimeout(() => {
                     const domData = getFocusedCardData(line);
                     if (domData) state.update(domData);
-                }, 32);
+                }, isSamsungTV() ? 50 : 32); // Більша затримка для TV
             },
             onMore() {
                 state.reset();
@@ -311,7 +412,21 @@
         });
 
         if (Array.isArray(line.items) && line.items.length) {
-            line.items.forEach(applyToCard);
+            // Для TV обробляємо менше карток одночасно
+            const itemsToProcess = isSamsungTV() ? 
+                line.items.slice(0, 10) : // Перші 10 для швидкості
+                line.items;
+            
+            itemsToProcess.forEach(applyToCard);
+            
+            // Решту обробляємо з затримкою
+            if (isSamsungTV() && line.items.length > 10) {
+                setTimeout(() => {
+                    line.items.slice(10).forEach((card, index) => {
+                        setTimeout(() => applyToCard(card), index * 50);
+                    });
+                }, 500);
+            }
         }
 
         if (line.last) {
@@ -328,6 +443,73 @@
         };
     }
 
+    function optimizeForTV() {
+        console.log('Applying TV optimizations...');
+        
+        // Оптимізація завантаження зображень
+        if (Lampa.Api && Lampa.Api.img) {
+            const originalImg = Lampa.Api.img;
+            Lampa.Api.img = function(path, size) {
+                if (isSamsungTV()) {
+                    // Для TV використовуємо оптимальні розміри
+                    if (size === 'w1280') size = 'w1920';
+                    if (size === 'w780' && is4KTV()) size = 'w1280';
+                }
+                return originalImg.call(this, path, size);
+            };
+        }
+        
+        // Оптимізація запитів
+        if (Lampa.Reguest) {
+            const originalTimeout = Lampa.Reguest.prototype.timeout;
+            Lampa.Reguest.prototype.timeout = function(time) {
+                // Збільшуємо таймаут для TV
+                const tvTime = isSamsungTV() ? Math.max(time, 10000) : time;
+                return originalTimeout.call(this, tvTime);
+            };
+        }
+        
+        // Обмеження кешу для TV
+        InterfaceInfo.prototype.load = function(data) {
+            if (!data || !data.id) return;
+
+            const source = data.source || 'tmdb';
+            if (source !== 'tmdb' && source !== 'cub') return;
+            if (!Lampa.TMDB || typeof Lampa.TMDB.api !== 'function' || typeof Lampa.TMDB.key !== 'function') return;
+
+            const type = data.media_type === 'tv' || data.name ? 'tv' : 'movie';
+            const language = Lampa.Storage.get('language');
+            const url = Lampa.TMDB.api(`${type}/${data.id}?api_key=${Lampa.TMDB.key()}&append_to_response=content_ratings,release_dates&language=${language}`);
+
+            this.currentUrl = url;
+
+            // Обмеження розміру кешу для TV
+            if (isSamsungTV()) {
+                const maxCacheSize = 15;
+                const keys = Object.keys(this.loaded);
+                if (keys.length >= maxCacheSize) {
+                    delete this.loaded[keys[0]];
+                }
+            }
+
+            if (this.loaded[url]) {
+                this.draw(this.loaded[url]);
+                return;
+            }
+
+            clearTimeout(this.timer);
+
+            this.timer = setTimeout(() => {
+                this.network.clear();
+                this.network.timeout(isSamsungTV() ? 10000 : 5000); // Більший таймаут для TV
+                this.network.silent(url, (movie) => {
+                    this.loaded[url] = movie;
+                    if (this.currentUrl === url) this.draw(movie);
+                });
+            }, isSamsungTV() ? 500 : 300); // Більша затримка для TV
+        };
+    }
+
     function addStyleV3() {
         if (addStyleV3.added) return;
         addStyleV3.added = true;
@@ -337,6 +519,7 @@
             position: relative;
         }
 
+        /* Базові розміри для десктопу */
         .new-interface .card.card--wide {
             width: 18.3em;
         }
@@ -413,6 +596,12 @@
         .new-interface .full-start__background {
             height: 108%;
             top: -6em;
+            transition: opacity 0.5s ease;
+            opacity: 0;
+        }
+
+        .new-interface .full-start__background.loaded {
+            opacity: 1;
         }
 
         .new-interface .full-start__rate {
@@ -446,6 +635,103 @@
             pointer-events: none;
         }
 
+        /* Samsung TV специфічні стилі */
+        .samsung-tv .new-interface .card.card--wide {
+            width: 22em !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .samsung-tv .new-interface .card.card--wide.focus {
+            transform: scale(1.08) !important;
+            z-index: 100 !important;
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.3) !important;
+        }
+        
+        .samsung-tv .new-interface .card.card--wide.focus .card__view {
+            border: 3px solid #fff !important;
+        }
+        
+        .samsung-tv .new-interface-info__title {
+            font-size: 5em !important;
+            margin-bottom: 0.5em !important;
+        }
+        
+        .samsung-tv .new-interface-info__description {
+            font-size: 1.5em !important;
+            line-height: 1.6 !important;
+            width: 80% !important;
+        }
+        
+        .samsung-tv .new-interface-info {
+            height: 28em !important;
+            padding: 2.5em !important;
+        }
+        
+        .samsung-tv .new-interface-card-title {
+            font-size: 1.3em !important;
+            margin-top: 0.8em !important;
+            font-weight: 600;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+        }
+        
+        /* 4K TV стилі */
+        .tv-4k .new-interface .card.card--wide {
+            width: 30em !important;
+        }
+        
+        .tv-4k .new-interface-info__title {
+            font-size: 7em !important;
+        }
+        
+        .tv-4k .new-interface-info__description {
+            font-size: 2em !important;
+            line-height: 1.7 !important;
+        }
+        
+        .tv-4k .new-interface-card-title {
+            font-size: 1.8em !important;
+            margin-top: 1em !important;
+        }
+        
+        .tv-4k .new-interface-info__details {
+            font-size: 1.4em !important;
+        }
+        
+        .tv-4k .new-interface-info__head {
+            font-size: 1.6em !important;
+        }
+        
+        .tv-4k .full-start__rate {
+            font-size: 1.8em !important;
+        }
+
+        /* Адаптація для великих екранів */
+        @media (min-width: 1920px) {
+            .new-interface:not(.samsung-tv) .card.card--wide {
+                width: 20em !important;
+            }
+            
+            .new-interface:not(.samsung-tv) .new-interface-info__title {
+                font-size: 4.5em !important;
+            }
+        }
+
+        /* HDR підтримка */
+        @media (dynamic-range: high) {
+            .samsung-tv .new-interface .card.card--wide.focus {
+                box-shadow: 0 0 50px rgba(255, 255, 255, 0.5) !important;
+            }
+        }
+
+        /* Поліпшення контрастності для TV */
+        .samsung-tv .new-interface-info__head {
+            color: rgba(255, 255, 255, 0.8) !important;
+        }
+        
+        .samsung-tv .new-interface-info__description {
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+
         body.light--version .new-interface-card-title {
             color: #111;
         }
@@ -466,9 +752,43 @@
         body.advanced--animation:not(.no--animation) .new-interface .card.card--wide.animate-trigger-enter .card__view {
             animation: animation-trigger-enter 0.2s forwards;
         }
+        
+        /* Оптимізація анімацій для TV */
+        .samsung-tv body.advanced--animation:not(.no--animation) .new-interface .card.card--wide.focus .card__view {
+            animation-duration: 0.3s !important;
+        }
+        
+        /* Поліпшення скролу для TV */
+        .samsung-tv .scroll-area {
+            scroll-behavior: smooth !important;
+        }
         </style>`);
 
         $('body').append(Lampa.Template.get('new_interface_style_v3', {}, true));
+        
+        // Додатково додаємо TV-специфічні стилі
+        if (isSamsungTV()) {
+            Lampa.Template.add('tv_optimization_style', `<style>
+                /* Вимкнення деяких ефектів для продуктивності на TV */
+                .samsung-tv * {
+                    -webkit-tap-highlight-color: transparent !important;
+                }
+                
+                /* Оптимізація шрифтів для TV */
+                .samsung-tv {
+                    text-rendering: optimizeSpeed !important;
+                    -webkit-font-smoothing: antialiased !important;
+                }
+                
+                /* Поліпшення фокусу для пульта ДК */
+                .samsung-tv .selector.focus {
+                    outline: 3px solid #00a8ff !important;
+                    outline-offset: 2px !important;
+                }
+            </style>`);
+            
+            $('body').append(Lampa.Template.get('tv_optimization_style', {}, true));
+        }
     }
 
     class InterfaceInfo {
@@ -477,6 +797,7 @@
             this.timer = null;
             this.network = new Lampa.Reguest();
             this.loaded = {};
+            this.currentUrl = null;
         }
 
         create() {
@@ -490,6 +811,11 @@
                     <div class="new-interface-info__description"></div>
                 </div>
             </div>`);
+            
+            // Оптимізація для TV
+            if (isSamsungTV()) {
+                this.html.addClass('tv-optimized');
+            }
         }
 
         render(js) {
@@ -523,6 +849,15 @@
 
             this.currentUrl = url;
 
+            // Оптимізація кешу для TV
+            if (isSamsungTV()) {
+                const maxCacheSize = 20;
+                const keys = Object.keys(this.loaded);
+                if (keys.length >= maxCacheSize) {
+                    delete this.loaded[keys[0]];
+                }
+            }
+
             if (this.loaded[url]) {
                 this.draw(this.loaded[url]);
                 return;
@@ -532,12 +867,12 @@
 
             this.timer = setTimeout(() => {
                 this.network.clear();
-                this.network.timeout(5000);
+                this.network.timeout(isSamsungTV() ? 8000 : 5000);
                 this.network.silent(url, (movie) => {
                     this.loaded[url] = movie;
                     if (this.currentUrl === url) this.draw(movie);
                 });
-            }, 300);
+            }, isSamsungTV() ? 400 : 300);
         }
 
         draw(movie) {
@@ -592,6 +927,7 @@
         return;
     }
 
+    // Legacy code for older versions (unchanged except TV detection)
     function create() {
       var html;
       var timer;
@@ -676,6 +1012,14 @@
       var background_img = html.find('.full-start__background');
       var background_last = '';
       var background_timer;
+      
+      // TV оптимізація
+      if (isSamsungTV()) {
+        html.addClass('samsung-tv');
+        if (is4KTV()) {
+          html.addClass('tv-4k');
+        }
+      }
 
       this.create = function () {};
 
@@ -743,7 +1087,7 @@
       };
 
       this.background = function (elem) {
-        var new_background = Lampa.Api.img(elem.backdrop_path, 'w1280');
+        var new_background = Lampa.Api.img(elem.backdrop_path, isSamsungTV() ? 'w1920' : 'w1280');
         clearTimeout(background_timer);
         if (new_background == background_last) return;
         background_timer = setTimeout(function () {
@@ -760,8 +1104,8 @@
           background_last = new_background;
           setTimeout(function () {
             background_img[0].src = background_last;
-          }, 300);
-        }, 1000);
+          }, isSamsungTV() ? 200 : 300);
+        }, isSamsungTV() ? 500 : 1000);
       };
 
       this.append = function (element) {
@@ -893,13 +1237,13 @@
       Lampa.InteractionMain = function (object) {
         var use = new_interface;
         if (!(object.source == 'tmdb' || object.source == 'cub')) use = old_interface;
-        if (window.innerWidth < 767) use = old_interface;
+        if (window.innerWidth < 767 && !isSamsungTV()) use = old_interface;
         if (!Lampa.Account.hasPremium()) use = old_interface;
         if (Lampa.Manifest.app_digital < 153) use = old_interface;
         return new use(object);
       };
 
-      Lampa.Template.add('new_interface_style', "\n        <style>\n        .new-interface .card--small.card--wide {\n            width: 18.3em;\n        }\n        \n        .new-interface-info {\n            position: relative;\n            padding: 1.5em;\n            height: 24em;\n        }\n        \n        .new-interface-info__body {\n            width: 80%;\n            padding-top: 1.1em;\n        }\n        \n        .new-interface-info__head {\n            color: rgba(255, 255, 255, 0.6);\n            margin-bottom: 1em;\n            font-size: 1.3em;\n            min-height: 1em;\n        }\n        \n        .new-interface-info__head span {\n            color: #fff;\n        }\n        \n        .new-interface-info__title {\n            font-size: 4em;\n            font-weight: 600;\n            margin-bottom: 0.3em;\n            overflow: hidden;\n            -o-text-overflow: \".\";\n            text-overflow: \".\";\n            display: -webkit-box;\n            -webkit-line-clamp: 1;\n            line-clamp: 1;\n            -webkit-box-orient: vertical;\n            margin-left: -0.03em;\n            line-height: 1.3;\n        }\n        \n        .new-interface-info__details {\n            margin-bottom: 1.6em;\n            display: -webkit-box;\n            display: -webkit-flex;\n            display: -moz-box;\n            display: -ms-flexbox;\n            display: flex;\n            -webkit-box-align: center;\n            -webkit-align-items: center;\n            -moz-box-align: center;\n            -ms-flex-align: center;\n            align-items: center;\n            -webkit-flex-wrap: wrap;\n            -ms-flex-wrap: wrap;\n            flex-wrap: wrap;\n            min-height: 1.9em;\n            font-size: 1.1em;\n        }\n        \n        .new-interface-info__split {\n            margin: 0 1em;\n            font-size: 0.7em;\n        }\n        \n        .new-interface-info__description {\n            font-size: 1.2em;\n            font-weight: 300;\n            line-height: 1.5;\n            overflow: hidden;\n            -o-text-overflow: \".\";\n            text-overflow: \".\";\n            display: -webkit-box;\n            -webkit-line-clamp: 4;\n            line-clamp: 4;\n            -webkit-box-orient: vertical;\n            width: 70%;\n        }\n        \n        .new-interface .card-more__box {\n            padding-bottom: 95%;\n        }\n        \n        .new-interface .full-start__background {\n            height: 108%;\n            top: -6em;\n        }\n        \n        .new-interface .full-start__rate {\n            font-size: 1.3em;\n            margin-right: 0;\n        }\n        \n        .new-interface .card__promo {\n            display: none;\n        }\n        \n        .new-interface .card.card--wide+.card-more .card-more__box {\n            padding-bottom: 95%;\n        }\n        \n        .new-interface .card.card--wide .card-watched {\n            display: none !important;\n        }\n        \n        body.light--version .new-interface-info__body {\n            width: 69%;\n            padding-top: 1.5em;\n        }\n        \n        body.light--version .new-interface-info {\n            height: 25.3em;\n        }\n\n        body.advanced--animation:not(.no--animation) .new-interface .card--small.card--wide.focus .card__view{\n            animation: animation-card-focus 0.2s\n        }\n        body.advanced--animation:not(.no--animation) .new-interface .card--small.card--wide.animate-trigger-enter .card__view{\n            animation: animation-trigger-enter 0.2s forwards\n        }\n        </style>\n    ");
+      Lampa.Template.add('new_interface_style', "\n        <style>\n        .new-interface .card--small.card--wide {\n            width: 18.3em;\n        }\n        \n        .new-interface-info {\n            position: relative;\n            padding: 1.5em;\n            height: 24em;\n        }\n        \n        .new-interface-info__body {\n            width: 80%;\n            padding-top: 1.1em;\n        }\n        \n        .new-interface-info__head {\n            color: rgba(255, 255, 255, 0.6);\n            margin-bottom: 1em;\n            font-size: 1.3em;\n            min-height: 1em;\n        }\n        \n        .new-interface-info__head span {\n            color: #fff;\n        }\n        \n        .new-interface-info__title {\n            font-size: 4em;\n            font-weight: 600;\n            margin-bottom: 0.3em;\n            overflow: hidden;\n            -o-text-overflow: \".\";\n            text-overflow: \".\";\n            display: -webkit-box;\n            -webkit-line-clamp: 1;\n            line-clamp: 1;\n            -webkit-box-orient: vertical;\n            margin-left: -0.03em;\n            line-height: 1.3;\n        }\n        \n        .new-interface-info__details {\n            margin-bottom: 1.6em;\n            display: -webkit-box;\n            display: -webkit-flex;\n            display: -moz-box;\n            display: -ms-flexbox;\n            display: flex;\n            -webkit-box-align: center;\n            -webkit-align-items: center;\n            -moz-box-align: center;\n            -ms-flex-align: center;\n            align-items: center;\n            -webkit-flex-wrap: wrap;\n            -ms-flex-wrap: wrap;\n            flex-wrap: wrap;\n            min-height: 1.9em;\n            font-size: 1.1em;\n        }\n        \n        .new-interface-info__split {\n            margin: 0 1em;\n            font-size: 0.7em;\n        }\n        \n        .new-interface-info__description {\n            font-size: 1.2em;\n            font-weight: 300;\n            line-height: 1.5;\n            overflow: hidden;\n            -o-text-overflow: \".\";\n            text-overflow: \".\";\n            display: -webkit-box;\n            -webkit-line-clamp: 4;\n            line-clamp: 4;\n            -webkit-box-orient: vertical;\n            width: 70%;\n        }\n        \n        .new-interface .card-more__box {\n            padding-bottom: 95%;\n        }\n        \n        .new-interface .full-start__background {\n            height: 108%;\n            top: -6em;\n        }\n        \n        .new-interface .full-start__rate {\n            font-size: 1.3em;\n            margin-right: 0;\n        }\n        \n        .new-interface .card__promo {\n            display: none;\n        }\n        \n        .new-interface .card.card--wide+.card-more .card-more__box {\n            padding-bottom: 95%;\n        }\n        \n        .new-interface .card.card--wide .card-watched {\n            display: none !important;\n        }\n        \n        /* Samsung TV стилі для старої версії */\n        .samsung-tv .new-interface .card--small.card--wide {\n            width: 22em !important;\n        }\n        \n        .samsung-tv .new-interface-info__title {\n            font-size: 5em !important;\n        }\n        \n        .tv-4k .new-interface .card--small.card--wide {\n            width: 30em !important;\n        }\n        \n        .tv-4k .new-interface-info__title {\n            font-size: 7em !important;\n        }\n        \n        body.light--version .new-interface-info__body {\n            width: 69%;\n            padding-top: 1.5em;\n        }\n        \n        body.light--version .new-interface-info {\n            height: 25.3em;\n        }\n\n        body.advanced--animation:not(.no--animation) .new-interface .card--small.card--wide.focus .card__view{\n            animation: animation-card-focus 0.2s\n        }\n        body.advanced--animation:not(.no--animation) .new-interface .card--small.card--wide.animate-trigger-enter .card__view{\n            animation: animation-trigger-enter 0.2s forwards\n        }\n        </style>\n    ");
       $('body').append(Lampa.Template.get('new_interface_style', {}, true));
     }
 
