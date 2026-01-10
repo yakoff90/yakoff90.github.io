@@ -28,13 +28,6 @@
         en: ['eng', 'ukr']
     };
 
-    // Функція для фільтрації російських субтитрів
-    function filterRussianSubtitles(subtitles) {
-        return subtitles.filter(function(sub) {
-            return sub.lang !== 'rus';
-        });
-    }
-
     function fetchSubs(imdb, season, episode) {
         var key = imdb + '_' + (season || 0) + '_' + (episode || 0);
         if (cache[key]) return Promise.resolve(cache[key]);
@@ -46,8 +39,7 @@
         return fetch(url)
             .then(function (r) { return r.json(); })
             .then(function (j) {
-                var filteredSubs = filterRussianSubtitles(j.subtitles || []);
-                cache[key] = filteredSubs;
+                cache[key] = j.subtitles || [];
                 return cache[key];
             })
             .catch(function (e) {
@@ -75,8 +67,12 @@
             var current = [];
             var i, s, found, defaultIndex = -1;
 
+            // Додаємо субтитри з OpenSubtitles (фільтруємо російські)
             for (i = 0; i < osSubs.length; i++) {
                 s = osSubs[i];
+                // Пропускаємо російські субтитри
+                if (s.lang === 'rus') continue;
+                
                 if (s.url && LANG_LABELS[s.lang]) {
                     subs.push({
                         lang: s.lang,
@@ -86,34 +82,38 @@
                 }
             }
 
+            // Додаємо вже наявні субтитри (також фільтруємо російські)
             if (playdata.subtitles) {
                 for (i = 0; i < playdata.subtitles.length; i++) {
                     s = playdata.subtitles[i];
-                    // Також фільтруємо російські субтитри з playdata
-                    if (s.lang !== 'rus') {
-                        // Додаємо прапор до вже наявних субтитрів
-                        var flag = s.lang === 'eng' ? '🇬🇧 ' : s.lang === 'ukr' ? '🇺🇦 ' : '';
-                        var label = s.label || '';
-                        
-                        // Якщо в label ще немає прапора, додаємо його
-                        if (!label.includes('🇬🇧') && !label.includes('🇺🇦')) {
-                            label = flag + label;
-                        }
-                        
-                        current.push({
-                            lang: s.lang || '',
-                            url: s.url,
-                            label: label
-                        });
+                    
+                    // Пропускаємо російські субтитри
+                    if (s.lang === 'rus') continue;
+                    
+                    var label = s.label || '';
+                    var lang = s.lang || '';
+                    
+                    // Додаємо прапор, якщо ще немає
+                    if (lang === 'eng' && !label.includes('🇬🇧')) {
+                        label = '🇬🇧 ' + label;
+                    } else if (lang === 'ukr' && !label.includes('🇺🇦')) {
+                        label = '🇺🇦 ' + label;
                     }
+                    
+                    current.push({
+                        lang: lang,
+                        url: s.url,
+                        label: label
+                    });
                 }
             }
 
+            // Додаємо нові субтитри, якщо вони ще не додані
             for (i = 0; i < subs.length; i++) {
                 s = subs[i];
                 found = false;
                 for (var j = 0; j < current.length; j++) {
-                    if (current[j].url === s.url) {
+                    if (current[j].url === s.url || current[j].lang === s.lang) {
                         found = true;
                         break;
                     }
@@ -121,8 +121,12 @@
                 if (!found) current.push(s);
             }
 
-            if (!current.length) return;
+            if (!current.length) {
+                console.log('[OS Subs] No subtitles available after filtering');
+                return;
+            }
 
+            // Сортуємо за пріоритетом
             current.sort(function (a, b) {
                 var aIndex = priority.indexOf(a.lang);
                 var bIndex = priority.indexOf(b.lang);
@@ -131,6 +135,7 @@
                 return aIndex - bIndex;
             });
 
+            // Визначаємо субтитри за замовчуванням
             for (i = 0; i < current.length; i++) {
                 if (current[i].lang === priority[0]) {
                     defaultIndex = i;
@@ -138,6 +143,8 @@
                 }
             }
 
+            console.log('[OS Subs] Available subtitles:', current);
+            
             if (Lampa.Player.subtitles) {
                 Lampa.Player.subtitles(current, defaultIndex >= 0 ? defaultIndex : 0);
             }
