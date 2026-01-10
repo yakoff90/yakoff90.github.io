@@ -1,173 +1,223 @@
 (function () {
     'use strict';
 
+    console.log('[OS Subs] Plugin loading for Samsung TV');
+
     var OSV3 = 'https://opensubtitles-v3.strem.io/';
     var cache = {};
-    var initialized = false;
+    var attempts = 0;
+    var maxAttempts = 30;
 
     function getInterfaceLang() {
         try {
-            var lang = Lampa.Storage.get('language') || 'en';
+            var lang = 'en';
+            if (window.Lampa && Lampa.Storage) {
+                lang = Lampa.Storage.get('language') || 'en';
+            }
             return lang.toLowerCase();
         } catch (e) {
             return 'en';
         }
     }
 
-    var LANG_LABELS = {
-        eng: { uk: 'Англійські', ru: 'Английские', en: 'English' },
-        ukr: { uk: 'Українські', ru: 'Украинские', en: 'Ukrainian' },
-        rus: { uk: 'Російські', ru: 'Русские', en: 'Russian' }
-    };
-
-    var LANG_PRIORITY = {
-        uk: ['ukr', 'eng', 'rus'],
-        ru: ['rus', 'eng', 'ukr'],
-        en: ['eng', 'ukr', 'rus']
+    var LANG_MAP = {
+        eng: 'Англійські',
+        ukr: 'Українські', 
+        rus: 'Російські'
     };
 
     function fetchSubs(imdb, season, episode) {
-        var key = imdb + '_' + (season || 0) + '_' + (episode || 0);
-        if (cache[key]) return Promise.resolve(cache[key]);
+        var key = imdb + '_' + (season || '0') + '_' + (episode || '0');
+        if (cache[key]) {
+            return Promise.resolve(cache[key]);
+        }
 
-        var url = season && episode
-            ? OSV3 + 'subtitles/series/' + imdb + ':' + season + ':' + episode + '.json'
-            : OSV3 + 'subtitles/movie/' + imdb + '.json';
+        var url = '';
+        if (season && episode && season > 0 && episode > 0) {
+            url = OSV3 + 'subtitles/series/' + imdb + ':' + season + ':' + episode + '.json';
+        } else {
+            url = OSV3 + 'subtitles/movie/' + imdb + '.json';
+        }
 
-        return new Promise(function (resolve) {
-            setTimeout(function () {
-                fetch(url)
-                    .then(function (r) { return r.ok ? r.json() : Promise.reject('HTTP error'); })
-                    .then(function (j) {
-                        cache[key] = j.subtitles || [];
+        return new Promise(function(resolve) {
+            var xhr = new XMLHttpRequest();
+            xhr.timeout = 5000;
+            xhr.open('GET', url, true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        cache[key] = data.subtitles || [];
                         resolve(cache[key]);
-                    })
-                    .catch(function (e) {
-                        console.warn('[OS Subs] Fetch error:', e);
+                    } catch(e) {
                         resolve([]);
-                    });
-            }, 100);
+                    }
+                } else {
+                    resolve([]);
+                }
+            };
+            xhr.onerror = function() {
+                resolve([]);
+            };
+            xhr.ontimeout = function() {
+                resolve([]);
+            };
+            setTimeout(function() {
+                xhr.send();
+            }, 200);
         });
     }
 
-    function setupSubs() {
-        if (!Lampa || !Lampa.Activity || !Lampa.Player) {
-            console.warn('[OS Subs] Lampa API not ready');
-            return;
-        }
+    function addSubtitlesToPlayer(subsArray, defaultIndex) {
+        if (!subsArray || subsArray.length === 0) return;
+        
+        attempts = 0;
+        var interval = setInterval(function() {
+            attempts++;
+            
+            if (window.Lampa && Lampa.Player && typeof Lampa.Player.subtitles === 'function') {
+                try {
+                    Lampa.Player.subtitles(subsArray, defaultIndex);
+                    console.log('[OS Subs] Successfully added ' + subsArray.length + ' subtitles');
+                    clearInterval(interval);
+                } catch(e) {
+                    console.warn('[OS Subs] Error adding subtitles:', e);
+                }
+            }
+            
+            if (attempts >= maxAttempts) {
+                console.warn('[OS Subs] Failed to add subtitles after ' + maxAttempts + ' attempts');
+                clearInterval(interval);
+            }
+        }, 300);
+    }
 
+    function loadSubtitlesForCurrentVideo() {
         try {
+            if (!window.Lampa || !Lampa.Activity || !Lampa.Player) {
+                console.warn('[OS Subs] Lampa not ready, retrying...');
+                setTimeout(loadSubtitlesForCurrentVideo, 1000);
+                return;
+            }
+
             var activity = Lampa.Activity.active();
-            var playdata = Lampa.Player.playdata();
-            if (!activity || !playdata) return;
+            if (!activity || !activity.movie) return;
 
             var movie = activity.movie;
-            if (!movie || !movie.imdb_id) return;
+            if (!movie.imdb_id) return;
 
-            var imdb = movie.imdb_id;
-            var isSeries = !!(movie.first_air_date);
-            var season = isSeries ? playdata.season : null;
-            var episode = isSeries ? playdata.episode : null;
+            var playdata = Lampa.Player.playdata();
+            if (!playdata) return;
 
-            if (!imdb) return;
+            var imdb = movie.imdb_id.replace('tt', '');
+            var season = 0;
+            var episode = 0;
+            
+            if (movie.first_air_date && playdata.season && playdata.episode) {
+                season = parseInt(playdata.season) || 0;
+                episode = parseInt(playdata.episode) || 0;
+            }
 
-            var interfaceLang = getInterfaceLang();
-            var priority = LANG_PRIORITY[interfaceLang] || LANG_PRIORITY.en;
+            console.log('[OS Subs] Loading for IMDB:' + imdb + ' S' + season + 'E' + episode);
 
-            fetchSubs(imdb, season, episode).then(function (osSubs) {
-                if (!Lampa.Player || !Lampa.Player.subtitles) return;
+            fetchSubs(imdb, season > 0 ? season : null, episode > 0 ? episode : null).then(function(subs) {
+                if (subs.length === 0) {
+                    console.log('[OS Subs] No subtitles found');
+                    return;
+                }
 
-                var subs = [];
-                var current = [];
-                var i, j, s, found;
+                var lang = getInterfaceLang();
+                var priority = lang === 'uk' ? ['ukr', 'eng', 'rus'] : 
+                              lang === 'ru' ? ['rus', 'eng', 'ukr'] : 
+                                              ['eng', 'ukr', 'rus'];
 
-                for (i = 0; i < osSubs.length; i++) {
-                    s = osSubs[i];
-                    if (s && s.url && s.lang && LANG_LABELS[s.lang]) {
-                        subs.push({
-                            lang: s.lang,
-                            url: s.url,
-                            label: LANG_LABELS[s.lang][interfaceLang] || LANG_LABELS[s.lang].en
+                var formattedSubs = [];
+                
+                for (var i = 0; i < subs.length; i++) {
+                    var sub = subs[i];
+                    if (sub && sub.url && sub.lang && LANG_MAP[sub.lang]) {
+                        formattedSubs.push({
+                            lang: sub.lang,
+                            url: sub.url,
+                            label: LANG_MAP[sub.lang]
                         });
                     }
                 }
 
-                if (playdata.subtitles && Array.isArray(playdata.subtitles)) {
-                    for (i = 0; i < playdata.subtitles.length; i++) {
-                        s = playdata.subtitles[i];
-                        if (s && s.url) {
-                            current.push({
-                                lang: s.lang || '',
-                                url: s.url,
-                                label: s.label || ''
-                            });
-                        }
-                    }
-                }
+                if (formattedSubs.length === 0) return;
 
-                for (i = 0; i < subs.length; i++) {
-                    s = subs[i];
-                    found = false;
-                    for (j = 0; j < current.length; j++) {
-                        if (current[j].url === s.url) {
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found) {
-                        current.push(s);
-                    }
-                }
-
-                if (current.length === 0) return;
-
-                current.sort(function (a, b) {
-                    var aIndex = priority.indexOf(a.lang);
-                    var bIndex = priority.indexOf(b.lang);
-                    aIndex = aIndex === -1 ? 999 : aIndex;
-                    bIndex = bIndex === -1 ? 999 : bIndex;
-                    return aIndex - bIndex;
+                formattedSubs.sort(function(a, b) {
+                    var aIdx = priority.indexOf(a.lang);
+                    var bIdx = priority.indexOf(b.lang);
+                    aIdx = aIdx === -1 ? 999 : aIdx;
+                    bIdx = bIdx === -1 ? 999 : bIdx;
+                    return aIdx - bIdx;
                 });
 
-                var defaultIndex = 0;
-                for (i = 0; i < current.length; i++) {
-                    if (current[i].lang === priority[0]) {
-                        defaultIndex = i;
+                var defaultIdx = 0;
+                for (var j = 0; j < formattedSubs.length; j++) {
+                    if (formattedSubs[j].lang === priority[0]) {
+                        defaultIdx = j;
                         break;
                     }
                 }
 
-                setTimeout(function () {
-                    if (Lampa.Player && Lampa.Player.subtitles) {
-                        Lampa.Player.subtitles(current, defaultIndex);
-                        console.log('[OS Subs] Added', current.length, 'subtitles');
-                    }
-                }, 300);
+                console.log('[OS Subs] Found ' + formattedSubs.length + ' subtitles, adding...');
+                
+                setTimeout(function() {
+                    addSubtitlesToPlayer(formattedSubs, defaultIdx);
+                }, 1500);
             });
-        } catch (e) {
-            console.error('[OS Subs] Setup error:', e);
+        } catch(e) {
+            console.error('[OS Subs] Error:', e);
         }
     }
 
-    function initPlugin() {
-        if (initialized) return;
+    function startListener() {
+        console.log('[OS Subs] Starting listener...');
         
-        if (window.Lampa && Lampa.Player && Lampa.Player.listener) {
-            Lampa.Player.listener.follow('start', function () {
-                console.log('[OS Subs] Player started');
-                setTimeout(setupSubs, 800);
-            });
-            initialized = true;
-            console.log('[OS Subs] Plugin initialized');
-        } else {
-            setTimeout(initPlugin, 1000);
-        }
+        var checkCount = 0;
+        var checkInterval = setInterval(function() {
+            checkCount++;
+            
+            if (window.Lampa && Lampa.Player && Lampa.Player.listener) {
+                console.log('[OS Subs] Lampa API found, attaching listener');
+                
+                Lampa.Player.listener.follow('start', function() {
+                    console.log('[OS Subs] Video started event');
+                    setTimeout(loadSubtitlesForCurrentVideo, 1200);
+                });
+                
+                Lampa.Player.listener.follow('change', function() {
+                    console.log('[OS Subs] Video changed event');
+                    setTimeout(loadSubtitlesForCurrentVideo, 1000);
+                });
+                
+                clearInterval(checkInterval);
+            } else if (checkCount > 50) {
+                console.warn('[OS Subs] Lampa API not found after 25 seconds');
+                clearInterval(checkInterval);
+                
+                setTimeout(function() {
+                    if (window.Lampa && Lampa.Player) {
+                        console.log('[OS Subs] Lampa loaded late, trying to load subtitles');
+                        loadSubtitlesForCurrentVideo();
+                    }
+                }, 5000);
+            }
+        }, 500);
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initPlugin);
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(startListener, 1000);
     } else {
-        setTimeout(initPlugin, 500);
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(startListener, 1000);
+        });
     }
+
+    window.addEventListener('load', function() {
+        console.log('[OS Subs] Page fully loaded');
+    });
 
 })();
