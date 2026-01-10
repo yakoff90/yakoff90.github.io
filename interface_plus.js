@@ -1,3 +1,5 @@
+[file name]: interface_plus.js
+[file content begin]
 (function () {
   'use strict';
 
@@ -149,43 +151,6 @@
     interface_mod_new_colored_age_desc: {
       en: 'Colorize age rating',
       uk: 'Підсвічувати віковий рейтинг в повній картці'
-    },
-
-    // Логотипи замість назв
-    logo_main_title: {
-      en: 'Logos instead of titles',
-      uk: 'Логотипи замість назв',
-      ru: 'Логотипы вместо названий'
-    },
-    logo_main_description: {
-      en: 'Displays movie logos instead of text',
-      uk: 'Відображає логотипи фільмів замість тексту',
-      ru: 'Отображает логотипы фильмов вместо текста'
-    },
-    logo_main_show: {
-      en: 'Show',
-      uk: 'Показати',
-      ru: 'Отображать'
-    },
-    logo_main_hide: {
-      en: 'Hide',
-      uk: 'Приховати',
-      ru: 'Скрыть'
-    },
-    logo_display_mode_title: {
-      en: 'Display mode',
-      uk: 'Режим відображення',
-      ru: 'Режим отображения'
-    },
-    logo_display_mode_logo_only: {
-      en: 'Logo only',
-      uk: 'Тільки логотип',
-      ru: 'Только логотип'
-    },
-    logo_display_mode_logo_and_text: {
-      en: 'Logo and text',
-      uk: 'Логотип і текст',
-      ru: 'Логотип и текст'
     },
 
     // Теми (інтегровані з themes_ua_loader.js)
@@ -351,6 +316,35 @@
       en: 'Color highlighting of ratings',
       uk: 'Кольорове виділення оцінок рейтингів'
     },
+    // НОВИЙ ПУНКТ: Кольори рамки нагород
+    interface_mod_new_ratings_awards_border: {
+      en: 'Awards border color',
+      uk: 'Колір рамки нагород'
+    },
+    interface_mod_new_ratings_awards_border_desc: {
+      en: 'Choose border color for Oscars, Emmy and other awards',
+      uk: 'Виберіть колір рамки для Оскарів, Еммі та інших нагород'
+    },
+    interface_mod_new_ratings_awards_border_gold: {
+      en: 'Gold',
+      uk: 'Золотий'
+    },
+    interface_mod_new_ratings_awards_border_silver: {
+      en: 'Silver',
+      uk: 'Срібний'
+    },
+    interface_mod_new_ratings_awards_border_bronze: {
+      en: 'Bronze',
+      uk: 'Бронзовий'
+    },
+    interface_mod_new_ratings_awards_border_green: {
+      en: 'Green',
+      uk: 'Зелений'
+    },
+    interface_mod_new_ratings_awards_border_blue: {
+      en: 'Blue',
+      uk: 'Синій'
+    },
     interface_mod_new_ratings_enable_imdb: {
       en: 'IMDb',
       uk: 'IMDb'
@@ -460,6 +454,7 @@
     ratings_show_awards: true,
     ratings_show_average: true,
     ratings_colorize_all: false,
+    ratings_awards_border: 'gold', // Нова настройка
     ratings_enable_imdb: true,
     ratings_enable_tmdb: true,
     ratings_enable_mc: true,
@@ -499,10 +494,6 @@
     colored_buttons: getBool('interface_mod_new_colored_buttons', false),
     button_size: (Lampa.Storage.get('interface_mod_new_button_size', 'normal') || 'normal'),
 
-    // Налаштування для логотипів
-    logo_main: Lampa.Storage.get('logo_main', '0'),
-    logo_display_mode: Lampa.Storage.get('logo_display_mode', 'logo_only'),
-
     // Налаштування для torrents+mod
     tor_frame: getBool('interface_mod_new_tor_frame', true),
     tor_bitrate: getBool('interface_mod_new_tor_bitrate', true),
@@ -516,6 +507,7 @@
     ratings_show_awards: getBool('ratings_show_awards', RCFG_DEFAULT.ratings_show_awards),
     ratings_show_average: getBool('ratings_show_average', RCFG_DEFAULT.ratings_show_average),
     ratings_colorize_all: getBool('ratings_colorize_all', RCFG_DEFAULT.ratings_colorize_all),
+    ratings_awards_border: Lampa.Storage.get('ratings_awards_border', RCFG_DEFAULT.ratings_awards_border), // Нова настройка
     ratings_enable_imdb: getBool('ratings_enable_imdb', RCFG_DEFAULT.ratings_enable_imdb),
     ratings_enable_tmdb: getBool('ratings_enable_tmdb', RCFG_DEFAULT.ratings_enable_tmdb),
     ratings_enable_mc: getBool('ratings_enable_mc', RCFG_DEFAULT.ratings_enable_mc),
@@ -629,14 +621,6 @@
       .card__type {
         display: none !important;
       }
-      
-      /* Стилі для логотипів */
-      .full-start-new__title img,
-      .full-start__title img {
-        max-height: 2.8em;
-        display: block;
-        margin-bottom: 0.2em;
-      }
     `;
     var st = document.createElement('style');
     st.id = 'interface_mod_base';
@@ -694,9 +678,41 @@
         --lmp-h-emmy:24px;
       }
 
-      /* --- Кольоровий режим --- */
+      /* --- Кольоровий режим для нагород --- */
       .rate--oscars, .rate--emmy, .rate--awards, .rate--gold {
         color: gold;
+      }
+      
+      /* --- Кольори рамки нагород --- */
+      .rate--oscars.awards-border-gold,
+      .rate--emmy.awards-border-gold,
+      .rate--awards.awards-border-gold {
+        border-color: gold !important;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5) !important;
+      }
+      .rate--oscars.awards-border-silver,
+      .rate--emmy.awards-border-silver,
+      .rate--awards.awards-border-silver {
+        border-color: silver !important;
+        box-shadow: 0 0 10px rgba(192, 192, 192, 0.5) !important;
+      }
+      .rate--oscars.awards-border-bronze,
+      .rate--emmy.awards-border-bronze,
+      .rate--awards.awards-border-bronze {
+        border-color: #cd7f32 !important;
+        box-shadow: 0 0 10px rgba(205, 127, 50, 0.5) !important;
+      }
+      .rate--oscars.awards-border-green,
+      .rate--emmy.awards-border-green,
+      .rate--awards.awards-border-green {
+        border-color: #2ecc71 !important;
+        box-shadow: 0 0 10px rgba(46, 204, 113, 0.5) !important;
+      }
+      .rate--oscars.awards-border-blue,
+      .rate--emmy.awards-border-blue,
+      .rate--awards.awards-border-blue {
+        border-color: #3498db !important;
+        box-shadow: 0 0 10px rgba(52, 152, 219, 0.5) !important;
       }
 
       /* --- Кольори оцінок --- */
@@ -797,101 +813,6 @@
     st.textContent = css;
     document.head.appendChild(st);
   })();
-
-  /* ============================================================
-   * ФУНКЦІОНАЛ ЛОГОТИПІВ ЗАМІСТЬ НАЗВ
-   * ============================================================ */
-
-  /**
-   * Функція для заміни логотипу замість назви в інтерфейсі
-   */
-  function initLogosInsteadOfTitles() {
-    // Перевірка, чи плагін уже ініціалізований
-    if (window.logoplugin) return;
-    window.logoplugin = true;
-
-    // Підписка на подію активності для обробки повноекранного режиму
-    Lampa.Listener.follow('full', function (event) {
-      // Перевірка, чи подія є завершенням рендерингу або типом movie та чи увімкнена заміна логотипу
-      if ((event.type == 'complite' || event.type == 'movie') && Lampa.Storage.get('logo_main') != '1') {
-        var item = event.data.movie;
-        var mediaType = item.name ? 'tv' : 'movie';
-        var currentLang = Lampa.Storage.get('language');
-        // Формування URL для запиту логотипу з TMDB (поточна мова)
-        var url = Lampa.TMDB.api(mediaType + '/' + item.id + '/images?api_key=' + Lampa.TMDB.key() + '&language=' + currentLang);
-
-        // Виконання AJAX-запиту для отримання логотипів
-        $.get(url, function (response) {
-          if (response.logos && response.logos[0]) {
-            // Логотип знайдено для поточної мови (uk/ru)
-            renderLogo(response.logos[0].file_path, event, mediaType, currentLang);
-          } else if (currentLang !== 'en') {
-            // Якщо логотип відсутній і мова не англійська, спробувати англійську
-            var enUrl = Lampa.TMDB.api(mediaType + '/' + item.id + '/images?api_key=' + Lampa.TMDB.key() + '&language=en');
-            $.get(enUrl, function (enResponse) {
-              if (enResponse.logos && enResponse.logos[0]) {
-                // Використати англійський логотип
-                renderLogo(enResponse.logos[0].file_path, event, mediaType, currentLang, true);
-              }
-            }).fail(function () {});
-          }
-        }).fail(function () {
-          if (currentLang !== 'en') {
-            // Спробувати англійську мову при помилці
-            var enUrl = Lampa.TMDB.api(mediaType + '/' + item.id + '/images?api_key=' + Lampa.TMDB.key() + '&language=en');
-            $.get(enUrl, function (enResponse) {
-              if (enResponse.logos && enResponse.logos[0]) {
-                renderLogo(enResponse.logos[0].file_path, event, mediaType, currentLang, true);
-              }
-            }).fail(function () {});
-          }
-        });
-
-        // Функція для рендерингу логотипу
-        function renderLogo(logoPath, event, mediaType, currentLang, isEnglishLogo) {
-          if (logoPath !== '') {
-            var card = event.object.activity.render();
-            var logoHtml;
-            var showTitle = Lampa.Storage.get('logo_display_mode') === 'logo_and_text' || (isEnglishLogo && Lampa.Storage.get('logo_display_mode') === 'logo_only');
-            var titleText = showTitle ? (card.find('.full-start-new__title').text() || card.find('.full-start__title').text() || item.title || item.name) : '';
-            // Логіка залежно від налаштувань та ширини екрану
-            if (window.innerWidth > 585) {
-              if (Lampa.Storage.get('card_interfice_type') === 'new' && !card.find('div[data-name="card_interfice_cover"]').length) {
-                logoHtml = '<div><img style="display: block; margin-bottom: 0.2em; max-height: 1.8em;" src="' + Lampa.TMDB.image('/t/p/w500' + logoPath.replace('.svg', '.png')) + '" />' + (titleText ? '<span>' + titleText + '</span>' : '') + '</div>';
-                card.find('.full-start-new__tagline').remove();
-                card.find('.full-start-new__title').html(logoHtml);
-              } else if (Lampa.Storage.get('card_interfice_type') === 'new' && card.find('div[data-name="card_interfice_cover"]').length) {
-                logoHtml = '<div><img style="display: block; margin-bottom: 0.2em; max-height: 2.8em;" src="' + Lampa.TMDB.image('/t/p/w500' + logoPath.replace('.svg', '.png')) + '" />' + (titleText ? '<span>' + titleText + '</span>' : '') + '</div>';
-                card.find('.full-start-new__title').html(logoHtml);
-              } else if (Lampa.Storage.get('card_interfice_type') === 'old' && !card.find('div[data-name="card_interfice_cover"]').length) {
-                logoHtml = '<div style="height: auto !important; overflow: visible !important;"><img style="display: block; margin-bottom: 0em;" src="' + Lampa.TMDB.image('/t/p/w300' + logoPath.replace('.svg', '.png')) + '" onload="if(this.naturalHeight > 80) { let ratio = this.naturalWidth / this.naturalHeight; this.height = 80; this.width = 80 * ratio; }" />' + (titleText ? '<span style="display: block; line-height: normal;">' + titleText + '</span>' : '') + '</div>';
-                card.find('.full-start__title-original').remove();
-                card.find('.full-start__title').css({
-                  'height': 'auto !important',
-                  'max-height': 'none !important',
-                  'overflow': 'visible !important'
-                }).html(logoHtml);
-              }
-            } else {
-              if (Lampa.Storage.get('card_interfice_type') === 'new') {
-                logoHtml = '<div><img style="display: block; margin-bottom: 0.2em; max-height: 1.8em;" src="' + Lampa.TMDB.image('/t/p/w500' + logoPath.replace('.svg', '.png')) + '" />' + (titleText ? '<span>' + titleText + '</span>' : '') + '</div>';
-                card.find('.full-start-new__tagline').remove();
-                card.find('.full-start-new__title').html(logoHtml);
-              } else {
-                logoHtml = '<div style="height: auto !important; overflow: visible !important;"><img style="display: block; margin-bottom: 0em;" src="' + Lampa.TMDB.image('/t/p/w300' + logoPath.replace('.svg', '.png')) + '" onload="if(this.naturalHeight > 38) { let ratio = this.naturalWidth / this.naturalHeight; this.height = 38; this.width = 38 * ratio; }" />' + (titleText ? '<span style="display: block; line-height: normal;">' + titleText + '</span>' : '') + '</div>';
-                card.find('.full-start__title-original').remove();
-                card.find('.full-start__title').css({
-                  'height': 'auto !important',
-                  'max-height': 'none !important',
-                  'overflow': 'visible !important'
-                }).html(logoHtml);
-              }
-            }
-          }
-        }
-      }
-    });
-  }
 
   /* ============================================================
    * ТЕМИ (інтегровані з themes_ua_loader.js)
@@ -1578,45 +1499,6 @@ border: 0.2em solid #f6a5b0;
       }
     });
 
-    // Логотипи замість назв
-    add({
-      component: 'interface_mod_new',
-      param: {
-        name: 'logo_main',
-        type: 'select',
-        values: {
-          '0': Lampa.Lang.translate('logo_main_show'),
-          '1': Lampa.Lang.translate('logo_main_hide')
-        },
-        default: '0'
-      },
-      field: {
-        name: Lampa.Lang.translate('logo_main_title'),
-        description: Lampa.Lang.translate('logo_main_description')
-      }
-    });
-
-    // Режим відображення логотипів (залежить від logo_main)
-    add({
-      component: 'interface_mod_new',
-      param: {
-        name: 'logo_display_mode',
-        type: 'select',
-        values: {
-          'logo_only': Lampa.Lang.translate('logo_display_mode_logo_only'),
-          'logo_and_text': Lampa.Lang.translate('logo_display_mode_logo_and_text')
-        },
-        default: 'logo_only'
-      },
-      field: {
-        name: Lampa.Lang.translate('logo_display_mode_title'),
-        description: Lampa.Lang.translate('logo_main_description'),
-        show: function () {
-          return Lampa.Storage.get('logo_main') === '0';
-        }
-      }
-    });
-
     // Теми
     add({
       component: 'interface_mod_new',
@@ -1838,6 +1720,27 @@ border: 0.2em solid #f6a5b0;
       onRender: function() {}
     });
     
+    // Рейтинги: кольори рамки нагород (НОВИЙ ПУНКТ)
+    add({
+      component: 'interface_mod_new',
+      param: {
+        name: 'ratings_awards_border',
+        type: 'select',
+        values: {
+          'gold': Lampa.Lang.translate('interface_mod_new_ratings_awards_border_gold'),
+          'silver': Lampa.Lang.translate('interface_mod_new_ratings_awards_border_silver'),
+          'bronze': Lampa.Lang.translate('interface_mod_new_ratings_awards_border_bronze'),
+          'green': Lampa.Lang.translate('interface_mod_new_ratings_awards_border_green'),
+          'blue': Lampa.Lang.translate('interface_mod_new_ratings_awards_border_blue')
+        },
+        default: RCFG_DEFAULT.ratings_awards_border
+      },
+      field: {
+        name: Lampa.Lang.translate('interface_mod_new_ratings_awards_border'),
+        description: Lampa.Lang.translate('interface_mod_new_ratings_awards_border_desc')
+      }
+    });
+    
     // Рейтинги: IMDb
     add({
       component: 'interface_mod_new',
@@ -2056,13 +1959,6 @@ border: 0.2em solid #f6a5b0;
           }
         }
         
-        // Реагуємо на зміни налаштувань логотипів
-        if (typeof key === 'string' && (key === 'logo_main' || key === 'logo_display_mode')) {
-          settings.logo_main = Lampa.Storage.get('logo_main', '0');
-          settings.logo_display_mode = Lampa.Storage.get('logo_display_mode', 'logo_only');
-          // Логотипи будуть автоматично оновлені при наступному відкритті картки
-        }
-        
         // Реагуємо на зміни налаштувань рейтингів
         if (typeof key === 'string' && key.indexOf('ratings_') === 0) {
           switch (key) {
@@ -2077,6 +1973,10 @@ border: 0.2em solid #f6a5b0;
             case 'ratings_colorize_all':
               settings.ratings_colorize_all = getBool(key, RCFG_DEFAULT.ratings_colorize_all);
               applyRatingsStyles();
+              break;
+            case 'ratings_awards_border': // Нова настройка
+              settings.ratings_awards_border = val || RCFG_DEFAULT.ratings_awards_border;
+              applyAwardsBorderColor();
               break;
             case 'ratings_enable_imdb':
               settings.ratings_enable_imdb = getBool(key, RCFG_DEFAULT.ratings_enable_imdb);
@@ -4436,6 +4336,31 @@ border: 0.2em solid #f6a5b0;
   }
 
   /**
+   * Застосовує кольори рамки до нагород
+   */
+  function applyAwardsBorderColor() {
+    var borderColor = settings.ratings_awards_border || 'gold';
+    
+    // Видаляємо всі попередні класи рамок
+    var awardsElements = document.querySelectorAll('.rate--oscars, .rate--emmy, .rate--awards');
+    awardsElements.forEach(function(el) {
+      el.classList.remove(
+        'awards-border-gold',
+        'awards-border-silver', 
+        'awards-border-bronze',
+        'awards-border-green',
+        'awards-border-blue'
+      );
+    });
+    
+    // Додаємо новий клас в залежності від обраного кольору
+    var borderClass = 'awards-border-' + borderColor;
+    awardsElements.forEach(function(el) {
+      el.classList.add(borderClass);
+    });
+  }
+
+  /**
    * Вставляє нові бейджі (MC, RT, Popcorn, Awards)
    */
   function insertRatings(data) {
@@ -4624,6 +4549,7 @@ border: 0.2em solid #f6a5b0;
 
     try {
       applyAwardsColor(rateLine, cfg);
+      applyAwardsBorderColor(); // Застосовуємо кольори рамки
     } catch (e) {}
   }
 
@@ -4643,6 +4569,7 @@ border: 0.2em solid #f6a5b0;
     if (!cfg.showAverage) {
       try {
         applyAwardsColor(rateLine, cfg);
+        applyAwardsBorderColor(); // Застосовуємо кольори рамки
       } catch (e) {}
       removeLoadingAnimation();
       undimRateLine(rateLine);
@@ -4693,6 +4620,7 @@ border: 0.2em solid #f6a5b0;
 
     try {
       applyAwardsColor(rateLine, getRatingsCfg());
+      applyAwardsBorderColor(); // Застосовуємо кольори рамки
     } catch (e) {}
 
     removeLoadingAnimation();
@@ -4818,6 +4746,7 @@ border: 0.2em solid #f6a5b0;
       showAwards: settings.ratings_show_awards,
       showAverage: settings.ratings_show_average,
       colorizeAll: settings.ratings_colorize_all,
+      awardsBorder: settings.ratings_awards_border,
       enableImdb: settings.ratings_enable_imdb,
       enableTmdb: settings.ratings_enable_tmdb,
       enableMc: settings.ratings_enable_mc,
@@ -4852,6 +4781,7 @@ border: 0.2em solid #f6a5b0;
   function applyRatingsStyles() {
     toggleAwards(settings.ratings_show_awards);
     toggleAverage(settings.ratings_show_average);
+    applyAwardsBorderColor(); // Застосовуємо кольори рамки нагород
   }
 
   /**
@@ -4886,6 +4816,9 @@ border: 0.2em solid #f6a5b0;
     }
     if (typeof Lampa.Storage.get('ratings_show_average') === 'undefined') {
       Lampa.Storage.set('ratings_show_average', true);
+    }
+    if (typeof Lampa.Storage.get('ratings_awards_border') === 'undefined') {
+      Lampa.Storage.set('ratings_awards_border', RCFG_DEFAULT.ratings_awards_border);
     }
   }
 
@@ -5751,9 +5684,6 @@ border: 0.2em solid #f6a5b0;
     if (settings.colored_age) enableAgeColoring();
     else disableAgeColoring(true);
 
-    // Ініціалізуємо функціонал логотипів
-    initLogosInsteadOfTitles();
-
     // Ініціалізуємо теми
     window.__ifx_first_theme_apply = true;
     applyTheme(settings.theme);
@@ -5779,6 +5709,7 @@ border: 0.2em solid #f6a5b0;
     window.LampaRatings.applyStyles = applyRatingsStyles;
     window.LampaRatings.getConfig = getRatingsCfg;
     applyRatingsStyles();
+    applyAwardsBorderColor(); // Застосовуємо кольори рамки нагород
     
     if (!window.combined_ratings_plugin) {
       startRatingsPlugin();
@@ -5800,3 +5731,4 @@ border: 0.2em solid #f6a5b0;
   }
 
 })();
+[file content end]
