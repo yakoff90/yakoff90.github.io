@@ -1,6 +1,6 @@
 // Plugin: OpenSubtitles для Tizen Samsung TV
 // Субтитри працюють тільки якщо у фільма є imdb. Додана локалізація і завантаження українських.
-// УКРАЇНСЬКІ СУБТИТРИ ЗАВЖДИ ПЕРШІ
+// УКРАЇНСЬКІ СУБТИТРИ ЗАВЖДИ ПЕРШІ - ВСІ В КОНЦІ СПИСКУ
 (function() {
     'use strict';
 
@@ -49,8 +49,8 @@
         ger: { uk: 'Німецькі', ru: 'Немецкие', en: 'German' }
     };
 
-    // Спеціальний пріоритет: українські завжди перші
-    var LANG_PRIORITY_ALWAYS_UKRAINIAN_FIRST = ['ukr', 'eng', 'rus', 'spa', 'fra', 'ger'];
+    // Пріоритет мов для сортування після українських
+    var LANG_PRIORITY_AFTER_UKRAINIAN = ['eng', 'rus', 'spa', 'fra', 'ger'];
 
     // Функція для отримання субтитрів з кешуванням
     function fetchSubs(imdb, season, episode, retryCount) {
@@ -89,28 +89,16 @@
             .then(function(data) {
                 var subtitles = data.subtitles || [];
                 
-                // Спеціальна обробка: спочатку українські субтитри
-                var sortedSubtitles = subtitles.sort(function(a, b) {
-                    // Українські завжди перші
-                    if (a.lang === 'ukr' && b.lang !== 'ukr') return -1;
-                    if (a.lang !== 'ukr' && b.lang === 'ukr') return 1;
-                    
-                    // Потім за рейтингом
-                    var aRating = a.rating || 0;
-                    var bRating = b.rating || 0;
-                    return bRating - aRating;
-                });
-                
                 // Кешування результатів
-                cache[key] = sortedSubtitles;
+                cache[key] = subtitles;
                 
                 // Автоматична очистка кешу через 1 годину
                 setTimeout(function() {
                     delete cache[key];
                 }, 3600000);
                 
-                log('Отримано субтитрів', sortedSubtitles.length);
-                return sortedSubtitles;
+                log('Отримано субтитрів', subtitles.length);
+                return subtitles;
             })
             .catch(function(error) {
                 log('Помилка отримання субтитрів', error.message);
@@ -134,49 +122,71 @@
         }
     }
 
-    // Функція для виділення українських субтитрів
-    function prioritizeUkrainianSubtitles(subtitles, interfaceLang) {
-        if (!subtitles || subtitles.length === 0) return subtitles;
+    // Функція для групування та сортування субтитрів
+    function groupAndSortSubtitles(allSubtitles, interfaceLang) {
+        if (!allSubtitles || allSubtitles.length === 0) return [];
         
-        // Шукаємо українські субтитри
-        var ukrainianSubs = subtitles.filter(function(s) {
-            return s.lang === 'ukr';
+        // Групуємо українські та інші субтитри
+        var ukrainianSubs = [];
+        var otherSubs = [];
+        
+        allSubtitles.forEach(function(sub) {
+            if (sub.url && LANG_LABELS[sub.lang]) {
+                var isUkrainian = sub.lang === 'ukr';
+                
+                var formattedSub = {
+                    lang: sub.lang,
+                    url: sub.url,
+                    label: isUkrainian ? 
+                        '🇺🇦 ' + (LANG_LABELS[sub.lang][interfaceLang] || LANG_LABELS[sub.lang].en) :
+                        (LANG_LABELS[sub.lang][interfaceLang] || LANG_LABELS[sub.lang].en),
+                    rating: sub.rating || 0,
+                    isUkrainian: isUkrainian
+                };
+                
+                if (isUkrainian) {
+                    ukrainianSubs.push(formattedSub);
+                } else {
+                    otherSubs.push(formattedSub);
+                }
+            }
         });
         
-        var otherSubs = subtitles.filter(function(s) {
-            return s.lang !== 'ukr';
+        log('Знайдено українських субтитрів', ukrainianSubs.length);
+        log('Знайдено інших субтитрів', otherSubs.length);
+        
+        // Сортуємо українські субтитри за рейтингом (спадання)
+        ukrainianSubs.sort(function(a, b) {
+            return b.rating - a.rating;
         });
         
-        // Форматуємо українські субтитри з особливою позначкою
-        var formattedUkrainianSubs = ukrainianSubs.map(function(s) {
-            return {
-                lang: s.lang,
-                url: s.url,
-                label: '🇺🇦 ' + (LANG_LABELS[s.lang][interfaceLang] || LANG_LABELS[s.lang].en),
-                rating: s.rating || 0,
-                isUkrainian: true
-            };
+        // Сортуємо інші субтитри за пріоритетом мови
+        otherSubs.sort(function(a, b) {
+            var aIndex = LANG_PRIORITY_AFTER_UKRAINIAN.indexOf(a.lang);
+            var bIndex = LANG_PRIORITY_AFTER_UKRAINIAN.indexOf(b.lang);
+            
+            // Якщо мова не в пріоритеті - ставимо в кінець
+            if (aIndex === -1 && bIndex === -1) return b.rating - a.rating;
+            if (aIndex === -1) return 1;
+            if (bIndex === -1) return -1;
+            
+            // Спершу за пріоритетом мови
+            if (aIndex !== bIndex) {
+                return aIndex - bIndex;
+            }
+            
+            // Якщо одна мова - за рейтингом
+            return b.rating - a.rating;
         });
         
-        // Форматуємо інші субтитри
-        var formattedOtherSubs = otherSubs.map(function(s) {
-            return {
-                lang: s.lang,
-                url: s.url,
-                label: LANG_LABELS[s.lang][interfaceLang] || LANG_LABELS[s.lang].en,
-                rating: s.rating || 0,
-                isUkrainian: false
-            };
-        });
-        
-        // Повертаємо спочатку українські, потім інші
-        return formattedUkrainianSubs.concat(formattedOtherSubs);
+        // Об'єднуємо: спочатку всі українські, потім всі інші
+        return ukrainianSubs.concat(otherSubs);
     }
 
     // Основна функція налаштування субтитрів
     function setupSubs() {
         try {
-            log('Запуск налаштування субтитрів (українські перші)');
+            log('Запуск налаштування субтитрів (УКРАЇНСЬКІ НА ПОЧАТКУ)');
             
             // Перевірка наявності необхідних об'єктів
             if (typeof Lampa === 'undefined') {
@@ -221,98 +231,128 @@
             // Отримання субтитрів
             fetchSubs(imdb, season, episode)
                 .then(function(osSubs) {
-                    // Фільтрація субтитрів
-                    var filteredSubs = osSubs.filter(function(s) {
-                        return s.url && LANG_LABELS[s.lang];
-                    });
+                    // Групуємо та сортуємо всі субтитри
+                    var allFormattedSubs = groupAndSortSubtitles(osSubs, interfaceLang);
 
-                    log('Знайдено субтитрів після фільтрації', filteredSubs.length);
+                    log('Всього відформатованих субтитрів', allFormattedSubs.length);
 
-                    // Виділяємо українські субтитри
-                    var subs = prioritizeUkrainianSubtitles(filteredSubs, interfaceLang);
-
-                    // Отримання поточних субтитрів
-                    var current = Array.isArray(playdata.subtitles) 
-                        ? playdata.subtitles.map(function(s) {
-                            var lang = s.lang || '';
-                            var isUkrainian = lang === 'ukr';
-                            
+                    // Отримання поточних субтитрів (якщо є)
+                    var existingSubs = [];
+                    if (Array.isArray(playdata.subtitles)) {
+                        existingSubs = playdata.subtitles.map(function(s) {
+                            var isUkrainian = (s.lang || '') === 'ukr';
                             return {
-                                lang: lang,
+                                lang: s.lang || '',
                                 url: s.url,
                                 label: isUkrainian ? '🇺🇦 ' + (s.label || 'Українські') : (s.label || ''),
                                 rating: 0,
-                                isUkrainian: isUkrainian
+                                isUkrainian: isUkrainian,
+                                isExisting: true
                             };
-                        })
-                        : [];
-
-                    // Додавання нових субтитрів
-                    subs.forEach(function(newSub) {
-                        var exists = current.find(function(existing) {
-                            return existing.url === newSub.url;
                         });
-                        
-                        if (!exists) {
-                            current.push(newSub);
+                    }
+
+                    // Об'єднуємо нові субтитри з існуючими
+                    var finalSubs = [];
+                    
+                    // Спочатку додаємо всі існуючі субтитри
+                    existingSubs.forEach(function(existing) {
+                        if (!finalSubs.find(function(s) { return s.url === existing.url; })) {
+                            finalSubs.push(existing);
+                        }
+                    });
+                    
+                    // Потім додаємо всі нові субтитри
+                    allFormattedSubs.forEach(function(newSub) {
+                        if (!finalSubs.find(function(s) { return s.url === newSub.url; })) {
+                            finalSubs.push(newSub);
                         }
                     });
 
-                    // Спеціальне сортування: українські завжди перші
-                    current.sort(function(a, b) {
+                    // Тепер сортуємо фінальний список: всі українські спочатку
+                    finalSubs.sort(function(a, b) {
                         // Українські завжди перші
                         if (a.isUkrainian && !b.isUkrainian) return -1;
                         if (!a.isUkrainian && b.isUkrainian) return 1;
                         
-                        // Якщо обидва українські або обидва не українські
-                        var aIndex = LANG_PRIORITY_ALWAYS_UKRAINIAN_FIRST.indexOf(a.lang);
-                        var bIndex = LANG_PRIORITY_ALWAYS_UKRAINIAN_FIRST.indexOf(b.lang);
+                        // Якщо обидва українські - за рейтингом
+                        if (a.isUkrainian && b.isUkrainian) {
+                            return b.rating - a.rating;
+                        }
                         
-                        // Якщо мова не в пріоритеті - ставимо в кінець
-                        if (aIndex === -1 && bIndex === -1) return b.rating - a.rating;
+                        // Якщо обидва не українські - за пріоритетом мови
+                        var aIndex = LANG_PRIORITY_AFTER_UKRAINIAN.indexOf(a.lang);
+                        var bIndex = LANG_PRIORITY_AFTER_UKRAINIAN.indexOf(b.lang);
+                        
+                        if (aIndex === -1 && bIndex === -1) return 0;
                         if (aIndex === -1) return 1;
                         if (bIndex === -1) return -1;
                         
                         return aIndex - bIndex;
                     });
 
-                    if (current.length === 0) {
+                    if (finalSubs.length === 0) {
                         log('Субтитри не знайдено');
                         return;
                     }
 
-                    log('Доступні субтитри (українські перші)', current.map(function(s) {
-                        return s.label + ' (' + s.lang + ')';
-                    }));
+                    // Перевіряємо позначку прапорця для всіх українських
+                    finalSubs.forEach(function(sub, index) {
+                        if (sub.isUkrainian && !sub.label.includes('🇺🇦')) {
+                            log('Додаю прапорець для українських субтитрів', { index: index, lang: sub.lang });
+                            sub.label = '🇺🇦 ' + sub.label.replace('🇺🇦 ', '');
+                        }
+                    });
+
+                    // Логуємо результат
+                    var ukrainianCount = finalSubs.filter(function(s) { return s.isUkrainian; }).length;
+                    log('Фінальний список субтитрів', { 
+                        всього: finalSubs.length,
+                        українських: ukrainianCount,
+                        список: finalSubs.map(function(s, i) {
+                            return i + '. ' + s.label + ' (' + s.lang + ')' + (s.isUkrainian ? ' 🇺🇦' : '');
+                        })
+                    });
 
                     // Визначення субтитрів за замовчуванням
-                    var defaultIndex = 0; // Завжди перший (український якщо є)
-                    
-                    // Якщо є українські субтитри, вибираємо перший український
-                    var ukrainianIndex = current.findIndex(function(s) {
-                        return s.isUkrainian;
-                    });
+                    var defaultIndex = 0;
+                    var ukrainianIndex = finalSubs.findIndex(function(s) { return s.isUkrainian; });
                     
                     if (ukrainianIndex !== -1) {
                         defaultIndex = ukrainianIndex;
-                        log('Вибрано українські субтитри за замовчуванням');
+                        log('Вибір українських субтитрів за замовчуванням', { 
+                            index: defaultIndex,
+                            label: finalSubs[defaultIndex].label 
+                        });
                     } else {
-                        log('Українські субтитри не знайдені, вибрано перші доступні');
+                        log('Українських субтитрів немає, вибір перших доступних', { 
+                            index: defaultIndex,
+                            label: finalSubs[defaultIndex].label 
+                        });
                     }
 
                     // Встановлення субтитрів
                     if (Lampa.Player && Lampa.Player.subtitles) {
-                        log('Встановлюю субтитри', { 
-                            count: current.length, 
-                            defaultIndex: defaultIndex,
-                            defaultLang: current[defaultIndex] ? current[defaultIndex].lang : 'none',
-                            hasUkrainian: ukrainianIndex !== -1
+                        log('Встановлення субтитрів в плеєр', { 
+                            count: finalSubs.length, 
+                            defaultIndex: defaultIndex
                         });
                         
                         // Невелика затримка для стабілізації плеєра
                         setTimeout(function() {
                             try {
-                                Lampa.Player.subtitles(current, defaultIndex);
+                                // Видаляємо тимчасові поля перед передачею в плеєр
+                                var cleanSubs = finalSubs.map(function(s) {
+                                    return {
+                                        lang: s.lang,
+                                        url: s.url,
+                                        label: s.label,
+                                        rating: s.rating
+                                    };
+                                });
+                                
+                                Lampa.Player.subtitles(cleanSubs, defaultIndex);
+                                log('Субтитри успішно встановлені');
                             } catch (e) {
                                 log('Помилка встановлення субтитрів', e);
                             }
@@ -330,7 +370,7 @@
 
     // Ініціалізація плагіна
     function initializePlugin() {
-        log('Ініціалізація плагіна OpenSubtitles для Tizen (Українські перші)');
+        log('Ініціалізація плагіна OpenSubtitles для Tizen (УСІ УКРАЇНСЬКІ НА ПОЧАТКУ)');
         
         // Перевірка наявності необхідних API
         if (typeof Lampa === 'undefined') {
@@ -364,7 +404,7 @@
                 setTimeout(setupSubs, 500);
             });
 
-            log('Плагін успішно ініціалізовано (Українські субтитри завжди перші)');
+            log('Плагін успішно ініціалізовано (Всі українські субтитри на початку)');
             return true;
             
         } catch (error) {
@@ -384,12 +424,13 @@
     // Експорт для відладки
     if (typeof window !== 'undefined') {
         window.OpenSubtitlesPlugin = {
-            version: '2.1.0',
-            description: 'Українські субтитри завжди перші',
+            version: '2.2.0',
+            description: 'УСІ УКРАЇНСЬКІ СУБТИТРИ НА ПОЧАТКУ СПИСКУ',
             setupSubs: setupSubs,
             fetchSubs: fetchSubs,
             getInterfaceLang: getInterfaceLang,
-            initializePlugin: initializePlugin
+            initializePlugin: initializePlugin,
+            groupAndSortSubtitles: groupAndSortSubtitles
         };
     }
 
