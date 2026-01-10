@@ -5,65 +5,61 @@
     const cache = {};
 
     function getInterfaceLang() {
-        // Для Samsung TV перевіряємо різні джерела мови
-        const lang = navigator.language || navigator.userLanguage || 'en';
-        const shortLang = lang.substring(0, 2).toLowerCase();
-        return ['uk', 'ru', 'en'].includes(shortLang) ? shortLang : 'en';
+        var lang = navigator.language || navigator.userLanguage || 'en';
+        var shortLang = lang.substring(0, 2).toLowerCase();
+        return ['uk', 'ru', 'en'].indexOf(shortLang) >= 0 ? shortLang : 'en';
     }
 
-    const LANG_LABELS = {
+    var LANG_LABELS = {
         eng: { uk: 'Англійські', ru: 'Английские', en: 'English' },
         ukr: { uk: 'Українські', ru: 'Украинские', en: 'Ukrainian' },
         rus: { uk: 'Російські', ru: 'Русские', en: 'Russian' }
     };
 
-    const LANG_PRIORITY = {
+    var LANG_PRIORITY = {
         uk: ['ukr', 'eng', 'rus'],
         ru: ['rus', 'eng', 'ukr'],
         en: ['eng', 'ukr', 'rus']
     };
 
     function getVideoInfo() {
-        // Спроба отримати інформацію про відео різними способами
         try {
-            // Спробуємо отримати з метаданих сторінки
-            const metaTags = document.getElementsByTagName('meta');
-            let imdbId = '';
-            let tmdbId = '';
-            let isSeries = false;
-            let season, episode;
+            var metaTags = document.getElementsByTagName('meta');
+            var imdbId = '';
+            var tmdbId = '';
+            var isSeries = false;
+            var season, episode;
             
-            for (let tag of metaTags) {
-                const name = tag.getAttribute('name') || tag.getAttribute('property') || '';
-                const content = tag.getAttribute('content') || '';
+            for (var i = 0; i < metaTags.length; i++) {
+                var tag = metaTags[i];
+                var name = tag.getAttribute('name') || tag.getAttribute('property') || '';
+                var content = tag.getAttribute('content') || '';
                 
-                if (name.includes('imdb') || name.includes('imdb')) {
+                if (name.indexOf('imdb') !== -1) {
                     imdbId = content.replace('tt', '');
                 }
-                if (name.includes('tmdb') || name.includes('themoviedb')) {
+                if (name.indexOf('tmdb') !== -1 || name.indexOf('themoviedb') !== -1) {
                     tmdbId = content;
                 }
-                if (name.includes('type') && content.includes('tv')) {
+                if (name.indexOf('type') !== -1 && content.indexOf('tv') !== -1) {
                     isSeries = true;
                 }
-                if (name.includes('season')) {
+                if (name.indexOf('season') !== -1) {
                     season = parseInt(content);
                 }
-                if (name.includes('episode')) {
+                if (name.indexOf('episode') !== -1) {
                     episode = parseInt(content);
                 }
             }
             
-            // Спробуємо отримати з URL
-            const url = window.location.href;
-            const urlParams = new URLSearchParams(window.location.search);
+            var urlParams = new URLSearchParams(window.location.search);
             
-            // Перевіряємо різні формати параметрів
             imdbId = imdbId || urlParams.get('imdb') || urlParams.get('imdbId') || '';
             tmdbId = tmdbId || urlParams.get('tmdb') || urlParams.get('tmdbId') || '';
             
-            // Чистимо ID
-            if (imdbId && imdbId.startsWith('tt')) imdbId = imdbId.substring(2);
+            if (imdbId && imdbId.indexOf('tt') === 0) {
+                imdbId = imdbId.substring(2);
+            }
             
             return {
                 imdb: imdbId,
@@ -81,29 +77,30 @@
     async function fetchSubs(id, isTmdb, season, episode) {
         if (!id) return [];
         
-        const key = `${isTmdb ? 'tmdb' : 'imdb'}_${id}_${season || 0}_${episode || 0}`;
+        var key = (isTmdb ? 'tmdb' : 'imdb') + '_' + id + '_' + (season || 0) + '_' + (episode || 0);
         if (cache[key]) return cache[key];
 
         try {
-            let pathId = isTmdb ? `tmdb:${id}` : id;
-            let url;
+            var pathId = isTmdb ? 'tmdb:' + id : id;
+            var url;
 
             if (season && episode) {
-                url = `${OSV3}subtitles/series/${pathId}:${season}:${episode}.json`;
+                url = OSV3 + 'subtitles/series/' + pathId + ':' + season + ':' + episode + '.json';
             } else {
-                url = `${OSV3}subtitles/movie/${pathId}.json`;
+                url = OSV3 + 'subtitles/movie/' + pathId + '.json';
             }
 
             console.log('[OS Subs] Fetching from:', url);
-            const response = await fetch(url);
+            var response = await fetch(url);
             
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
+                throw new Error('HTTP ' + response.status);
             }
             
-            const data = await response.json();
-            console.log('[OS Subs] Found subtitles:', data.subtitles?.length || 0);
-            return (cache[key] = data.subtitles || []);
+            var data = await response.json();
+            console.log('[OS Subs] Found subtitles:', data.subtitles ? data.subtitles.length : 0);
+            cache[key] = data.subtitles || [];
+            return cache[key];
         } catch (error) {
             console.warn('[OS Subs] Fetch error:', error);
             return [];
@@ -116,48 +113,51 @@
             return;
         }
         
-        console.log('[OS Subs] Adding subtitles:', subtitles);
+        console.log('[OS Subs] Adding subtitles:', subtitles.length);
         
-        // Пошук всіх відео елементів на сторінці
-        const videos = document.querySelectorAll('video');
+        var videos = document.querySelectorAll('video');
         
-        videos.forEach((video, index) => {
-            subtitles.forEach((subtitle, subIndex) => {
+        for (var v = 0; v < videos.length; v++) {
+            var video = videos[v];
+            
+            for (var s = 0; s < subtitles.length; s++) {
+                var subtitle = subtitles[s];
                 try {
-                    const track = document.createElement('track');
+                    var track = document.createElement('track');
                     track.kind = 'subtitles';
                     track.label = subtitle.label;
                     track.srclang = subtitle.lang;
                     track.src = subtitle.url;
-                    track.default = subIndex === 0; // Перші субтитри за замовчуванням
+                    track.default = s === 0;
                     
                     video.appendChild(track);
-                    console.log(`[OS Subs] Added subtitle track ${subIndex} to video ${index}:`, subtitle);
-                } catch (e) {
-                    console.error('[OS Subs] Error adding track:', e);
+                    console.log('[OS Subs] Added subtitle track:', subtitle.label);
+                } catch (err) {
+                    console.error('[OS Subs] Error adding track:', err);
                 }
-            });
+            }
             
-            // Активація субтитрів
-            setTimeout(() => {
-                try {
-                    if (video.textTracks && video.textTracks.length > 0) {
-                        for (let i = 0; i < video.textTracks.length; i++) {
-                            video.textTracks[i].mode = i === 0 ? 'showing' : 'hidden';
+            setTimeout(function(vid) {
+                return function() {
+                    try {
+                        if (vid.textTracks && vid.textTracks.length > 0) {
+                            for (var t = 0; t < vid.textTracks.length; t++) {
+                                vid.textTracks[t].mode = t === 0 ? 'showing' : 'hidden';
+                            }
+                            console.log('[OS Subs] Subtitles activated');
                         }
-                        console.log('[OS Subs] Subtitles activated for video', index);
+                    } catch (err) {
+                        console.error('[OS Subs] Error activating subtitles:', err);
                     }
-                } catch (e) {
-                    console.error('[OS Subs] Error activating subtitles:', e);
-                }
-            }, 1000);
-        });
+                };
+            }(video), 1000);
+        }
     }
 
     async function setupSubs() {
         console.log('[OS Subs] Setting up subtitles...');
         
-        const videoInfo = getVideoInfo();
+        var videoInfo = getVideoInfo();
         console.log('[OS Subs] Video info:', videoInfo);
         
         if (!videoInfo.imdb && !videoInfo.tmdb) {
@@ -165,20 +165,18 @@
             return;
         }
 
-        const interfaceLang = getInterfaceLang();
+        var interfaceLang = getInterfaceLang();
         console.log('[OS Subs] Interface language:', interfaceLang);
         
-        const priority = LANG_PRIORITY[interfaceLang] || LANG_PRIORITY.en;
+        var priority = LANG_PRIORITY[interfaceLang] || LANG_PRIORITY.en;
 
-        let subs = [];
+        var subs = [];
 
-        // 1️⃣ IMDB
         if (videoInfo.imdb) {
             console.log('[OS Subs] Fetching IMDB subtitles for:', videoInfo.imdb);
             subs = await fetchSubs(videoInfo.imdb, false, videoInfo.season, videoInfo.episode);
         }
 
-        // 2️⃣ TMDB fallback
         if (!subs.length && videoInfo.tmdb) {
             console.log('[OS Subs] Fetching TMDB subtitles for:', videoInfo.tmdb);
             subs = await fetchSubs(videoInfo.tmdb, true, videoInfo.season, videoInfo.episode);
@@ -189,35 +187,34 @@
             return;
         }
 
-        // Фільтруємо та обробляємо субтитри
-        let processed = subs
-            .filter(s => s.url && LANG_LABELS[s.lang])
-            .map(s => ({
-                lang: s.lang,
-                url: s.url,
-                label: LANG_LABELS[s.lang][interfaceLang] || LANG_LABELS[s.lang].en
-            }));
+        var processed = [];
+        for (var i = 0; i < subs.length; i++) {
+            var s = subs[i];
+            if (s.url && LANG_LABELS[s.lang]) {
+                processed.push({
+                    lang: s.lang,
+                    url: s.url,
+                    label: LANG_LABELS[s.lang][interfaceLang] || LANG_LABELS[s.lang].en
+                });
+            }
+        }
 
-        // Сортуємо за пріоритетом мови
-        processed.sort((a, b) =>
-            priority.indexOf(a.lang) - priority.indexOf(b.lang)
-        );
+        processed.sort(function(a, b) {
+            return priority.indexOf(a.lang) - priority.indexOf(b.lang);
+        });
 
-        console.log('[OS Subs] Processed subtitles:', processed);
+        console.log('[OS Subs] Processed subtitles:', processed.length);
         
-        // Додаємо субтитри до плеєра
         addSubtitlesToPlayer(processed);
     }
 
-    // Запускаємо коли сторінка завантажиться
     window.addEventListener('load', function() {
         console.log('[OS Subs] Page loaded, starting subtitle setup...');
         setTimeout(setupSubs, 2000);
     });
 
-    // Також запускаємо при зміні URL (для SPA)
-    let lastUrl = window.location.href;
-    setInterval(() => {
+    var lastUrl = window.location.href;
+    setInterval(function() {
         if (window.location.href !== lastUrl) {
             lastUrl = window.location.href;
             console.log('[OS Subs] URL changed, reloading subtitles...');
@@ -225,7 +222,6 @@
         }
     }, 1000);
 
-    // Мануальний запуск через кнопку (для тестування)
     window.enableSubtitles = function() {
         console.log('[OS Subs] Manual trigger');
         setupSubs();
