@@ -1,99 +1,74 @@
-//лагін субтитрів працює тільки якщо у фільма є imdb. Додана локалізація і завантаження українських. Спасибі @BDV_Burik
-(function () {
-    'use strict';
-
-    const OSV3 = 'https://opensubtitles-v3.strem.io/';
-    const cache = {};
-
-    function getInterfaceLang() {
-        return (Lampa.Storage.get('language') || 'en').toLowerCase();
-    }
-
-    const LANG_LABELS = {
-        eng: { uk: 'Англійські', ru: 'Английские', en: 'English' },
-        ukr: { uk: 'Українські', ru: 'Украинские', en: 'Ukrainian' },
-        rus: { uk: 'Російські', ru: 'Русские', en: 'Russian' }
-    };
-
-    const LANG_PRIORITY = {
-        uk: ['ukr', 'eng', 'rus'],
-        ru: ['rus', 'eng', 'ukr'],
-        en: ['eng', 'ukr', 'rus']
-    };
-
-    async function fetchSubs(imdb, season, episode) {
-        const key = `${imdb}_${season || 0}_${episode || 0}`;
-        if (cache[key]) return cache[key];
-
+// Мінімальний плагін субтитрів для Samsung TV
+(function() {
+    console.log('[Subs] Завантаження...');
+    
+    function addSubtitles() {
         try {
-            const url = season && episode
-                ? `${OSV3}subtitles/series/${imdb}:${season}:${episode}.json`
-                : `${OSV3}subtitles/movie/${imdb}.json`;
-
-            const r = await fetch(url);
-            const j = await r.json();
-
-            return (cache[key] = j.subtitles || []);
-        } catch (e) {
-            console.warn('[OS Subs]', e);
-            return [];
+            const activity = Lampa.Activity.active();
+            const playdata = Lampa.Player.playdata();
+            const movie = activity?.movie;
+            
+            if (!movie || !movie.imdb_id || !playdata) return;
+            
+            const imdb = movie.imdb_id;
+            const isSeries = !!movie.first_air_date;
+            
+            let url;
+            if (isSeries && playdata.season && playdata.episode) {
+                url = `https://opensubtitles-v3.strem.io/subtitles/series/${imdb}:${playdata.season}:${playdata.episode}.json`;
+            } else {
+                url = `https://opensubtitles-v3.strem.io/subtitles/movie/${imdb}.json`;
+            }
+            
+            fetch(url)
+                .then(r => r.json())
+                .then(data => {
+                    const subs = data.subtitles || [];
+                    if (subs.length === 0) return;
+                    
+                    const langMap = {
+                        'eng': 'Англійські',
+                        'ukr': 'Українські', 
+                        'rus': 'Російські'
+                    };
+                    
+                    const formatted = subs
+                        .filter(s => s.url && langMap[s.lang])
+                        .map(s => ({
+                            lang: s.lang,
+                            url: s.url,
+                            label: langMap[s.lang]
+                        }));
+                    
+                    if (formatted.length > 0) {
+                        // Додаємо тільки якщо їх ще немає
+                        const current = playdata.subtitles || [];
+                        formatted.forEach(newSub => {
+                            if (!current.find(c => c.url === newSub.url)) {
+                                current.push(newSub);
+                            }
+                        });
+                        
+                        Lampa.Player.subtitles(current, 0);
+                        console.log('[Subs] Додано:', formatted.length);
+                    }
+                });
+        } catch(e) {
+            console.warn('[Subs] Помилка:', e);
         }
     }
-
-    async function setupSubs() {
-        const activity = Lampa.Activity.active?.();
-        const playdata = Lampa.Player.playdata?.();
-        const movie = activity?.movie;
-
-        if (!activity || !playdata || !movie || !movie.imdb_id) return;
-
-        const imdb = movie.imdb_id;
-        const isSeries = !!movie.first_air_date;
-
-        const season = isSeries ? playdata.season : undefined;
-        const episode = isSeries ? playdata.episode : undefined;
-
-        const interfaceLang = getInterfaceLang();
-        const priority = LANG_PRIORITY[interfaceLang] || LANG_PRIORITY.en;
-
-        const osSubs = await fetchSubs(imdb, season, episode);
-
-        let subs = osSubs
-            .filter(s =>
-                s.url &&
-                LANG_LABELS[s.lang]
-            )
-            .map(s => ({
-                lang: s.lang,
-                url: s.url,
-                label: LANG_LABELS[s.lang][interfaceLang] || LANG_LABELS[s.lang].en
-            }));
-
-        const current = (playdata.subtitles || []).map(s => ({
-            lang: s.lang || '',
-            url: s.url,
-            label: s.label
-        }));
-
-        subs.forEach(s => {
-            if (!current.find(c => c.url === s.url)) {
-                current.push(s);
-            }
-        });
-
-        current.sort((a, b) => {
-            return priority.indexOf(a.lang) - priority.indexOf(b.lang);
-        });
-
-        if (!current.length) return;
-
-        const defaultIndex = current.findIndex(s => s.lang === priority[0]);
-
-        Lampa.Player.subtitles(current, defaultIndex >= 0 ? defaultIndex : 0);
+    
+    // Чекаємо Lampa
+    function init() {
+        if (window.Lampa && Lampa.Player) {
+            Lampa.Player.listener.follow('start', () => {
+                setTimeout(addSubtitles, 1500);
+            });
+            console.log('[Subs] Готово');
+        } else {
+            setTimeout(init, 300);
+        }
     }
-
-    Lampa.Player.listener.follow('start', function () {
-        setTimeout(setupSubs, 500);
-    });
-
+    
+    init();
 })();
