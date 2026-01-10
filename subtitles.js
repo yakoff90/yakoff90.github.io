@@ -6,7 +6,11 @@
     const cache = {};
 
     function getInterfaceLang() {
-        return (Lampa.Storage.get('language') || 'en').toLowerCase();
+        try {
+            return (Lampa.Storage.get('language') || 'en').toLowerCase();
+        } catch (e) {
+            return 'en';
+        }
     }
 
     const LANG_LABELS = {
@@ -30,100 +34,141 @@
                 ? `${OSV3}subtitles/series/${imdb}:${season}:${episode}.json`
                 : `${OSV3}subtitles/movie/${imdb}.json`;
 
-            // Використання Lampa.Request для сумісності з Tizen
-            const response = await Lampa.Request.json(url, {
+            // Оригінальний fetch, який працює на Tizen
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
+            
+            const response = await fetch(url, {
+                signal: controller.signal,
                 headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                timeout: 10000
+                    'Accept': 'application/json'
+                }
             });
-
-            return (cache[key] = response.subtitles || []);
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            const data = await response.json();
+            return (cache[key] = data.subtitles || []);
         } catch (e) {
-            console.warn('[OS Subs]', e);
+            console.warn('[OS Subs] Помилка завантаження:', e.message || e);
             return [];
         }
     }
 
-    async function setupSubs() {
-        const activity = Lampa.Activity.active?.();
-        const playdata = Lampa.Player.playdata?.();
-        const movie = activity?.movie;
+    function setupSubs() {
+        try {
+            const activity = Lampa.Activity.active();
+            if (!activity) return;
+            
+            const playdata = Lampa.Player.playdata();
+            if (!playdata) return;
+            
+            const movie = activity.movie;
+            if (!movie || !movie.imdb_id) return;
 
-        if (!activity || !playdata || !movie || !movie.imdb_id) {
-            console.log('[OS Subs] Немає даних для завантаження субтитрів');
-            return;
+            const imdb = movie.imdb_id;
+            const isSeries = !!movie.first_air_date;
+
+            const season = isSeries ? playdata.season : undefined;
+            const episode = isSeries ? playdata.episode : undefined;
+
+            const interfaceLang = getInterfaceLang();
+            const priority = LANG_PRIORITY[interfaceLang] || LANG_PRIORITY.en;
+
+            // Асинхронне завантаження субтитрів
+            fetchSubs(imdb, season, episode).then(osSubs => {
+                let subs = osSubs
+                    .filter(s => s.url && LANG_LABELS[s.lang])
+                    .map(s => ({
+                        lang: s.lang,
+                        url: s.url,
+                        label: LANG_LABELS[s.lang][interfaceLang] || LANG_LABELS[s.lang].en
+                    }));
+
+                // Отримуємо поточні субтитри
+                let current = [];
+                try {
+                    if (playdata.subtitles && Array.isArray(playdata.subtitles)) {
+                        current = playdata.subtitles.map(s => ({
+                            lang: s.lang || '',
+                            url: s.url,
+                            label: s.label || ''
+                        }));
+                    }
+                } catch (e) {
+                    console.warn('[OS Subs] Помилка читання поточних субтитрів:', e);
+                }
+
+                // Додаємо нові субтитри
+                subs.forEach(s => {
+                    if (!current.find(c => c.url === s.url)) {
+                        current.push(s);
+                    }
+                });
+
+                // Сортуємо за пріоритетом мов
+                if (current.length > 0) {
+                    current.sort((a, b) => {
+                        const aIndex = priority.indexOf(a.lang);
+                        const bIndex = priority.indexOf(b.lang);
+                        const aPos = aIndex === -1 ? 999 : aIndex;
+                        const bPos = bIndex === -1 ? 999 : bIndex;
+                        return aPos - bPos;
+                    });
+
+                    // Знаходимо індекс мови за замовчуванням
+                    let defaultIndex = 0;
+                    for (let i = 0; i < current.length; i++) {
+                        if (current[i].lang === priority[0]) {
+                            defaultIndex = i;
+                            break;
+                        }
+                    }
+
+                    // Додаємо субтитри до плеєра
+                    try {
+                        Lampa.Player.subtitles(current, defaultIndex);
+                        console.log('[OS Subs] Субтитри додано:', current.length, 'шт');
+                    } catch (e) {
+                        console.warn('[OS Subs] Помилка додавання субтитрів:', e);
+                    }
+                }
+            });
+        } catch (e) {
+            console.warn('[OS Subs] Помилка в setupSubs:', e);
         }
-
-        const imdb = movie.imdb_id;
-        const isSeries = !!movie.first_air_date;
-
-        const season = isSeries ? playdata.season : undefined;
-        const episode = isSeries ? playdata.episode : undefined;
-
-        const interfaceLang = getInterfaceLang();
-        const priority = LANG_PRIORITY[interfaceLang] || LANG_PRIORITY.en;
-
-        console.log('[OS Subs] Завантаження субтитрів для IMDB:', imdb, 'Серія:', season, 'Епізод:', episode);
-
-        const osSubs = await fetchSubs(imdb, season, episode);
-        console.log('[OS Subs] Знайдено субтитрів:', osSubs.length);
-
-        let subs = osSubs
-            .filter(s =>
-                s.url &&
-                LANG_LABELS[s.lang]
-            )
-            .map(s => ({
-                lang: s.lang,
-                url: s.url,
-                label: LANG_LABELS[s.lang][interfaceLang] || LANG_LABELS[s.lang].en
-            }));
-
-        const current = (playdata.subtitles || []).map(s => ({
-            lang: s.lang || '',
-            url: s.url,
-            label: s.label
-        }));
-
-        subs.forEach(s => {
-            if (!current.find(c => c.url === s.url)) {
-                current.push(s);
-            }
-        });
-
-        current.sort((a, b) => {
-            const aIndex = priority.indexOf(a.lang);
-            const bIndex = priority.indexOf(b.lang);
-            return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
-        });
-
-        if (!current.length) {
-            console.log('[OS Subs] Немає доступних субтитрів');
-            return;
-        }
-
-        const defaultIndex = current.findIndex(s => s.lang === priority[0]);
-        console.log('[OS Subs] Додано субтитрів:', current.length, 'Мова за замовчуванням:', priority[0]);
-
-        Lampa.Player.subtitles(current, defaultIndex >= 0 ? defaultIndex : 0);
     }
 
-    // Чекаємо поки Lampa повністю завантажиться
-    if (window.Lampa && Lampa.Player) {
+    // Ініціалізація при старті плеєра
+    function init() {
+        if (!window.Lampa || !Lampa.Player) {
+            setTimeout(init, 100);
+            return;
+        }
+        
+        // Слухаємо подію старту відтворення
         Lampa.Player.listener.follow('start', function () {
-            console.log('[OS Subs] Початок відтворення, завантаження субтитрів...');
-            setTimeout(setupSubs, 500);
+            // Невелика затримка для завантаження метаданих
+            setTimeout(setupSubs, 300);
         });
+        
+        // Також спробуємо при зміні субтитрів
+        Lampa.Player.listener.follow('subtitles', function () {
+            setTimeout(setupSubs, 100);
+        });
+        
+        console.log('[OS Subs] Плагін ініціалізовано');
+    }
+
+    // Запускаємо ініціалізацію
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
     } else {
-        // Якщо Lampa ще не завантажилась, чекаємо на подію завантаження
-        document.addEventListener('lampa-loaded', function () {
-            Lampa.Player.listener.follow('start', function () {
-                console.log('[OS Subs] Початок відтворення, завантаження субтитрів...');
-                setTimeout(setupSubs, 500);
-            });
-        });
+        init();
     }
 
 })();
