@@ -10,16 +10,30 @@
     }
 
     var LANG_LABELS = {
-        eng: { uk: 'Англійські', ru: 'Английские', en: 'English' },
-        ukr: { uk: 'Українські', ru: 'Украинские', en: 'Ukrainian' },
-        rus: { uk: 'Російські', ru: 'Русские', en: 'Russian' }
+        eng: { 
+            uk: '🇬🇧 Англійські', 
+            ru: '🇬🇧 Английские', 
+            en: '🇬🇧 English' 
+        },
+        ukr: { 
+            uk: '🇺🇦 Українські', 
+            ru: '🇺🇦 Украинские', 
+            en: '🇺🇦 Ukrainian' 
+        }
     };
 
     var LANG_PRIORITY = {
-        uk: ['ukr', 'eng', 'rus'],
-        ru: ['rus', 'eng', 'ukr'],
-        en: ['eng', 'ukr', 'rus']
+        uk: ['ukr', 'eng'],
+        ru: ['eng', 'ukr'],
+        en: ['eng', 'ukr']
     };
+
+    // Функція для фільтрації російських субтитрів
+    function filterRussianSubtitles(subtitles) {
+        return subtitles.filter(function(sub) {
+            return sub.lang !== 'rus';
+        });
+    }
 
     function fetchSubs(imdb, season, episode) {
         var key = imdb + '_' + (season || 0) + '_' + (episode || 0);
@@ -32,7 +46,8 @@
         return fetch(url)
             .then(function (r) { return r.json(); })
             .then(function (j) {
-                cache[key] = j.subtitles || [];
+                var filteredSubs = filterRussianSubtitles(j.subtitles || []);
+                cache[key] = filteredSubs;
                 return cache[key];
             })
             .catch(function (e) {
@@ -74,11 +89,23 @@
             if (playdata.subtitles) {
                 for (i = 0; i < playdata.subtitles.length; i++) {
                     s = playdata.subtitles[i];
-                    current.push({
-                        lang: s.lang || '',
-                        url: s.url,
-                        label: s.label
-                    });
+                    // Також фільтруємо російські субтитри з playdata
+                    if (s.lang !== 'rus') {
+                        // Додаємо прапор до вже наявних субтитрів
+                        var flag = s.lang === 'eng' ? '🇬🇧 ' : s.lang === 'ukr' ? '🇺🇦 ' : '';
+                        var label = s.label || '';
+                        
+                        // Якщо в label ще немає прапора, додаємо його
+                        if (!label.includes('🇬🇧') && !label.includes('🇺🇦')) {
+                            label = flag + label;
+                        }
+                        
+                        current.push({
+                            lang: s.lang || '',
+                            url: s.url,
+                            label: label
+                        });
+                    }
                 }
             }
 
