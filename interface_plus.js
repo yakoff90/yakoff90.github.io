@@ -668,6 +668,40 @@
         background: rgba(255, 255, 255, 0.1);
         border-radius: 0.3em;
       }
+      
+      /* Стилі для синьо-жовтої кнопки онлайн */
+      .full-start__button.view--online.selector.blue-yellow-button,
+      .full-start__button.view--online.selector.blue-yellow-button.focus,
+      .full-start__button.view--online.selector.blue-yellow-button.hover {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #fbbf24 100%) !important;
+        border: 2px solid #fbbf24 !important;
+        box-shadow: 0 0 15px rgba(59, 130, 246, 0.5), inset 0 0 10px rgba(251, 191, 36, 0.2) !important;
+        color: white !important;
+        font-weight: bold !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+        position: relative !important;
+        overflow: hidden !important;
+      }
+      
+      .full-start__button.view--online.selector.blue-yellow-button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        animation: shine 2s infinite;
+      }
+      
+      @keyframes shine {
+        0% { left: -100%; }
+        100% { left: 100%; }
+      }
+      
+      .full-start__button.view--online.selector.blue-yellow-button svg {
+        filter: drop-shadow(0 0 2px rgba(251, 191, 36, 0.7));
+      }
     `;
     var st = document.createElement('style');
     st.id = 'interface_mod_base';
@@ -3276,11 +3310,26 @@ border: 0.2em solid #f6a5b0;
   }
 
   /* ============================================================
-   * КОЛЬОРОВІ КНОПКИ
+   * КОЛЬОРОВІ КНОПКИ ТА СИНЬО-ЖОВТА КНОПКА ОНЛАЙН
    * ============================================================ */
   var TORRENT_SVG_SOURCE = "\n<svg xmlns=\"http://www.w3.org/2000/svg\" x=\"0\" y=\"0\" viewBox=\"0 0 48 48\">\n  <path fill=\"#4caf50\" fill-rule=\"evenodd\" d=\"M23.501,44.125c11.016,0,20-8.984,20-20 c0-11.015-8.984-20-20-20c-11.016,0-20,8.985-20,20C3.501,35.141,12.485,44.125,23.501,44.125z\" clip-rule=\"evenodd\"></path>\n  <path fill=\"#fff\" fill-rule=\"evenodd\" d=\"M43.252,27.114C39.718,25.992,38.055,19.625,34,11l-7,1.077 c1.615,4.905,8.781,16.872,0.728,18.853C20.825,32.722,17.573,20.519,15,14l-8,2l10.178,27.081c1.991,0.67,4.112,1.044,6.323,1.044 c0.982,0,1.941-0.094,2.885-0.232l-4.443-8.376c6.868,1.552,12.308-0.869,12.962-6.203c1.727,2.29,4.089,3.183,6.734,3.172 C42.419,30.807,42.965,29.006,43.252,27.114z\" clip-rule=\"evenodd\"></path>\n</svg>";
 
-  var ONLINE_SVG_SOURCE = null;
+  // НОВА СИНЬО-ЖОВТА КНОПКА ОНЛАЙН (адаптовано з tricks.js)
+  var ONLINE_BLUE_YELLOW_SVG_SOURCE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <defs>
+      <linearGradient id="blueYellowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#1e40af;stop-opacity:1" />
+        <stop offset="50%" style="stop-color:#3b82f6;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#fbbf24;stop-opacity:1" />
+      </linearGradient>
+      <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="0" stdDeviation="2" flood-color="#fbbf24" flood-opacity="0.5"/>
+      </filter>
+    </defs>
+    <path fill="url(#blueYellowGradient)" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
+    <path fill="white" d="M10 16.5v-9l6 4.5-6 4.5z" filter="url(#shadow)"/>
+  </svg>`;
+
   var REYOHOHO_SVG_SOURCE = null;
   var lastActiveButton = null;
   var isColoredButtonsInitialized = false;
@@ -3317,8 +3366,7 @@ border: 0.2em solid #f6a5b0;
     // Додаємо кастомні стилі
     addCustomStyles();
 
-    // Завантажуємо SVG
-    loadOnlineSVG();
+    // Завантажуємо SVG для reyohoho
     loadReyohohoSVG();
     
     // Запускаємо спостереження
@@ -3334,20 +3382,6 @@ border: 0.2em solid #f6a5b0;
     
     // Застосовуємо поточний розмір іконок
     updateColoredButtonsIconSizes();
-  }
-
-  function loadOnlineSVG() {
-    if (ONLINE_SVG_SOURCE) return;
-    
-    fetch('https://raw.githubusercontent.com/ARST113/Buttons-/refs/heads/main/play-video-svgrepo-com.svg').then(function (response) {
-      return response.text();
-    }).then(function (svg) {
-      ONLINE_SVG_SOURCE = svg;
-      console.log('✅ SVG для онлайн завантажено');
-      if (settings.colored_buttons) processButtons();
-    })["catch"](function (error) {
-      console.error('❌ Помилка завантаження SVG:', error);
-    });
   }
 
   function loadReyohohoSVG() {
@@ -3527,6 +3561,33 @@ border: 0.2em solid #f6a5b0;
         min-width: ${iconSize.width}px !important;
         min-height: ${iconSize.height}px !important;
       }
+      
+      /* Стилі для синьо-жовтої кнопки онлайн */
+      .full-start__button.view--online.selector.blue-yellow-button {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #fbbf24 100%) !important;
+        border: 2px solid #fbbf24 !important;
+        box-shadow: 0 0 15px rgba(59, 130, 246, 0.5), inset 0 0 10px rgba(251, 191, 36, 0.2) !important;
+        color: white !important;
+        font-weight: bold !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+        position: relative !important;
+        overflow: hidden !important;
+      }
+      
+      .full-start__button.view--online.selector.blue-yellow-button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        animation: shine 2s infinite;
+      }
+      
+      .full-start__button.view--online.selector.blue-yellow-button svg {
+        filter: drop-shadow(0 0 2px rgba(251, 191, 36, 0.7));
+      }
     `;
     document.head.appendChild(style);
   }
@@ -3553,68 +3614,55 @@ border: 0.2em solid #f6a5b0;
       }
     });
 
-    // Онлайн-кнопки - обробляємо тільки BwaRC і Cinema
-    if (ONLINE_SVG_SOURCE) {
-      var onlineButtons = document.querySelectorAll('.full-start__button.view--online.selector');
-      onlineButtons.forEach(function (btn) {
-        // Завжди додаємо обробники hover
-        attachHoverEnter(btn);
+    // Онлайн-кнопки - застосовуємо синьо-жовтий стиль для всіх
+    var onlineButtons = document.querySelectorAll('.full-start__button.view--online.selector');
+    onlineButtons.forEach(function (btn) {
+      // Завжди додаємо обробники hover
+      attachHoverEnter(btn);
 
-        // Пропускаємо якщо вже оброблена
-        if (btn.classList.contains('online-svg-applied')) return;
+      // Пропускаємо якщо вже оброблена
+      if (btn.classList.contains('online-blue-yellow-applied')) return;
 
-        var pluginName = getPluginName(btn);
-        console.log('Перевіряємо плагін:', pluginName, btn);
+      var pluginName = getPluginName(btn);
+      console.log('Обробляємо онлайн кнопку плагіна:', pluginName, btn);
 
-        // Міняємо іконку та текст для BwaRC
-        if (pluginName.toLowerCase().includes('bwa')) {
-          setTimeout(function() {
-            if (!btn.parentNode) {
-              console.log('❌ Кнопка BwaRC більше не існує, пропускаємо');
-              return;
-            }
-
-            var svg = btn.querySelector('svg');
-            var span = btn.querySelector('span');
-
-            if (svg && !svg.classList.contains('custom-svg-replaced')) {
-              if (replaceIconPreservingAttrs(svg, ONLINE_SVG_SOURCE, {
-                width: iconSize.width,
-                height: iconSize.height
-              })) {
-                svg.classList.add('custom-svg-replaced');
-                count++;
-              }
-            }
-
-            if (span && span.textContent !== 'BWA') {
-              span.textContent = 'BWA';
-            }
-
-            btn.classList.add('online-svg-applied');
-            console.log('✅ Застосовано зміни для плагіна BwaRC');
-          }, 50);
-        } 
-        // Міняємо тільки текст для Cinema
-        else if (pluginName.toLowerCase().includes('cinema')) {
-          setTimeout(function() {
-            if (!btn.parentNode) return;
-
-            var span = btn.querySelector('span');
-            if (span && span.textContent !== 'Cinema') {
-              span.textContent = 'Cinema';
-            }
-            btn.classList.add('online-svg-applied');
-            console.log('✅ Текст змінено на Cinema для плагіна cinema');
-          }, 50);
-        } 
-        // Для інших плагінів просто позначаємо як оброблені, щоб не чіпати в майбутньому
-        else {
-          btn.classList.add('online-svg-applied');
-          console.log('⚠️ Плагін ' + pluginName + ' позначено як оброблений (без змін)');
+      setTimeout(function() {
+        if (!btn.parentNode) {
+          console.log('❌ Кнопка більше не існує, пропускаємо');
+          return;
         }
-      });
-    }
+
+        var svg = btn.querySelector('svg');
+        var span = btn.querySelector('span');
+
+        // Додаємо клас для синьо-жовтої кнопки
+        btn.classList.add('blue-yellow-button');
+        
+        // Замінюємо іконку на синьо-жовту
+        if (svg && !svg.classList.contains('blue-yellow-svg-replaced')) {
+          if (replaceIconPreservingAttrs(svg, ONLINE_BLUE_YELLOW_SVG_SOURCE, {
+            width: iconSize.width,
+            height: iconSize.height,
+            className: 'blue-yellow-svg'
+          })) {
+            svg.classList.add('blue-yellow-svg-replaced');
+            count++;
+          }
+        }
+
+        // Оновлюємо текст для BwaRC і Cinema
+        if (span) {
+          if (pluginName.toLowerCase().includes('bwa')) {
+            span.textContent = 'BWA';
+          } else if (pluginName.toLowerCase().includes('cinema')) {
+            span.textContent = 'Cinema';
+          }
+        }
+
+        btn.classList.add('online-blue-yellow-applied');
+        console.log('✅ Застосовано синьо-жовтий стиль для плагіна:', pluginName);
+      }, 50);
+    });
 
     // Обробляємо кнопки reyohoho_mod
     if (REYOHOHO_SVG_SOURCE) {
@@ -3716,6 +3764,13 @@ border: 0.2em solid #f6a5b0;
     // Видаляємо кастомні стилі
     var style = document.getElementById('custom-button-styles');
     if (style) style.remove();
+    
+    // Видаляємо класи з кнопок
+    var onlineButtons = document.querySelectorAll('.full-start__button.view--online.selector');
+    onlineButtons.forEach(function(btn) {
+      btn.classList.remove('blue-yellow-button', 'online-blue-yellow-applied');
+    });
+    
     console.log('❌ Кольорові кнопки вимкнено');
   }
 
