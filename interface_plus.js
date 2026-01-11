@@ -280,7 +280,41 @@
       uk: 'Оновлює іконки та кольори кнопок онлайн, торенти, трейлери'
     },
 
-    // НОВЕ: Розмір кнопок
+    // НОВЕ: Керування іконками для кольорових кнопок
+    interface_mod_new_colored_buttons_torrent: {
+      en: 'Torrent buttons',
+      uk: 'Торент кнопки'
+    },
+    interface_mod_new_colored_buttons_torrent_desc: {
+      en: 'Show icons for torrent buttons',
+      uk: 'Показувати іконки для торент кнопок'
+    },
+    interface_mod_new_colored_buttons_online: {
+      en: 'Online buttons',
+      uk: 'Онлайн кнопки'
+    },
+    interface_mod_new_colored_buttons_online_desc: {
+      en: 'Show icons for online buttons',
+      uk: 'Показувати іконки для онлайн кнопок'
+    },
+    interface_mod_new_colored_buttons_reyohoho: {
+      en: 'Reyohoho buttons',
+      uk: 'Reyohoho кнопки'
+    },
+    interface_mod_new_colored_buttons_reyohoho_desc: {
+      en: 'Show icons for reyohoho buttons',
+      uk: 'Показувати іконки для reyohoho кнопок'
+    },
+    interface_mod_new_colored_buttons_onlinemod: {
+      en: 'Online mod buttons',
+      uk: 'Online mod кнопки'
+    },
+    interface_mod_new_colored_buttons_onlinemod_desc: {
+      en: 'Show icons for online mod buttons',
+      uk: 'Показувати іконки для online mod кнопок'
+    },
+
+    // Розмір кнопок
     interface_mod_new_button_size: {
       en: 'Button size',
       uk: 'Розмір кнопок'
@@ -498,7 +532,7 @@
    * Об'єкт з поточними налаштуваннями плагіну
    */
   var settings = {
-    reload_button: getBool('interface_mod_new_reload_button', true), // Новий параметр для кнопки перезавантаження
+    reload_button: getBool('interface_mod_new_reload_button', true),
     info_panel: getBool('interface_mod_new_info_panel', true),
     colored_ratings: getBool('interface_mod_new_colored_ratings', false),
     colored_status: getBool('interface_mod_new_colored_status', false),
@@ -508,6 +542,12 @@
     all_buttons: getBool('interface_mod_new_all_buttons', false),
     icon_only: getBool('interface_mod_new_icon_only', false),
     colored_buttons: getBool('interface_mod_new_colored_buttons', false),
+    // НОВІ НАЛАШТУВАННЯ ДЛЯ КЕРУВАННЯ ІКОНКАМИ
+    colored_buttons_torrent: getBool('interface_mod_new_colored_buttons_torrent', true),
+    colored_buttons_online: getBool('interface_mod_new_colored_buttons_online', true),
+    colored_buttons_reyohoho: getBool('interface_mod_new_colored_buttons_reyohoho', true),
+    colored_buttons_onlinemod: getBool('interface_mod_new_colored_buttons_onlinemod', true),
+    
     button_size: (Lampa.Storage.get('interface_mod_new_button_size', 'normal') || 'normal'),
 
     // Налаштування для логотипів
@@ -1808,6 +1848,79 @@ border: 0.2em solid #f6a5b0;
       }
     });
 
+    // НОВІ НАЛАШТУВАННЯ: Керування іконками для кольорових кнопок
+    // Торент кнопки
+    add({
+      component: 'interface_mod_new',
+      param: {
+        name: 'interface_mod_new_colored_buttons_torrent',
+        type: 'trigger',
+        values: true,
+        default: true
+      },
+      field: {
+        name: Lampa.Lang.translate('interface_mod_new_colored_buttons_torrent'),
+        description: Lampa.Lang.translate('interface_mod_new_colored_buttons_torrent_desc'),
+        show: function() {
+          return getBool('interface_mod_new_colored_buttons', false);
+        }
+      }
+    });
+
+    // Онлайн кнопки
+    add({
+      component: 'interface_mod_new',
+      param: {
+        name: 'interface_mod_new_colored_buttons_online',
+        type: 'trigger',
+        values: true,
+        default: true
+      },
+      field: {
+        name: Lampa.Lang.translate('interface_mod_new_colored_buttons_online'),
+        description: Lampa.Lang.translate('interface_mod_new_colored_buttons_online_desc'),
+        show: function() {
+          return getBool('interface_mod_new_colored_buttons', false);
+        }
+      }
+    });
+
+    // Reyohoho кнопки
+    add({
+      component: 'interface_mod_new',
+      param: {
+        name: 'interface_mod_new_colored_buttons_reyohoho',
+        type: 'trigger',
+        values: true,
+        default: true
+      },
+      field: {
+        name: Lampa.Lang.translate('interface_mod_new_colored_buttons_reyohoho'),
+        description: Lampa.Lang.translate('interface_mod_new_colored_buttons_reyohoho_desc'),
+        show: function() {
+          return getBool('interface_mod_new_colored_buttons', false);
+        }
+      }
+    });
+
+    // Online mod кнопки
+    add({
+      component: 'interface_mod_new',
+      param: {
+        name: 'interface_mod_new_colored_buttons_onlinemod',
+        type: 'trigger',
+        values: true,
+        default: true
+      },
+      field: {
+        name: Lampa.Lang.translate('interface_mod_new_colored_buttons_onlinemod'),
+        description: Lampa.Lang.translate('interface_mod_new_colored_buttons_onlinemod_desc'),
+        show: function() {
+          return getBool('interface_mod_new_colored_buttons', false);
+        }
+      }
+    });
+
     // Розмір кнопок (збільшені значення)
     add({
       component: 'interface_mod_new',
@@ -2129,6 +2242,35 @@ border: 0.2em solid #f6a5b0;
                 initializeColoredButtons();
               } else {
                 disableColoredButtons();
+              }
+              break;
+              
+            // НОВІ НАЛАШТУВАННЯ ДЛЯ КЕРУВАННЯ ІКОНКАМИ
+            case 'interface_mod_new_colored_buttons_torrent':
+              settings.colored_buttons_torrent = getBool(key, true);
+              if (settings.colored_buttons) {
+                processButtons();
+              }
+              break;
+              
+            case 'interface_mod_new_colored_buttons_online':
+              settings.colored_buttons_online = getBool(key, true);
+              if (settings.colored_buttons) {
+                processButtons();
+              }
+              break;
+              
+            case 'interface_mod_new_colored_buttons_reyohoho':
+              settings.colored_buttons_reyohoho = getBool(key, true);
+              if (settings.colored_buttons) {
+                processButtons();
+              }
+              break;
+              
+            case 'interface_mod_new_colored_buttons_onlinemod':
+              settings.colored_buttons_onlinemod = getBool(key, true);
+              if (settings.colored_buttons) {
+                processButtons();
               }
               break;
               
@@ -3446,8 +3588,8 @@ border: 0.2em solid #f6a5b0;
           if (currentText === 'Онлайн' && lastActiveButton) {
             var pluginName = getPluginName(lastActiveButton);
             requestAnimationFrame(function () {
-              titleElement.textContent = pluginName + " - Online";
-              console.log("✅ Заголовок змінено на: " + pluginName + " - Online");
+              titleElement.textContent = pluginName + " - Онлайн";
+              console.log("✅ Заголовок змінено на: " + pluginName + " - Онлайн");
             });
           }
         }
@@ -3537,24 +3679,26 @@ border: 0.2em solid #f6a5b0;
     var count = 0;
     var iconSize = getIconSizeForButtonSize();
 
-    // Торрент-кнопки - обробляємо всі
-    var torrentButtons = document.querySelectorAll('.full-start__button.view--torrent.selector');
-    torrentButtons.forEach(function (btn) {
-      if (btn.classList.contains('utorrent-svg-applied')) return;
-      var svg = btn.querySelector('svg');
-      if (svg) {
-        if (replaceIconPreservingAttrs(svg, TORRENT_SVG_SOURCE, {
-          width: iconSize.width,
-          height: iconSize.height
-        })) {
-          btn.classList.add('utorrent-svg-applied');
-          count++;
+    // Торрент-кнопки - обробляємо тільки якщо дозволено в налаштуваннях
+    if (settings.colored_buttons_torrent) {
+      var torrentButtons = document.querySelectorAll('.full-start__button.view--torrent.selector');
+      torrentButtons.forEach(function (btn) {
+        if (btn.classList.contains('utorrent-svg-applied')) return;
+        var svg = btn.querySelector('svg');
+        if (svg) {
+          if (replaceIconPreservingAttrs(svg, TORRENT_SVG_SOURCE, {
+            width: iconSize.width,
+            height: iconSize.height
+          })) {
+            btn.classList.add('utorrent-svg-applied');
+            count++;
+          }
         }
-      }
-    });
+      });
+    }
 
-    // Онлайн-кнопки - обробляємо тільки BwaRC і Cinema
-    if (ONLINE_SVG_SOURCE) {
+    // Онлайн-кнопки - обробляємо тільки якщо дозволено в налаштуваннях
+    if (settings.colored_buttons_online && ONLINE_SVG_SOURCE) {
       var onlineButtons = document.querySelectorAll('.full-start__button.view--online.selector');
       onlineButtons.forEach(function (btn) {
         // Завжди додаємо обробники hover
@@ -3616,8 +3760,8 @@ border: 0.2em solid #f6a5b0;
       });
     }
 
-    // Обробляємо кнопки reyohoho_mod
-    if (REYOHOHO_SVG_SOURCE) {
+    // Обробляємо кнопки reyohoho_mod тільки якщо дозволено в налаштуваннях
+    if (settings.colored_buttons_reyohoho && REYOHOHO_SVG_SOURCE) {
       var reyohohoButtons = document.querySelectorAll('.full-start__button.view--reyohoho_mod.selector');
       reyohohoButtons.forEach(function (btn) {
         // Завжди додаємо обробники hover
@@ -3645,8 +3789,8 @@ border: 0.2em solid #f6a5b0;
       });
     }
 
-    // Обробляємо кнопки online_mod - використовуємо ту ж іконку що і для reyohoho
-    if (REYOHOHO_SVG_SOURCE) {
+    // Обробляємо кнопки online_mod тільки якщо дозволено в налаштуваннях
+    if (settings.colored_buttons_onlinemod && REYOHOHO_SVG_SOURCE) {
       var onlineModButtons = document.querySelectorAll('.full-start__button.view--online_mod.selector');
       onlineModButtons.forEach(function (btn) {
         // Завжди додаємо обробники hover
