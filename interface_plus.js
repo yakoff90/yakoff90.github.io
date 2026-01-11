@@ -115,6 +115,16 @@
       uk: 'Інтерфейс +'
     },
 
+    // Кнопка перезавантаження
+    interface_mod_new_reload_button: {
+      en: 'Reload button',
+      uk: 'Кнопка перезавантаження'
+    },
+    interface_mod_new_reload_button_desc: {
+      en: 'Show reload button in the header',
+      uk: 'Показати кнопку перезавантаження в заголовку'
+    },
+
     interface_mod_new_info_panel: {
       en: 'New info panel',
       uk: 'Нова інфо-панель'
@@ -488,6 +498,7 @@
    * Об'єкт з поточними налаштуваннями плагіну
    */
   var settings = {
+    reload_button: getBool('interface_mod_new_reload_button', true), // Новий параметр для кнопки перезавантаження
     info_panel: getBool('interface_mod_new_info_panel', true),
     colored_ratings: getBool('interface_mod_new_colored_ratings', false),
     colored_status: getBool('interface_mod_new_colored_status', false),
@@ -636,6 +647,26 @@
         max-height: 2.8em;
         display: block;
         margin-bottom: 0.2em;
+      }
+      
+      /* Стилі для кнопки перезавантаження */
+      #RELOAD {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.5em;
+        height: 2.5em;
+        margin-left: 0.5em;
+      }
+      #RELOAD svg {
+        width: 1.5em;
+        height: 1.5em;
+        color: #fff;
+      }
+      #RELOAD.focus,
+      #RELOAD.hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 0.3em;
       }
     `;
     var st = document.createElement('style');
@@ -797,6 +828,54 @@
     st.textContent = css;
     document.head.appendChild(st);
   })();
+
+  /* ============================================================
+   * ФУНКЦІОНАЛ КНОПКИ ПЕРЕЗАВАНТАЖЕННЯ
+   * ============================================================ */
+  
+  var icon_server_reload = '<svg fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="0.4800000000000001"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M4,12a1,1,0,0,1-2,0A9.983,9.983,0,0,1,18.242,4.206V2.758a1,1,0,1,1,2,0v4a1,1,0,0,1-1,1h-4a1,1,0,0,1,0-2h1.743A7.986,7.986,0,0,0,4,12Zm17-1a1,1,0,0,0-1,1A7.986,7.986,0,0,1,7.015,18.242H8.757a1,1,0,1,0,0-2h-4a1,1,0,0,0-1,1v4a1,1,0,0,0,2,0V19.794A9.984,9.984,0,0,0,22,12,1,1,0,0,0,21,11Z" fill="currentColor"></path></g></svg></div>';
+  
+  /**
+   * Додає кнопку перезавантаження в заголовок
+   */
+  function addReloadButton() {
+    // Перевіряємо, чи вже існує кнопка
+    if ($('#RELOAD').length) return;
+    
+    // Перевіряємо, чи увімкнено кнопку перезавантаження
+    if (!getBool('interface_mod_new_reload_button', true)) return;
+    
+    var reloadBUTT = '<div id="RELOAD" class="head__action selector redirect-screen">' + icon_server_reload + '</div>';
+    
+    // Додаємо кнопку в заголовок
+    $('#app > div.head > div > div.head__actions').append(reloadBUTT);
+    
+    // Додаємо обробник подій
+    $('#RELOAD').on('hover:enter hover:click hover:touch', function() {
+      location.reload();
+    });
+    
+    console.log('✅ Кнопка перезавантаження додана');
+  }
+  
+  /**
+   * Видаляє кнопку перезавантаження
+   */
+  function removeReloadButton() {
+    $('#RELOAD').remove();
+    console.log('❌ Кнопка перезавантаження видалена');
+  }
+  
+  /**
+   * Оновлює стан кнопки перезавантаження
+   */
+  function updateReloadButton() {
+    if (getBool('interface_mod_new_reload_button', true)) {
+      addReloadButton();
+    } else {
+      removeReloadButton();
+    }
+  }
 
   /* ============================================================
    * ФУНКЦІОНАЛ ЛОГОТИПІВ ЗАМІСТЬ НАЗВ
@@ -1518,6 +1597,21 @@ border: 0.2em solid #f6a5b0;
 
     var add = Lampa.SettingsApi.addParam;
 
+    // Кнопка перезавантаження - додаємо першою
+    add({
+      component: 'interface_mod_new',
+      param: {
+        name: 'interface_mod_new_reload_button',
+        type: 'trigger',
+        values: true,
+        default: true
+      },
+      field: {
+        name: Lampa.Lang.translate('interface_mod_new_reload_button'),
+        description: Lampa.Lang.translate('interface_mod_new_reload_button_desc')
+      }
+    });
+
     // Інфо-панель
     add({
       component: 'interface_mod_new',
@@ -1973,6 +2067,11 @@ border: 0.2em solid #f6a5b0;
         if (typeof key === 'string' && key.indexOf('interface_mod_new_') === 0) {
           
           switch (key) {
+            case 'interface_mod_new_reload_button':
+              settings.reload_button = getBool(key, true);
+              updateReloadButton();
+              break;
+              
             case 'interface_mod_new_info_panel':
               settings.info_panel = getBool(key, true);
               rebuildInfoPanelActive();
@@ -5751,6 +5850,9 @@ border: 0.2em solid #f6a5b0;
     if (settings.colored_age) enableAgeColoring();
     else disableAgeColoring(true);
 
+    // Ініціалізуємо функціонал кнопки перезавантаження
+    updateReloadButton();
+    
     // Ініціалізуємо функціонал логотипів
     initLogosInsteadOfTitles();
 
