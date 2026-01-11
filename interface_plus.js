@@ -127,7 +127,7 @@
 
     interface_mod_new_info_panel: {
       en: 'New info panel',
-      uk: 'Нова інфо-панель'
+      uk: 'Нова інфо1панель'
     },
     interface_mod_new_info_panel_desc: {
       en: 'Colored and rephrased info line',
@@ -2533,7 +2533,7 @@ border: 0.2em solid #f6a5b0;
   }
 
   /**
-   * Перебудовує інфо-панель на відкритій картці (або повертає оригінальну)
+   * Перебудовує інфо+панель на відкритій картці (або повертає оригінальну)
    */
   function rebuildInfoPanelActive() {
     var enabled = getBool('interface_mod_new_info_panel', true);
@@ -3282,6 +3282,10 @@ border: 0.2em solid #f6a5b0;
 
   var ONLINE_SVG_SOURCE = null;
   var REYOHOHO_SVG_SOURCE = null;
+  
+  // ДОДАНО: SVG для Online HD Rezka (беремо з tricks.js)
+  var ONLINE_HD_REZKA_SVG_SOURCE = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>';
+  
   var lastActiveButton = null;
   var isColoredButtonsInitialized = false;
 
@@ -3682,6 +3686,51 @@ border: 0.2em solid #f6a5b0;
 
           btn.classList.add('online-mod-svg-applied');
           console.log('✅ Застосовано зміни для плагіна online_mod');
+        }, 50);
+      });
+    }
+
+    // ДОДАНО: Обробляємо кнопки Online HD Rezka
+    if (ONLINE_HD_REZKA_SVG_SOURCE) {
+      var hdRezkaButtons = document.querySelectorAll('.full-start__button.view--online_hd_rezka.selector, .full-start__button.view--online_hdrezka.selector');
+      hdRezkaButtons.forEach(function (btn) {
+        // Завжди додаємо обробники hover
+        attachHoverEnter(btn);
+
+        // Пропускаємо якщо вже оброблена
+        if (btn.classList.contains('hdrezka-svg-applied')) return;
+
+        console.log('🔧 Обробляємо Online HD Rezka кнопку:', btn);
+
+        setTimeout(function() {
+          if (!btn.parentNode) {
+            console.log('❌ Кнопка Online HD Rezka більше не існує, пропускаємо');
+            return;
+          }
+
+          var svg = btn.querySelector('svg');
+          var span = btn.querySelector('span');
+
+          // Замінюємо іконку на спеціальну для HD Rezka
+          if (svg && !svg.classList.contains('hdrezka-svg-replaced')) {
+            if (replaceIconPreservingAttrs(svg, ONLINE_HD_REZKA_SVG_SOURCE, {
+              width: iconSize.width,
+              height: iconSize.height,
+              className: 'hdrezka-custom-icon'
+            })) {
+              svg.classList.add('hdrezka-svg-replaced');
+              count++;
+              console.log('✅ Іконка замінена для Online HD Rezka');
+            }
+          }
+
+          // Оновлюємо текст кнопки
+          if (span && span.textContent !== 'HD Rezka') {
+            span.textContent = 'HD Rezka';
+          }
+
+          btn.classList.add('hdrezka-svg-applied');
+          console.log('✅ Застосовано зміни для плагіна Online HD Rezka');
         }, 50);
       });
     }
