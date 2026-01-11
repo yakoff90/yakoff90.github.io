@@ -2319,7 +2319,7 @@ border: 0.2em solid #f6a5b0;
     });
     
     // Оновлюємо розміри для всіх кастомних SVG
-    var customSvgs = document.querySelectorAll('.custom-svg-replaced, .reyohoho-custom-icon, .online-mod-custom-icon');
+    var customSvgs = document.querySelectorAll('.custom-svg-replaced, .reyohoho-custom-icon, .online-mod-custom-icon, .lampaua-custom-icon');
     customSvgs.forEach(function(svg) {
       svg.setAttribute('width', iconSize.width);
       svg.setAttribute('height', iconSize.height);
@@ -2337,7 +2337,7 @@ border: 0.2em solid #f6a5b0;
     var iconSize = getIconSizeForButtonSize();
     
     // Оновлюємо розміри для всіх кастомних SVG
-    var customSvgs = document.querySelectorAll('.custom-svg-replaced, .reyohoho-custom-icon, .online-mod-custom-icon');
+    var customSvgs = document.querySelectorAll('.custom-svg-replaced, .reyohoho-custom-icon, .online-mod-custom-icon, .lampaua-custom-icon');
     customSvgs.forEach(function(svg) {
       svg.setAttribute('width', iconSize.width);
       svg.setAttribute('height', iconSize.height);
@@ -3282,6 +3282,7 @@ border: 0.2em solid #f6a5b0;
 
   var ONLINE_SVG_SOURCE = null;
   var REYOHOHO_SVG_SOURCE = null;
+  var LAMPAUA_SVG_SOURCE = null; // Нова змінна для SVG lampaua
   var lastActiveButton = null;
   var isColoredButtonsInitialized = false;
 
@@ -3320,6 +3321,7 @@ border: 0.2em solid #f6a5b0;
     // Завантажуємо SVG
     loadOnlineSVG();
     loadReyohohoSVG();
+    loadLampauaSVG(); // Завантажуємо SVG для lampaua
     
     // Запускаємо спостереження
     observeButtons();
@@ -3362,6 +3364,22 @@ border: 0.2em solid #f6a5b0;
     })["catch"](function (error) {
       console.error('❌ Помилка завантаження SVG reyohoho:', error);
     });
+  }
+
+  function loadLampauaSVG() {
+    if (LAMPAUA_SVG_SOURCE) return;
+    
+    // Жовто-синя іконка у стилі України (взята з tricks.js та змінена)
+    var lampauaSVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">' +
+      '<rect width="24" height="24" rx="4" fill="#FFD700"/>' +
+      '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="#0057B7"/>' +
+      '<path d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" fill="#FFD700"/>' +
+      '<circle cx="12" cy="12" r="2" fill="#0057B7"/>' +
+      '</svg>';
+    
+    LAMPAUA_SVG_SOURCE = lampauaSVG;
+    console.log('✅ SVG для lampaua завантажено');
+    if (settings.colored_buttons) processButtons();
   }
 
   function buildSVG(svgSource) {
@@ -3521,6 +3539,7 @@ border: 0.2em solid #f6a5b0;
       /* Специфічні стилі для кастомних іконок */
       .reyohoho-custom-icon,
       .online-mod-custom-icon,
+      .lampaua-custom-icon,
       .custom-svg-replaced {
         width: ${iconSize.width}px !important;
         height: ${iconSize.height}px !important;
@@ -3682,6 +3701,51 @@ border: 0.2em solid #f6a5b0;
 
           btn.classList.add('online-mod-svg-applied');
           console.log('✅ Застосовано зміни для плагіна online_mod');
+        }, 50);
+      });
+    }
+
+    // Обробляємо кнопки lampaua (https://lampaua.mooo.com/online.js)
+    if (LAMPAUA_SVG_SOURCE) {
+      var lampauaButtons = document.querySelectorAll('.full-start__button.view--lampaua.selector, .full-start__button[data-subtitle*="lampaua"], .full-start__button[data-subtitle*="LAMPAUA"]');
+      lampauaButtons.forEach(function (btn) {
+        // Завжди додаємо обробники hover
+        attachHoverEnter(btn);
+
+        // Пропускаємо якщо вже оброблена
+        if (btn.classList.contains('lampaua-svg-applied')) return;
+
+        console.log('🔧 Обробляємо lampaua кнопку:', btn);
+
+        setTimeout(function() {
+          if (!btn.parentNode) {
+            console.log('❌ Кнопка lampaua більше не існує, пропускаємо');
+            return;
+          }
+
+          var svg = btn.querySelector('svg');
+          var span = btn.querySelector('span');
+
+          // Замінюємо іконку на жовто-синю українську
+          if (svg && !svg.classList.contains('lampaua-svg-replaced')) {
+            if (replaceIconPreservingAttrs(svg, LAMPAUA_SVG_SOURCE, {
+              width: iconSize.width,
+              height: iconSize.height,
+              className: 'lampaua-custom-icon'
+            })) {
+              svg.classList.add('lampaua-svg-replaced');
+              count++;
+              console.log('✅ Іконка замінена для lampaua (на жовто-синю українську)');
+            }
+          }
+
+          // Оновлюємо текст якщо потрібно
+          if (span && span.textContent !== 'LAMPA UA') {
+            span.textContent = 'LAMPA UA';
+          }
+
+          btn.classList.add('lampaua-svg-applied');
+          console.log('✅ Застосовано зміни для плагіна lampaua');
         }, 50);
       });
     }
@@ -4758,7 +4822,7 @@ border: 0.2em solid #f6a5b0;
       } else if (data.mc_critic_for_avg && !isNaN(data.mc_critic_for_avg)) {
         parts.push(parseFloat(data.mc_critic_for_avg));
       } else if (data.mc_for_avg && !isNaN(data.mc_for_avg)) {
-        parts.push(parseFloat(data.mc_for_avg));
+        parts.push(parseFloat(data.mc_for_avg);
       }
     }
 
