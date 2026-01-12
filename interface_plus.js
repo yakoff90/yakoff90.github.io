@@ -1,3 +1,5 @@
+[file name]: interface_plus.js
+[file content begin]
 (function () {
   'use strict';
 
@@ -353,14 +355,8 @@
       en: 'Show average rating',
       uk: 'Показувати середній рейтинг'
     },
-    interface_mod_new_ratings_colorize_all: {
-      en: 'Colorize ratings',
-      uk: 'Кольорові рейтинги'
-    },
-    interface_mod_new_ratings_colorize_all_desc: {
-      en: 'Color highlighting of ratings',
-      uk: 'Кольорове виділення оцінок рейтингів'
-    },
+    // ВИДАЛЕНО: interface_mod_new_ratings_colorize_all - не потрібен
+    
     interface_mod_new_ratings_enable_imdb: {
       en: 'IMDb',
       uk: 'IMDb'
@@ -469,7 +465,7 @@
   var RCFG_DEFAULT = {
     ratings_show_awards: true,
     ratings_show_average: true,
-    ratings_colorize_all: false,
+    // ВИДАЛЕНО: ratings_colorize_all: false,
     ratings_enable_imdb: true,
     ratings_enable_tmdb: true,
     ratings_enable_mc: true,
@@ -526,7 +522,7 @@
     // Налаштування для рейтингів
     ratings_show_awards: getBool('ratings_show_awards', RCFG_DEFAULT.ratings_show_awards),
     ratings_show_average: getBool('ratings_show_average', RCFG_DEFAULT.ratings_show_average),
-    ratings_colorize_all: getBool('ratings_colorize_all', RCFG_DEFAULT.ratings_colorize_all),
+    // ВИДАЛЕНО: ratings_colorize_all: getBool('ratings_colorize_all', RCFG_DEFAULT.ratings_colorize_all),
     ratings_enable_imdb: getBool('ratings_enable_imdb', RCFG_DEFAULT.ratings_enable_imdb),
     ratings_enable_tmdb: getBool('ratings_enable_tmdb', RCFG_DEFAULT.ratings_enable_tmdb),
     ratings_enable_mc: getBool('ratings_enable_mc', RCFG_DEFAULT.ratings_enable_mc),
@@ -1917,20 +1913,8 @@ border: 0.2em solid #f6a5b0;
       onRender: function(item) {}
     });
 
-    // Рейтинги: кольорові рейтинги
-    add({
-      component: 'interface_mod_new',
-      param: {
-        name: 'ratings_colorize_all',
-        type: 'trigger',
-        "default": RCFG_DEFAULT.ratings_colorize_all
-      },
-      field: {
-        name: Lampa.Lang.translate('interface_mod_new_ratings_colorize_all'),
-        description: Lampa.Lang.translate('interface_mod_new_ratings_colorize_all_desc')
-      },
-      onRender: function() {}
-    });
+    // ВИДАЛЕНО: Рейтинги: кольорові рейтинги (ця функція видалена)
+    // Блок з параметром ratings_colorize_all був видалений
     
     // Рейтинги: IMDb
     add({
@@ -2173,10 +2157,7 @@ border: 0.2em solid #f6a5b0;
               settings.ratings_show_average = getBool(key, RCFG_DEFAULT.ratings_show_average);
               toggleAverage(settings.ratings_show_average);
               break;
-            case 'ratings_colorize_all':
-              settings.ratings_colorize_all = getBool(key, RCFG_DEFAULT.ratings_colorize_all);
-              applyRatingsStyles();
-              break;
+            // ВИДАЛЕНО: ratings_colorize_all
             case 'ratings_enable_imdb':
               settings.ratings_enable_imdb = getBool(key, RCFG_DEFAULT.ratings_enable_imdb);
               updateRatingsDisplay();
@@ -4494,9 +4475,7 @@ border: 0.2em solid #f6a5b0;
           imdbDivs.eq(1).addClass('source--name').html(iconImg(ICONS.imdb, 'IMDb', 22));
         }
         imdbContainer.removeClass('rating--green rating--blue rating--orange rating--red');
-        if (cfg.colorizeAll && data.imdb_for_avg && !isNaN(data.imdb_for_avg)) {
-          imdbContainer.addClass(getRatingClass(parseFloat(data.imdb_for_avg)));
-        }
+        // ВИДАЛЕНО: застосування кольорів для рейтингів
       }
     }
 
@@ -4513,9 +4492,7 @@ border: 0.2em solid #f6a5b0;
           tmdbDivs.eq(1).addClass('source--name').html(iconImg(ICONS.tmdb, 'TMDB', 24));
         }
         tmdbContainer.removeClass('hide rating--green rating--blue rating--orange rating--red');
-        if (cfg.colorizeAll && data.tmdb_for_avg && !isNaN(data.tmdb_for_avg)) {
-          tmdbContainer.addClass(getRatingClass(parseFloat(data.tmdb_for_avg)));
-        }
+        // ВИДАЛЕНО: застосування кольорів для рейтингів
       }
     }
   }
@@ -4523,15 +4500,10 @@ border: 0.2em solid #f6a5b0;
   /**
    * Застосовує "золотий" колір до нагород
    */
-  function applyAwardsColor(rateLine, cfg) {
+  function applyAwardsColor(rateLine) {
     var $tiles = rateLine.find('.rate--awards, .rate--oscars, .rate--emmy');
     $tiles.removeClass('rating--green rating--blue rating--orange rating--red');
-
-    if (cfg && cfg.colorizeAll) {
-      $tiles.addClass('rate--gold');
-    } else {
-      $tiles.removeClass('rate--gold');
-    }
+    $tiles.addClass('rate--gold'); // Нагороди завжди золоті
   }
 
   /**
@@ -4588,8 +4560,7 @@ border: 0.2em solid #f6a5b0;
         cont.find('> div').eq(0).text(mcText);
       }
 
-      cont.removeClass('rating--green rating--blue rating--orange rating--red');
-      if (cfg.colorizeAll) cont.addClass(getRatingClass(mcVal));
+      // ВИДАЛЕНО: застосування кольорів для рейтингів
     })();
 
     (function() {
@@ -4636,8 +4607,7 @@ border: 0.2em solid #f6a5b0;
         cont.find('.source--name').html(iconImg(rtIconUrl, 'Rotten Tomatoes', 22, extra));
       }
 
-      cont.removeClass('rating--green rating--blue rating--orange rating--red');
-      if (cfg.colorizeAll) cont.addClass(getRatingClass(rtVal));
+      // ВИДАЛЕНО: застосування кольорів для рейтингів
     })();
 
     (function() {
@@ -4678,8 +4648,7 @@ border: 0.2em solid #f6a5b0;
         cont.find('.source--name').html(iconImg(ICONS.popcorn, 'Audience', 22));
       }
 
-      cont.removeClass('rating--green rating--blue rating--orange rating--red');
-      if (cfg.colorizeAll) cont.addClass(getRatingClass(pcVal));
+      // ВИДАЛЕНО: застосування кольорів для рейтингів
     })();
 
     if (data.awards && data.awards > 0 && !$('.rate--awards', rateLine).length) {
@@ -4722,7 +4691,7 @@ border: 0.2em solid #f6a5b0;
     }
 
     try {
-      applyAwardsColor(rateLine, cfg);
+      applyAwardsColor(rateLine);
     } catch (e) {}
   }
 
@@ -4741,7 +4710,7 @@ border: 0.2em solid #f6a5b0;
     $('.rate--avg', rateLine).remove();
     if (!cfg.showAverage) {
       try {
-        applyAwardsColor(rateLine, cfg);
+        applyAwardsColor(rateLine);
       } catch (e) {}
       removeLoadingAnimation();
       undimRateLine(rateLine);
@@ -4774,10 +4743,9 @@ border: 0.2em solid #f6a5b0;
     var sum = 0;
     for (var i = 0; i < parts.length; i++) sum += parts[i];
     var avg = sum / parts.length;
-    var colorClass = cfg.colorizeAll ? getRatingClass(avg) : '';
 
     var avgElement = $(
-      '<div class="full-start__rate rate--avg ' + colorClass + '">' +
+      '<div class="full-start__rate rate--avg">' +
       '<div>' + avg.toFixed(1) + '</div>' +
       '<div class="source--name"></div>' +
       '</div>'
@@ -4791,7 +4759,7 @@ border: 0.2em solid #f6a5b0;
     else rateLine.prepend(avgElement);
 
     try {
-      applyAwardsColor(rateLine, getRatingsCfg());
+      applyAwardsColor(rateLine);
     } catch (e) {}
 
     removeLoadingAnimation();
@@ -4829,8 +4797,6 @@ border: 0.2em solid #f6a5b0;
       updateHiddenElements(currentRatingsData);
       insertRatings(currentRatingsData);
       calculateAverageRating(currentRatingsData);
-
-      applyRatingsStyles();
     }
 
     function proceedWithImdbId() {
@@ -4916,7 +4882,7 @@ border: 0.2em solid #f6a5b0;
     return {
       showAwards: settings.ratings_show_awards,
       showAverage: settings.ratings_show_average,
-      colorizeAll: settings.ratings_colorize_all,
+      // ВИДАЛЕНО: colorizeAll: settings.ratings_colorize_all,
       enableImdb: settings.ratings_enable_imdb,
       enableTmdb: settings.ratings_enable_tmdb,
       enableMc: settings.ratings_enable_mc,
@@ -4986,6 +4952,7 @@ border: 0.2em solid #f6a5b0;
     if (typeof Lampa.Storage.get('ratings_show_average') === 'undefined') {
       Lampa.Storage.set('ratings_show_average', true);
     }
+    // ВИДАЛЕНО: перевірка для ratings_colorize_all
   }
 
   /**
@@ -5902,3 +5869,4 @@ border: 0.2em solid #f6a5b0;
   }
 
 })();
+[file content end]
