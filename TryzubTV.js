@@ -1,23 +1,17 @@
 (function () {
   'use strict';
 
-  // Проверяем, работает ли на Tizen
+  // Перевірка Tizen/Samsung TV
   var IS_TIZEN = typeof tizen !== 'undefined' || 
                  navigator.userAgent.toLowerCase().indexOf('tizen') > -1 ||
                  navigator.userAgent.toLowerCase().indexOf('samsung') > -1 ||
                  /SMART-TV|Tizen/.test(navigator.userAgent);
 
-  console.log('TryzubTV: Platform detection - IS_TIZEN:', IS_TIZEN, 'UserAgent:', navigator.userAgent);
+  console.log('TryzubTV: Платформа - Tizen:', IS_TIZEN);
 
-  // Базовые константы с альтернативными прокси для Tizen
-  var API_BASE = IS_TIZEN 
-    ? 'https://corsproxy.io/?' + encodeURIComponent('https://dyvy.tv/api/v1')
-    : 'https://dyvy.tv/api/v1';
-  
-  var REPLAY_BASE$1 = IS_TIZEN
-    ? 'https://corsproxy.io/?' + encodeURIComponent('https://a.maincast.tv/items')
-    : 'https://p01--corsproxy--h7ynqrkjrc6c.code.run/https://a.maincast.tv/items';
-  
+  // Базові константи
+  var API_BASE = 'https://dyvy.tv/api/v1';
+  var REPLAY_BASE$1 = 'https://a.maincast.tv/items';
   var REPLAY_LIMIT = 10;
   var QR_CARD_POSTER$1 = 'https://iili.io/fkdGkSj.png';
   var CATALOG_ORDER_KEY = 'tryzubtv_catalog_order';
@@ -25,7 +19,7 @@
   var SOURCE_TV = 'tv';
   var SOURCE_REPLAY = 'replay';
 
-  // Упрощенные функции для совместимости
+  // Функції для сумісності
   function _arrayLikeToArray(r, a) {
     (null == a || a > r.length) && (a = r.length);
     for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e];
@@ -107,85 +101,63 @@
     }
   }
 
-  // Адаптированная функция запроса для всех платформ
+  // Функція запиту з CORS проксі для Tizen
   function request$2(url) {
     return new Promise(function (resolve, reject) {
-      console.log('TryzubTV: Requesting URL:', url);
+      console.log('TryzubTV: Запит до:', url);
       
-      // Для Tizen используем более надежный подход
+      // Для Tizen використовуємо проксі
+      var requestUrl = IS_TIZEN ? 
+        'https://api.allorigins.win/raw?url=' + encodeURIComponent(url) :
+        url;
+      
       if (IS_TIZEN) {
+        console.log('TryzubTV: Використовуємо проксі для Tizen');
+      }
+      
+      // Спробуємо різні методи
+      if (Lampa && Lampa.Network && Lampa.Network.silent && !IS_TIZEN) {
+        // Оригінальний метод для Lampa
+        Lampa.Network.silent(requestUrl, resolve, reject);
+      } else {
+        // XMLHttpRequest для всіх платформ
         try {
           var xhr = new XMLHttpRequest();
-          xhr.open('GET', url, true);
-          xhr.timeout = 15000; // Увеличен таймаут для Tizen
-          
-          // Важно для CORS на Tizen
+          xhr.open('GET', requestUrl, true);
+          xhr.timeout = 15000;
           xhr.setRequestHeader('Accept', 'application/json');
-          xhr.setRequestHeader('Content-Type', 'application/json');
           
           xhr.onreadystatechange = function () {
             if (xhr.readyState === 4) {
-              console.log('TryzubTV: XHR Status:', xhr.status, 'for URL:', url);
-              if (xhr.status === 200 || xhr.status === 0) { // 0 для file:// протокола
+              if (xhr.status === 200 || xhr.status === 0) {
                 try {
                   var data = JSON.parse(xhr.responseText);
-                  console.log('TryzubTV: XHR Success, data received');
                   resolve(data);
                 } catch (e) {
-                  console.error('TryzubTV: JSON parse error:', e, 'Response:', xhr.responseText);
-                  try {
-                    // Пробуем парсить как текст
-                    resolve(xhr.responseText);
-                  } catch (e2) {
-                    reject(new Error('Invalid JSON response'));
-                  }
+                  console.error('TryzubTV: Помилка парсингу JSON:', e);
+                  reject(e);
                 }
               } else {
-                console.error('TryzubTV: XHR Error Status:', xhr.status);
-                // Пробуем альтернативный URL
-                var altUrl = url.replace('corsproxy.io', 'api.allorigins.win');
-                if (url !== altUrl) {
-                  console.log('TryzubTV: Trying alternative URL:', altUrl);
-                  request$2(altUrl).then(resolve).catch(reject);
-                } else {
-                  reject(new Error('HTTP ' + xhr.status));
-                }
+                console.error('TryzubTV: Помилка HTTP:', xhr.status);
+                reject(new Error('HTTP ' + xhr.status));
               }
             }
           };
           
           xhr.onerror = function () {
-            console.error('TryzubTV: XHR Network error for URL:', url);
-            // Пробуем без прокси как последний вариант
-            if (url.includes('corsproxy.io')) {
-              var directUrl = decodeURIComponent(url.split('?')[1]);
-              console.log('TryzubTV: Trying direct URL:', directUrl);
-              request$2(directUrl).then(resolve).catch(reject);
-            } else {
-              reject(new Error('Network error'));
-            }
+            console.error('TryzubTV: Помилка мережі');
+            reject(new Error('Помилка мережі'));
           };
           
           xhr.ontimeout = function () {
-            console.error('TryzubTV: XHR Timeout for URL:', url);
-            reject(new Error('Timeout'));
+            console.error('TryzubTV: Таймаут запиту');
+            reject(new Error('Таймаут'));
           };
           
           xhr.send();
         } catch (error) {
-          console.error('TryzubTV: XHR Exception:', error);
+          console.error('TryzubTV: Виняток при запиті:', error);
           reject(error);
-        }
-      } else {
-        // Оригинальный код для других платформ
-        if (Lampa && Lampa.Network && Lampa.Network.silent) {
-          Lampa.Network.silent(url, resolve, reject);
-        } else {
-          // Fallback для старых версий Lampa
-          fetch(url)
-            .then(response => response.json())
-            .then(resolve)
-            .catch(reject);
         }
       }
     });
@@ -376,7 +348,7 @@
         }
       };
     } catch (e) {
-      console.error('TryzubTV: Error mapping replay to card:', e);
+      console.error('TryzubTV: Помилка перетворення replay:', e);
       return null;
     }
   }
@@ -388,18 +360,11 @@
   function _fetchCategories() {
     _fetchCategories = _asyncToGenerator(function* () {
       try {
-        console.log('TryzubTV: Fetching categories from:', API_BASE + "/categories?is_main=1");
-        var response = yield request$2(API_BASE + "/categories?is_main=1");
-        console.log('TryzubTV: Categories response:', response);
+        var response = yield request$2("".concat(API_BASE, "/categories?is_main=1"));
         return response && response.data ? response.data : [];
       } catch (error) {
-        console.error('TryzubTV: Error fetching categories:', error);
-        // Возвращаем заглушку для тестирования
-        return IS_TIZEN ? [
-          { name: "News", slug: "news" },
-          { name: "Sport", slug: "sport" },
-          { name: "Movies", slug: "movies" }
-        ] : [];
+        console.error('TryzubTV: Помилка завантаження категорій:', error);
+        return [];
       }
     });
     return _fetchCategories.apply(this, arguments);
@@ -412,13 +377,15 @@
   function _fetchReplayDisciplines() {
     _fetchReplayDisciplines = _asyncToGenerator(function* () {
       try {
-        var url = REPLAY_BASE$1 + "/discipline?filter={\"category\":\"sport\"}&fields=name,id,icon";
-        console.log('TryzubTV: Fetching disciplines from:', url);
+        // Використовуємо проксі для Tizen
+        var url = IS_TIZEN ? 
+          'https://api.allorigins.win/raw?url=' + encodeURIComponent("".concat(REPLAY_BASE$1, "/discipline?filter={\"category\":\"sport\"}&fields=name,id,icon")) :
+          "".concat(REPLAY_BASE$1, "/discipline?filter={\"category\":\"sport\"}&fields=name,id,icon");
+        
         var response = yield request$2(url);
-        console.log('TryzubTV: Disciplines response:', response);
         return response && response.data ? response.data : [];
       } catch (error) {
-        console.error('TryzubTV: Error fetching disciplines:', error);
+        console.error('TryzubTV: Помилка завантаження дисциплін:', error);
         return [];
       }
     });
@@ -430,7 +397,7 @@
     var title = translateCategoryName$1(rawTitle);
     var slug = category && category.slug ? category.slug : '';
     return {
-      id: SOURCE_TV + ":" + slug,
+      id: "".concat(SOURCE_TV, ":").concat(slug),
       source: SOURCE_TV,
       title: title,
       rawTitle: rawTitle,
@@ -442,7 +409,7 @@
     var rawTitle = discipline && discipline.name ? discipline.name : '';
     var title = translateCategoryName$1(rawTitle);
     return {
-      id: SOURCE_REPLAY + ":" + discipline.id,
+      id: "".concat(SOURCE_REPLAY, ":").concat(discipline.id),
       source: SOURCE_REPLAY,
       title: title,
       rawTitle: rawTitle,
@@ -457,31 +424,17 @@
   function _fetchCatalogLines() {
     _fetchCatalogLines = _asyncToGenerator(function* () {
       try {
-        console.log('TryzubTV: Fetching catalog lines...');
         var _ref = yield Promise.all([fetchCategories(), fetchReplayDisciplines()]),
             _ref2 = _slicedToArray(_ref, 2),
             categories = _ref2[0],
             disciplines = _ref2[1];
         
-        console.log('TryzubTV: Categories found:', categories ? categories.length : 0);
-        console.log('TryzubTV: Disciplines found:', disciplines ? disciplines.length : 0);
-        
         var tvLines = (categories || []).map(buildLineMetaTv);
         var replayLines = (disciplines || []).map(buildLineMetaReplay);
         
-        var allLines = tvLines.concat(replayLines);
-        console.log('TryzubTV: Total lines:', allLines.length);
-        return allLines;
+        return tvLines.concat(replayLines);
       } catch (error) {
-        console.error('TryzubTV: Error fetching catalog lines:', error);
-        // Возвращаем заглушку для Tizen если запрос не удался
-        if (IS_TIZEN) {
-          return [
-            buildLineMetaTv({ name: "News", slug: "news" }),
-            buildLineMetaTv({ name: "Sport", slug: "sport" }),
-            buildLineMetaReplay({ name: "Football", id: "1" })
-          ];
-        }
+        console.error('TryzubTV: Помилка завантаження каталогу:', error);
         return [];
       }
     });
@@ -509,9 +462,9 @@
       };
     } else {
       params.tryzubtv_replay_id = meta.discipline_id;
-      var morePrefix = Lampa && Lampa.Lang ? Lampa.Lang.translate('tryzubtv_more_videos') : 'All videos:';
+      var morePrefix = Lampa && Lampa.Lang ? Lampa.Lang.translate('tryzubtv_more_videos') : 'Усі відео:';
       params.more = {
-        title: morePrefix + " " + meta.title,
+        title: "".concat(morePrefix, " ").concat(meta.title),
         component: 'salopower_category',
         disciplineId: meta.discipline_id
       };
@@ -536,10 +489,7 @@
   function _loadMain() {
     _loadMain = _asyncToGenerator(function* () {
       try {
-        console.log('TryzubTV: Loading main catalog...');
         var linesMeta = yield fetchCatalogLines();
-        console.log('TryzubTV: Lines meta received:', linesMeta.length);
-        
         var ordered = sortCatalogLines(linesMeta);
         var hidden = getCatalogHidden();
         
@@ -553,19 +503,15 @@
           return true;
         });
         
-        console.log('TryzubTV: Visible lines:', visible.length);
-        
         var LineModule = Lampa && Lampa.Maker && Lampa.Maker.module ? Lampa.Maker.module('Line') : null;
         var lines = visible.map(function (meta, index) {
           return buildLineShell(meta, LineModule, index);
         });
         
-        console.log('TryzubTV: Lines built:', lines.length);
         oncomplete(lines);
       } catch (error) {
-        console.error('TryzubTV: Error in loadMain:', error);
+        console.error('TryzubTV: Помилка в loadMain:', error);
         if (onerror) onerror(error);
-        // Даже при ошибке показываем пустой список
         oncomplete([]);
       }
     });
@@ -579,35 +525,23 @@
   function _loadCategory$1() {
     _loadCategory$1 = _asyncToGenerator(function* (categorySlug, categoryTitle, oncomplete, onerror) {
       try {
-        console.log('TryzubTV: Loading category:', categorySlug);
-        var url = API_BASE + "/channels?category_slug=" + encodeURIComponent(categorySlug) + "&limit=100";
-        console.log('TryzubTV: Category URL:', url);
-        
+        var url = "".concat(API_BASE, "/channels?category_slug=").concat(encodeURIComponent(categorySlug), "&limit=500");
         var response = yield request$2(url);
-        console.log('TryzubTV: Category response received');
         
         var channels = response && response.data ? response.data : [];
         var total = response && response.meta && response.meta.total ? response.meta.total : channels.length;
         
-        console.log('TryzubTV: Channels found:', channels.length);
-        
         var title = translateCategoryName$1(categoryTitle || categorySlug || '');
-        var lineTitle = total ? title + " · " + total : title;
+        var lineTitle = total ? "".concat(title, " \xB7 ").concat(total) : title;
         
-        var items = channels
-          .filter(isFreeChannel)
-          .filter(function (channel) {
-            return channel && channel.link;
-          })
-          .map(function (channel) {
-            return mapChannelToCard(channel, {
-              slug: categorySlug,
-              name: title
-            });
-          })
-          .filter(Boolean);
-        
-        console.log('TryzubTV: Mapped items:', items.length);
+        var items = channels.filter(isFreeChannel).filter(function (channel) {
+          return channel && channel.link;
+        }).map(function (channel) {
+          return mapChannelToCard(channel, {
+            slug: categorySlug,
+            name: title
+          });
+        }).filter(Boolean);
         
         oncomplete([{
           title: lineTitle,
@@ -621,7 +555,7 @@
           }
         }]);
       } catch (error) {
-        console.error('TryzubTV: Error loading category:', error);
+        console.error('TryzubTV: Помилка завантаження категорії:', error);
         if (onerror) onerror(error);
         oncomplete([{
           title: translateCategoryName$1(categoryTitle || categorySlug || ''),
@@ -643,70 +577,57 @@
         var params = lineData && lineData.params || {};
         var source = params.tryzubtv_source;
         
-        console.log('TryzubTV: Loading line items for source:', source);
-        
         if (source === SOURCE_TV) {
           var slug = params.tryzubtv_category;
           if (!slug) {
-            console.log('TryzubTV: No category slug for TV source');
             return { items: [], total: 0, total_pages: 1 };
           }
           
-          var url = API_BASE + "/channels?category_slug=" + encodeURIComponent(slug) + "&limit=100";
-          console.log('TryzubTV: TV line URL:', url);
-          
+          var url = "".concat(API_BASE, "/channels?category_slug=").concat(encodeURIComponent(slug), "&limit=500");
           var response = yield request$2(url);
           var channels = response && response.data ? response.data : [];
           var total = response && response.meta && response.meta.total ? response.meta.total : channels.length;
           
-          console.log('TryzubTV: TV channels found:', channels.length);
-          
           var title = translateCategoryName$1(params.tryzubtv_category_raw || params.tryzubtv_category_title || '');
           
-          var items = channels
-            .filter(isFreeChannel)
-            .filter(function (channel) {
-              return channel && channel.link;
-            })
-            .map(function (channel) {
-              return mapChannelToCard(channel, {
-                slug: slug,
-                name: title
-              });
-            })
-            .filter(Boolean);
+          var items = channels.filter(isFreeChannel).filter(function (channel) {
+            return channel && channel.link;
+          }).map(function (channel) {
+            return mapChannelToCard(channel, {
+              slug: slug,
+              name: title
+            });
+          }).filter(Boolean);
           
-          console.log('TryzubTV: TV items mapped:', items.length);
           return { items: items, total: total, title: title };
           
         } else if (source === SOURCE_REPLAY) {
           var disciplineId = params.tryzubtv_replay_id;
           if (!disciplineId) {
-            console.log('TryzubTV: No discipline ID for replay source');
             return { items: [], total: 0, total_pages: 1 };
           }
           
-          var _url = REPLAY_BASE$1 + "/vod?filter={\"discipline\":" + disciplineId + "}&sort=-date&limit=" + (REPLAY_LIMIT + 1);
-          console.log('TryzubTV: Replay line URL:', _url);
+          // Використовуємо проксі для Tizen
+          var replayUrl = "".concat(REPLAY_BASE$1, "/vod?filter={\"discipline\":").concat(disciplineId, "}&sort=-date&limit=").concat(REPLAY_LIMIT + 1);
+          var requestUrl = IS_TIZEN ? 
+            'https://api.allorigins.win/raw?url=' + encodeURIComponent(replayUrl) :
+            replayUrl;
           
-          var _response = yield request$2(_url);
+          var _response = yield request$2(requestUrl);
           var vods = (_response && _response.data ? _response.data : []).filter(function (vod) {
             return vod && vod.link && !vod.link.includes('youtube');
           });
-          
-          console.log('TryzubTV: Replay vods found:', vods.length);
           
           var mapped = vods.map(mapReplayToCard).filter(Boolean);
           var hasMore = mapped.length > REPLAY_LIMIT;
           var _items = hasMore ? mapped.slice(0, REPLAY_LIMIT) : mapped;
           
-          console.log('TryzubTV: Replay items mapped:', _items.length);
           return { items: _items, total: null, total_pages: hasMore ? 2 : 1 };
         }
         
         return { items: [], total: 0, total_pages: 1 };
       } catch (error) {
-        console.error('TryzubTV: Error loading line items:', error);
+        console.error('TryzubTV: Помилка завантаження елементів лінії:', error);
         return { items: [], total: 0, total_pages: 1 };
       }
     });
@@ -728,13 +649,13 @@
     SOURCE_REPLAY: SOURCE_REPLAY
   };
 
-  // Упрощенный модуль Player для Tizen
+  // Модуль Player
   function request$1(url) {
-    return request$2(url); // Используем ту же функцию запроса
+    return request$2(url);
   }
   
   function buildChannelEpgUrl(slug) {
-    return API_BASE + "/channels/" + encodeURIComponent(slug) + "?expand=epg_items";
+    return "".concat(API_BASE, "/channels/").concat(encodeURIComponent(slug), "?expand=epg_items");
   }
   
   function toPlaylistItems(items, fallbackTitle) {
@@ -763,7 +684,7 @@
     if (!items.length) {
       var empty = document.createElement('div');
       empty.classList.add('player-panel-iptv-item__prog-item');
-      empty.innerHTML = "<span>" + (Lampa && Lampa.Lang ? Lampa.Lang.translate('tryzubtv_now_empty') : 'No EPG data') + "</span>";
+      empty.innerHTML = "<span>".concat(Lampa && Lampa.Lang ? Lampa.Lang.translate('tryzubtv_now_empty') : 'Немає даних EPG', "</span>");
       if (container[0]) container[0].append(empty);
       return;
     }
@@ -776,7 +697,7 @@
       row.classList.add('player-panel-iptv-item__prog-item');
       if (absoluteIndex === position) row.classList.add('watch');
       var span = document.createElement('span');
-      span.textContent = formatProgramTime(item.start) + " - " + formatProgramTime(item.finish) + "  " + item.name;
+      span.textContent = "".concat(formatProgramTime(item.start), " - ").concat(formatProgramTime(item.finish), "  ").concat(item.name);
       row.append(span);
       if (container[0]) container[0].append(row);
     });
@@ -811,24 +732,22 @@
   function _fetchCategoryChannels() {
     _fetchCategoryChannels = _asyncToGenerator(function* (categorySlug) {
       try {
-        var url = API_BASE + "/channels?category_slug=" + encodeURIComponent(categorySlug) + "&limit=100";
+        var url = "".concat(API_BASE, "/channels?category_slug=").concat(encodeURIComponent(categorySlug), "&limit=500");
         var response = yield request$1(url);
         var channels = response && response.data ? response.data : [];
-        return channels
-          .filter(function (channel) {
-            return channel && channel.package_block == null && channel.link;
-          })
-          .map(function (channel) {
-            return {
-              name: channel.name || '',
-              slug: channel.slug || '',
-              url: channel.link || '',
-              logo: channel.icon_url || channel.icon_url_2 || '',
-              epg_current: channel.epg_current || null
-            };
-          });
+        return channels.filter(function (channel) {
+          return channel && channel.package_block == null && channel.link;
+        }).map(function (channel) {
+          return {
+            name: channel.name || '',
+            slug: channel.slug || '',
+            url: channel.link || '',
+            logo: channel.icon_url || channel.icon_url_2 || '',
+            epg_current: channel.epg_current || null
+          };
+        });
       } catch (error) {
-        console.error('TryzubTV: Error fetching category channels:', error);
+        console.error('TryzubTV: Помилка завантаження каналів категорії:', error);
         return [];
       }
     });
@@ -882,7 +801,7 @@
             });
           }
         }).catch(function (error) {
-          console.error('TryzubTV: channel epg load failed', error);
+          console.error('TryzubTV: Помилка завантаження EPG каналу', error);
           epgCache[selected.slug] = {
             items: [],
             position: 0
@@ -932,7 +851,7 @@
             Lampa.Player.playlist(toPlaylistItems(items, selected.name));
           }
         }).catch(function (error) {
-          console.error('TryzubTV: playlist load failed', error);
+          console.error('TryzubTV: Помилка завантаження плейліста', error);
           if (Lampa && Lampa.Noty && Lampa.Lang) {
             Lampa.Noty.show(Lampa.Lang.translate('tryzubtv_epg_failed'));
           }
@@ -943,8 +862,7 @@
     if (Lampa && Lampa.Player && Lampa.Player.iptv) {
       Lampa.Player.iptv(data);
     } else {
-      console.error('TryzubTV: Lampa.Player.iptv not available');
-      // Fallback: просто запускаем видео
+      console.error('TryzubTV: Lampa.Player.iptv недоступний');
       if (Lampa && Lampa.Player && Lampa.Player.play) {
         Lampa.Player.play({
           title: data.title,
@@ -968,15 +886,11 @@
     var categoryTitle = cardData.tryzubtv_category_title || cardData.tryzubtv_category || 
                        (Lampa && Lampa.Lang ? Lampa.Lang.translate('tryzubtv_title') : 'TryzubTV');
     
-    console.log('TryzubTV: Playing channel:', title, 'Category:', categorySlug);
-    
     if (categorySlug) {
       if (Lampa && Lampa.Loading) Lampa.Loading.start();
       
       fetchCategoryChannels(categorySlug).then(function (channels) {
         if (Lampa && Lampa.Loading) Lampa.Loading.stop();
-        
-        console.log('TryzubTV: Category channels found:', channels.length);
         
         if (!channels.length) {
           playIptvList([{
@@ -993,10 +907,9 @@
           return channel.slug === cardData.tryzubtv_slug;
         }));
         
-        console.log('TryzubTV: Starting channel index:', startIndex);
         playIptvList(channels, startIndex, categoryTitle);
       }).catch(function (error) {
-        console.error('TryzubTV: category channels load failed', error);
+        console.error('TryzubTV: Помилка завантаження каналів категорії', error);
         if (Lampa && Lampa.Loading) Lampa.Loading.stop();
         
         playIptvList([{
@@ -1017,87 +930,146 @@
       }], 0, categoryTitle);
     }
     
-    // Загружаем EPG в фоне
-    if (cardData.tryzubtv_slug) {
-      fetchChannelEpg(cardData.tryzubtv_slug).then(function (data) {
-        var items = data && data.epg_items ? data.epg_items : [];
-        var playlist = toPlaylistItems(items, title);
-        if (playlist.length && Lampa && Lampa.Player && Lampa.Player.playlist) {
-          Lampa.Player.playlist(playlist);
-        }
-      }).catch(function (error) {
-        console.error('TryzubTV: epg list load failed', error);
-      });
-    }
+    if (!cardData.tryzubtv_slug) return;
+    fetchChannelEpg(cardData.tryzubtv_slug).then(function (data) {
+      var items = data && data.epg_items ? data.epg_items : [];
+      var playlist = toPlaylistItems(items, title);
+      if (playlist.length && Lampa && Lampa.Player && Lampa.Player.playlist) {
+        Lampa.Player.playlist(playlist);
+      }
+    }).catch(function (error) {
+      console.error('TryzubTV: Помилка завантаження списку EPG', error);
+    });
   }
   
   var Player = {
     playChannel: playChannel
   };
 
-  // Упрощенный QR модуль
+  // QR модуль
   var QR_URL = 'https://lampame.donatik.me';
-  var QR_TEXT = "<a href=\"" + QR_URL + "\">Посілання</a>";
+  var QR_TEXT = "<a href=\"".concat(QR_URL, "\">\u041F\u043E\u0441\u0438\u043B\u0430\u043D\u043D\u044F</a>");
   var QR_BODY = 'Донат автору плагіну TryzubTV добровільний, на розвиток якого витрачено багато часу та сил.';
   var QR_CARD_POSTER = 'https://iili.io/fkdGkSj.png';
   
   function openQrModal() {
     var html = $('<div class="tryzubtv-qr-modal" style="display:flex;flex-direction:column;gap:1.2em;align-items:center;text-align:center;">' + 
       '<div class="account-modal-split__info" style="max-width:28em;">' + 
-      '<div class="account-modal-split__text"><img src="' + QR_CARD_POSTER + '" class="tryzubtv-qr-modal__img" style="max-width:100%;height:auto;"><br />' + QR_BODY + '</div>' + 
+      "<div class=\"account-modal-split__text\"><img src=\"".concat(QR_CARD_POSTER, "\" class=\"tryzubtv-qr-modal__img\"><br />").concat(QR_BODY, "</div>") + 
       '</div>' + 
       '<div class="account-modal-split__qr">' + 
-      '<div class="account-modal-split__qr-code" style="margin-bottom:0;width: 13em;height: 13em;background:#fff;padding:1em;box-sizing:border-box;">' +
-      '<div style="color:#000;text-align:center;padding:3em 0;">QR код недоступний<br>на цьому пристрої</div>' +
-      '</div>' + 
-      '<div class="account-modal-split__qr-text">' + QR_TEXT + '</div>' + 
+      '<div class="account-modal-split__qr-code" style="margin-bottom:0;width: 13em;height: 13em;"></div>' + 
+      "<div class=\"account-modal-split__qr-text\">".concat(QR_TEXT, "</div>") + 
       '</div>' + 
       '</div>');
     
-    var enabledController = Lampa && Lampa.Controller ? Lampa.Controller.enabled().name : '';
+    var qrElement = html.find('.account-modal-split__qr-code');
     
-    if (Lampa && Lampa.Modal) {
-      Lampa.Modal.open({
-        title: '',
-        html: html,
-        size: 'medium',
-        onBack: function onBack() {
-          Lampa.Modal.close();
-          if (Lampa && Lampa.Controller) {
-            Lampa.Controller.toggle(enabledController);
-          }
-        }
+    if (Lampa.Utils && Lampa.Utils.qrcode) {
+      Lampa.Utils.qrcode(QR_URL, qrElement, function (error) {
+        console.error(error);
       });
+    } else {
+      qrElement.html('<div style="color: white; padding: 20px;">QR код недоступний на цьому пристрої</div>');
     }
+    
+    var svg = qrElement.find('svg');
+    if (svg[0]) {
+      svg[0].style.setProperty('width', '12em', 'important');
+      svg[0].style.setProperty('height', '12em', 'important');
+    }
+    
+    var enabledController = Lampa.Controller.enabled().name;
+    Lampa.Modal.open({
+      title: '',
+      html: html,
+      size: 'medium',
+      onBack: function onBack() {
+        Lampa.Modal.close();
+        Lampa.Controller.toggle(enabledController);
+      }
+    });
   }
 
-  // Упрощенный SocketManager для Tizen
+  // SocketManager
   var SocketManager = function () {
     var instance;
+    var socket;
+    var key;
     
     function createInstance() {
       var connect = function connect() {
         return new Promise(function (resolve, reject) {
-          console.log('TryzubTV: SocketManager connecting...');
-          // Для Tizen генерируем локальный ключ
-          var key = 'tizen_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-          console.log('TryzubTV: Generated key for Tizen');
-          resolve(key);
+          if (IS_TIZEN) {
+            console.log('TryzubTV: Tizen виявлено, використовуємо альтернативний метод');
+            key = 'tizen_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            resolve(key);
+            return;
+          }
+          
+          if (socket && socket.readyState === WebSocket.OPEN && key) {
+            return resolve(key);
+          }
+          if (socket && socket.readyState === WebSocket.CONNECTING) {
+            socket.onmessage = function (event) {
+              handleMessage(event, resolve, reject);
+            };
+            return;
+          }
+          
+          try {
+            socket = new WebSocket('wss://vod-maincast.cosmonova-broadcast.tv/ws');
+          } catch (e) {
+            reject('TryzubTV: WebSocket не підтримується');
+            return;
+          }
+          
+          socket.onopen = function () {
+            console.log('TryzubTV: WebSocket підключено');
+          };
+          
+          socket.onmessage = function (event) {
+            handleMessage(event, resolve, reject);
+          };
+          
+          socket.onerror = function () {
+            console.error('TryzubTV: Помилка WebSocket');
+            reject('TryzubTV: Помилка WebSocket');
+            disconnect();
+          };
+          
+          socket.onclose = function () {
+            console.log('TryzubTV: WebSocket відключено');
+            socket = null;
+            key = null;
+          };
         });
       };
       
+      var handleMessage = function handleMessage(event, resolve, reject) {
+        try {
+          var data = JSON.parse(event.data);
+          if (data.type === 'auth' && data.payload && data.payload.hash) {
+            key = data.payload.hash;
+            console.log('TryzubTV: Ключ отримано');
+            resolve(key);
+          } else {
+            reject('TryzubTV: Невірна відповідь авторизації');
+          }
+        } catch (e) {
+          reject('TryzubTV: Помилка парсингу повідомлення');
+        }
+      };
+      
       var disconnect = function disconnect() {
-        console.log('TryzubTV: SocketManager disconnected');
+        if (socket) socket.close();
       };
       
       var listen = function listen() {
-        console.log('TryzubTV: SocketManager listening');
-        if (Lampa && Lampa.Player && Lampa.Player.listener) {
-          Lampa.Player.listener.follow('destroy', function () {
-            console.log('TryzubTV: Player destroyed');
-            disconnect();
-          });
-        }
+        Lampa.Player.listener.follow('destroy', function () {
+          console.log('TryzubTV: Плеєр знищено, закриваємо сокет.');
+          disconnect();
+        });
       };
       
       return {
@@ -1115,36 +1087,27 @@
     };
   }();
 
-  // Основной компонент
+  // Основні функції
   function appendReplayOverlay(cardItem, cardData) {
     try {
-      if (!cardItem || !cardData) return;
-      
       var cardElement = cardItem.render ? cardItem.render(true) : null;
       if (!cardElement) return;
-      
       var $card = $(cardElement);
       var card_view = $card.find('.card__view');
-      if (!card_view.length) return;
-      
+      if (!card_view.length || !cardData) return;
       var title = cardData.title || '';
       var desc = cardData.salo_description || cardData.description || '';
       var date = cardData.salo_release_date || cardData.release_date || '';
       if (!title && !desc && !date) return;
-      
       $card.addClass('card--salopower');
-      
-      var overlay = '<div class="card__body card__body--salopower" style="position:absolute;left:0;top:0;width:100%;height:100%;display:flex;flex-direction:column;padding:1.2em 1.5em;background-image:linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0) 100%);pointer-events:none;">' +
-        '<div class="card__title" style="font-size:1.6em;font-weight:700;">' + title + '</div>' +
-        '<div class="card__salopower-data" style="margin-top:auto;padding-top:1em;">' +
-        '<div class="card__description" style="font-size:1.3em;color:rgba(255,255,255,0.7);-webkit-line-clamp:2;-webkit-box-orient:vertical;display:-webkit-box;overflow:hidden;text-overflow:ellipsis;">' + desc + '</div>' +
-        '<div class="card__release-date" style="font-size:1.2em;color:rgba(255,255,255,0.5);margin-top:0.5em;">' + date + '</div>' +
-        '</div>' +
-        '</div>';
-      
-      card_view.append(overlay);
+      var tpl = Lampa.Template.get('salopower_episode_card_data', {
+        title: title,
+        salo_description: desc,
+        salo_release_date: date
+      });
+      card_view.append(tpl);
     } catch (e) {
-      console.error('TryzubTV: replay card overlay error', e);
+      console.error('TryzubTV: Помилка overlay replay картки', e);
     }
   }
   
@@ -1155,34 +1118,23 @@
   function _playReplay() {
     _playReplay = _asyncToGenerator(function* (cardData) {
       if (!cardData || !cardData.salo_vod_id) {
-        console.error('TryzubTV: No vod_id for replay');
         return;
       }
       
-      if (Lampa && Lampa.Loading) Lampa.Loading.start();
-      
+      Lampa.Loading.start();
       try {
-        console.log('TryzubTV: Playing replay with ID:', cardData.salo_vod_id);
-        
-        // Для Tizen используем прямой URL
-        var videoUrl = "https://vod-maincast.cosmonova-broadcast.tv/" + cardData.salo_vod_id + "/master.m3u8";
-        console.log('TryzubTV: Video URL:', videoUrl);
-        
-        if (Lampa && Lampa.Player && Lampa.Player.play) {
-          Lampa.Player.play({
-            title: cardData.title || 'Replay',
-            url: videoUrl
-          });
-        } else {
-          console.error('TryzubTV: Lampa.Player.play not available');
-        }
+        var socket = SocketManager.getInstance();
+        var key = yield socket.connect();
+        var newLink = "https://vod-maincast.cosmonova-broadcast.tv/".concat(cardData.salo_vod_id, "/master.m3u8?key=").concat(key);
+        Lampa.Player.play({
+          title: cardData.title,
+          url: newLink
+        });
       } catch (error) {
-        console.error('TryzubTV: replay playback failed', error);
-        if (Lampa && Lampa.Noty) {
-          Lampa.Noty.show('Не вдалося запустити відтворення.');
-        }
+        console.error('TryzubTV: Помилка відтворення replay', error);
+        Lampa.Noty.show('Не вдалося отримати ключ для відтворення.');
       } finally {
-        if (Lampa && Lampa.Loading) Lampa.Loading.stop();
+        Lampa.Loading.stop();
       }
     });
     return _playReplay.apply(this, arguments);
@@ -1192,30 +1144,24 @@
     if (!lineItem || !lineData || lineData.tryzubtv_loaded) return;
     lineData.tryzubtv_loaded = true;
     
-    console.log('TryzubTV: Loading line content for:', lineData.title);
-    
     Api$1.loadLineItems(lineData).then(function (payload) {
       var items = payload.items || [];
       var total = payload.total;
       var totalPages = payload.total_pages || (items.length ? 2 : 1);
-      
-      console.log('TryzubTV: Line items loaded:', items.length);
       
       lineData.results = items;
       lineData.total_pages = totalPages;
       
       if (typeof total === 'number' && total > 0 && lineData.params && lineData.params.tryzubtv_source === Api$1.SOURCE_TV) {
         var title = lineData.params.tryzubtv_category_title || lineData.title;
-        var newTitle = title + " · " + total;
+        var newTitle = "".concat(title, " \xB7 ").concat(total);
         lineData.title = newTitle;
-        
         var titleNode = lineItem.render().find('.items-line__title');
         if (titleNode.length) titleNode.text(newTitle);
       }
       
-      // Добавляем карточку доната только если есть элементы
-      if (lineData.params && lineData.params.tryzubtv_line_index === 0 && !lineData.tryzubtv_qr_added && items.length > 0) {
-        var donateEnabled = Lampa && Lampa.Storage ? Lampa.Storage.get('tryzubtv_donate_card', true) : true;
+      if (lineData.params && lineData.params.tryzubtv_line_index === 0 && !lineData.tryzubtv_qr_added) {
+        var donateEnabled = Lampa.Storage.get('tryzubtv_donate_card', true);
         if (donateEnabled) {
           lineData.results.unshift(Api$1.buildQrCard());
         }
@@ -1225,82 +1171,38 @@
       var view = lineItem.params && lineItem.params.items ? lineItem.params.items.view : 7;
       var initial = lineData.results.slice(0, view);
       
-      console.log('TryzubTV: Appending initial items:', initial.length);
-      
       initial.forEach(function (element) {
-        if (lineItem && typeof lineItem.emit === 'function') {
-          lineItem.emit('createAndAppend', element);
-        }
+        lineItem.emit('createAndAppend', element);
       });
     }).catch(function (error) {
-      console.error('TryzubTV: line load failed', error);
+      console.error('TryzubTV: Помилка завантаження лінії', error);
       lineData.tryzubtv_loaded = false;
     });
   }
   
   function component$2(object) {
-    if (!Lampa || !Lampa.Maker) {
-      console.error('TryzubTV: Lampa.Maker not available');
-      return null;
-    }
-    
     var comp = Lampa.Maker.make('Main', object);
-    
     comp.use({
       onCreate: function onCreate() {
         var _this = this;
+        this.activity.render().addClass('tryzubtv-activity');
+        this.activity.loader(true);
         
-        console.log('TryzubTV: Main component onCreate');
-        
-        if (this.activity && this.activity.render) {
-          this.activity.render().addClass('tryzubtv-activity');
-        }
-        
-        if (this.activity && this.activity.loader) {
-          this.activity.loader(true);
-        }
-        
-        // Задержка для Tizen
+        // Затримка для Tizen
         setTimeout(function() {
           Api$1.loadMain(function (lines) {
-            console.log('TryzubTV: Main lines received:', lines ? lines.length : 0);
-            
-            if (_this.activity && _this.activity.loader) {
-              _this.activity.loader(false);
-            }
-            
-            if (lines && lines.length) {
-              if (_this.build) {
-                _this.build(lines);
-              }
-            } else {
-              if (_this.empty) {
-                _this.empty();
-              }
-            }
-          }, function (error) {
-            console.error('TryzubTV: Main load error:', error);
-            
-            if (_this.activity && _this.activity.loader) {
-              _this.activity.loader(false);
-            }
-            
-            if (_this.empty) {
-              _this.empty();
-            }
+            if (lines && lines.length) _this.build(lines);else _this.empty();
+            _this.activity.loader(false);
+          }, function () {
+            _this.activity.loader(false);
+            _this.empty();
           });
         }, IS_TIZEN ? 500 : 0);
       },
-      
       onBack: function onBack() {
-        if (Lampa && Lampa.Activity) {
-          Lampa.Activity.backward();
-        }
+        Lampa.Activity.backward();
       },
-      
       onInstance: function onInstance(lineItem, lineData) {
-        if (!lineItem || !lineData) return;
-        
         var params = lineData.params || {};
         var lineIndex = typeof params.tryzubtv_line_index === 'number' ? params.tryzubtv_line_index : 0;
         var forceVisible = lineIndex < 4;
@@ -1310,50 +1212,38 @@
           onVisible: function onVisible() {
             loadLineContent(lineItem, lineData);
           },
-          
           onPush: function onPush(item) {
             if (lineData.tryzubtv_force_visible && item && typeof item.visible === 'function') {
               item.visible();
             }
           },
-          
           onMore: function onMore() {
             var more = params.more || {};
-            
             if (more.component === 'salopower_category' && more.disciplineId) {
-              if (Lampa && Lampa.Activity) {
-                Lampa.Activity.push({
-                  url: '',
-                  title: more.title || lineData.title || (Lampa.Lang ? Lampa.Lang.translate('tryzubtv_title') : 'TryzubTV'),
-                  component: 'salopower_category',
-                  disciplineId: more.disciplineId
-                });
-              }
-              return;
-            }
-            
-            if (!more.category_slug) return;
-            
-            if (Lampa && Lampa.Activity) {
               Lampa.Activity.push({
                 url: '',
-                title: more.title || lineData.title || (Lampa.Lang ? Lampa.Lang.translate('tryzubtv_title') : 'TryzubTV'),
-                component: 'tryzubtv_category',
-                category_slug: more.category_slug,
-                category_title: more.title || lineData.title || '',
-                params: {
-                  empty: {
-                    title: more.title || (Lampa.Lang ? Lampa.Lang.translate('tryzubtv_title') : 'TryzubTV'),
-                    descr: Lampa.Lang ? Lampa.Lang.translate('tryzubtv_empty') : 'No channels available'
-                  }
-                }
+                title: more.title || lineData.title || Lampa.Lang.translate('tryzubtv_title'),
+                component: 'salopower_category',
+                disciplineId: more.disciplineId
               });
+              return;
             }
+            if (!more.category_slug) return;
+            Lampa.Activity.push({
+              url: '',
+              title: more.title || lineData.title || Lampa.Lang.translate('tryzubtv_title'),
+              component: 'tryzubtv_category',
+              category_slug: more.category_slug,
+              category_title: more.title || lineData.title || '',
+              params: {
+                empty: {
+                  title: more.title || Lampa.Lang.translate('tryzubtv_title'),
+                  descr: Lampa.Lang.translate('tryzubtv_empty')
+                }
+              }
+            });
           },
-          
           onInstance: function onInstance(cardItem, cardData) {
-            if (!cardItem || !cardData) return;
-            
             cardItem.use({
               onCreate: function onCreate() {
                 if (this.html && this.html.classList) {
@@ -1363,7 +1253,6 @@
                   appendReplayOverlay(cardItem, cardData);
                 }
               },
-              
               onEnter: function onEnter() {
                 if (cardData && cardData.tryzubtv_action === 'qr_modal') {
                   openQrModal();
@@ -1375,7 +1264,6 @@
                 }
                 Player.playChannel(cardData);
               },
-              
               onMenu: function onMenu() {
                 return false;
               }
@@ -1386,104 +1274,53 @@
         if (forceVisible) {
           setTimeout(function () {
             loadLineContent(lineItem, lineData);
-          }, IS_TIZEN ? 1000 : 0);
+          }, 0);
         }
       }
     });
-    
     return comp;
   }
 
-  // Компонент категории
+  // Компонент категорії
   function component$1(object) {
-    if (!Lampa || !Lampa.Maker) {
-      console.error('TryzubTV: Lampa.Maker not available for category');
-      return null;
-    }
-    
     var comp = Lampa.Maker.make('Category', object);
-    
     comp.use({
       onCreate: function onCreate() {
         var _this = this;
-        
-        console.log('TryzubTV: Category component onCreate, slug:', object.category_slug);
-        
-        if (this.activity && this.activity.render) {
-          this.activity.render().addClass('tryzubtv-activity');
-        }
-        
-        if (this.activity && this.activity.loader) {
-          this.activity.loader(true);
-        }
-        
+        this.activity.render().addClass('tryzubtv-activity');
+        this.activity.loader(true);
         if (!object.category_slug) {
-          console.error('TryzubTV: No category slug provided');
-          if (this.activity && this.activity.loader) {
-            this.activity.loader(false);
-          }
-          if (this.empty) {
-            this.empty();
-          }
+          this.activity.loader(false);
+          this.empty();
           return;
         }
         
-        // Задержка для Tizen
+        // Затримка для Tizen
         setTimeout(function() {
           Api$1.loadCategory(object.category_slug, object.category_title, function (lines) {
-            console.log('TryzubTV: Category lines received:', lines && lines[0] ? lines[0].results.length : 0);
-            
-            if (_this.activity && _this.activity.loader) {
-              _this.activity.loader(false);
-            }
-            
-            if (lines && lines[0] && lines[0].results && lines[0].results.length) {
-              if (_this.build) {
-                _this.build(lines);
-              }
-            } else {
-              if (_this.empty) {
-                _this.empty();
-              }
-            }
-          }, function (error) {
-            console.error('TryzubTV: Category load error:', error);
-            
-            if (_this.activity && _this.activity.loader) {
-              _this.activity.loader(false);
-            }
-            
-            if (_this.empty) {
-              _this.empty();
-            }
+            if (lines && lines[0] && lines[0].results && lines[0].results.length) _this.build(lines);else _this.empty();
+            _this.activity.loader(false);
+          }, function () {
+            _this.activity.loader(false);
+            _this.empty();
           });
         }, IS_TIZEN ? 500 : 0);
       },
-      
       onBack: function onBack() {
-        if (Lampa && Lampa.Activity) {
-          Lampa.Activity.backward();
-        }
+        Lampa.Activity.backward();
       },
-      
       onInstance: function onInstance(lineItem, lineData) {
-        if (!lineItem) return;
-        
         lineItem.use({
           onInstance: function onInstance(cardItem, cardData) {
-            if (!cardItem || !cardData) return;
-            
             cardItem.use({
               onCreate: function onCreate() {
                 if (this.html && this.html.classList) {
                   this.html.classList.add('card--tryzubtv');
                 }
               },
-              
               onEnter: function onEnter() {
                 Player.playChannel(cardData);
               },
-              
               onMenu: function onMenu() {
                 return false;
               }
@@ -1492,17 +1329,11 @@
         });
       }
     });
-    
     return comp;
   }
 
-  // Языковые настройки
-  function lang() {
-    if (!Lampa || !Lampa.Lang) {
-      console.warn('TryzubTV: Lampa.Lang not available');
-      return;
-    }
-    
+  // Мовні налаштування
+  function lang () {
     Lampa.Lang.add({
       tryzubtv_title: {
         en: 'TryzubTV',
@@ -1593,18 +1424,98 @@
         uk: 'Дитячі'
       }
     });
-    
-    console.log('TryzubTV: Language strings added');
   }
 
-  // Настройки
+  // Редактор каталогу (НАЛАШТУВАННЯ КАТЕГОРІЙ)
+  var ORDER_KEY = 'tryzubtv_catalog_order';
+  var HIDE_KEY = 'tryzubtv_catalog_hidden';
+  
+  function translateCategoryName(name) {
+    var raw = name || '';
+    if (!raw) return '';
+    var key = "tryzubtv_category_".concat(raw);
+    var translated = Lampa.Lang ? Lampa.Lang.translate(key) : key;
+    return translated === key ? raw : translated;
+  }
+  
+  function saveList(list) {
+    var order = [];
+    var hidden = [];
+    list.find('.menu-edit-list__item').each(function () {
+      var item = $(this);
+      var lineId = item.data('lineId');
+      if (lineId) order.push(lineId);
+      if (item.hasClass('hidden')) hidden.push(lineId);
+    });
+    Lampa.Storage.set(ORDER_KEY, order);
+    Lampa.Storage.set(HIDE_KEY, hidden);
+  }
+  
+  function openCatalogEditor() {
+    Lampa.Loading.start();
+    Api$1.fetchCatalogLines().then(function (lines) {
+      var storedHidden = Api$1.getCatalogHidden();
+      var ordered = Api$1.sortCatalogLines(lines);
+      
+      var list = $('<div class="menu-edit-list"></div>');
+      
+      ordered.forEach(function (line) {
+        var title = translateCategoryName(line.title || line.rawTitle || line.id);
+        var item = $("<div class=\"menu-edit-list__item\">\n                    <div class=\"menu-edit-list__icon\"></div>\n                    <div class=\"menu-edit-list__title\">".concat(title, "</div>\n                    <div class=\"menu-edit-list__move move-up selector\">\n                        <svg width=\"22\" height=\"14\" viewBox=\"0 0 22 14\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n                            <path d=\"M2 12L11 3L20 12\" stroke=\"currentColor\" stroke-width=\"4\" stroke-linecap=\"round\"/>\n                        </svg>\n                    </div>\n                    <div class=\"menu-edit-list__move move-down selector\">\n                        <svg width=\"22\" height=\"14\" viewBox=\"0 0 22 14\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n                            <path d=\"M2 2L11 11L20 2\" stroke=\"currentColor\" stroke-width=\"4\" stroke-linecap=\"round\"/>\n                        </svg>\n                    </div>\n                    <div class=\"menu-edit-list__toggle toggle selector\">\n                        <svg width=\"26\" height=\"26\" viewBox=\"0 0 26 26\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n                            <rect x=\"1.89111\" y=\"1.78369\" width=\"21.793\" height=\"21.793\" rx=\"3.5\" stroke=\"currentColor\" stroke-width=\"3\"/>\n                            <path d=\"M7.44873 12.9658L10.8179 16.3349L18.1269 9.02588\" stroke=\"currentColor\" stroke-width=\"3\" class=\"dot\" opacity=\"0\" stroke-linecap=\"round\"/>\n                        </svg>\n                    </div>\n                </div>");
+        
+        item.data('lineId', line.id);
+        
+        item.find('.move-up').on('hover:enter', function () {
+          var prev = item.prev();
+          if (prev.length) item.insertBefore(prev);
+        });
+        
+        item.find('.move-down').on('hover:enter', function () {
+          var next = item.next();
+          if (next.length) item.insertAfter(next);
+        });
+        
+        var isHidden = storedHidden.indexOf(line.id) !== -1;
+        if (isHidden) item.addClass('hidden');
+        
+        item.find('.toggle').on('hover:enter', function () {
+          item.toggleClass('hidden');
+          item.find('.dot').attr('opacity', item.hasClass('hidden') ? 0 : 1);
+        }).find('.dot').attr('opacity', isHidden ? 0 : 1);
+        
+        list.append(item);
+      });
+      
+      Lampa.Modal.open({
+        title: Lampa.Lang.translate('tryzubtv_settings_catalog'),
+        html: list,
+        size: 'small',
+        scroll_to_center: true,
+        select: list.find('.selector').first(),
+        onBack: function onBack() {
+          saveList(list);
+          Lampa.Modal.close();
+          Lampa.Controller.toggle('settings_component');
+        }
+      });
+      
+      setTimeout(function () {
+        Lampa.Modal.toggle(list.find('.selector').first());
+      }, 0);
+    }).catch(function (error) {
+      console.error('TryzubTV: Помилка завантаження редактора каталогу', error);
+      Lampa.Noty.show(Lampa.Lang.translate('tryzubtv_empty'));
+    }).finally(function () {
+      Lampa.Loading.stop();
+    });
+  }
+
+  // Налаштування
   var SOURCE_TV_KEY = 'tryzubtv_source_tv';
   var SOURCE_REPLAY_KEY = 'tryzubtv_source_replay';
   var DONATE_CARD_KEY = 'tryzubtv_donate_card';
   
   function ensureAtLeastOne(enabledKey) {
-    if (!Lampa || !Lampa.Storage || !Lampa.Noty || !Lampa.Settings) return;
-    
     var tvEnabled = Lampa.Storage.get(SOURCE_TV_KEY, true);
     var replayEnabled = Lampa.Storage.get(SOURCE_REPLAY_KEY, true);
     if (!tvEnabled && !replayEnabled) {
@@ -1615,23 +1526,13 @@
   }
   
   function initSettings() {
-    if (!Lampa) {
-      console.warn('TryzubTV: Lampa not available for settings');
-      return;
-    }
-    
     var SettingsApi = Lampa.SettingsApi || Lampa.Settings;
-    if (!SettingsApi || !SettingsApi.addComponent) {
-      console.warn('TryzubTV: Settings API not available');
-      return;
-    }
-    
-    console.log('TryzubTV: Initializing settings');
+    if (!SettingsApi || !SettingsApi.addComponent) return;
     
     SettingsApi.addComponent({
       component: 'tryzubtv',
-      name: Lampa.Lang ? Lampa.Lang.translate('tryzubtv_title') : 'TryzubTV',
-      icon: '<svg viewBox="0 0 32 32" fill="#ffffff" xmlns="http://www.w3.org/2000/svg"><path d="M30.118 15l0.776-1.553c0.136-0.271 0.141-0.589 0.014-0.865-0.127-0.275-0.372-0.478-0.666-0.552L27 11.219V11c0-0.552-0.448-1-1-1h-2.586L22 8.586V7c0-0.308-0.142-0.599-0.385-0.788-0.243-0.19-0.561-0.258-0.858-0.183l-4 1c-0.241 0.061-0.451 0.208-0.589 0.416l-1.044 1.566-0.229-0.459c-0.144-0.288-0.417-0.488-0.734-0.54-0.315-0.049-0.64 0.054-0.868 0.28l-0.533 0.534L8.372 7.071C8.153 6.984 7.91 6.977 7.684 7.051l-3 1C4.16 8.226 3.877 8.792 4.052 9.316l0.726 2.177-1.224 0.612C3.214 12.275 3 12.621 3 13v1.382l-1.447 0.724c-0.494 0.247-0.694 0.848-0.447 1.342l1 2C2.275 18.786 2.621 19 3 19h4c0.265 0 0.52-0.105 0.707-0.293l0.833-0.833 2.19-0.73L13.586 20l-1.293 1.293c-0.076 0.076-0.139 0.164-0.187 0.26l-1 2c-0.192 0.385-0.117 0.85 0.187 1.154l1 1C12.48 25.895 12.735 26 13 26h1c0.265 0 0.52-0.105 0.707-0.293L16 24.414l0.293 0.293c0.227 0.227 0.548 0.329 0.867 0.28 0.317-0.052 0.59-0.252 0.734-0.54L18 24.236V25c0 0.379 0.214 0.725 0.553 0.894L20 26.618V27c0 0.347 0.18 0.668 0.474 0.851C20.635 27.95 20.818 28 21 28c0.153 0 0.306-0.035 0.447-0.105l4-2c0.193-0.097 0.351-0.254 0.447-0.448l1-2c0.192-0.385 0.117-0.85-0.187-1.154-0.303-0.304-0.769-0.379-1.154-0.187l-1.105 0.553-0.139-0.277 4.206-2.523c0.163-0.098 0.295-0.24 0.38-0.41L29.618 18H30c0.347 0 0.668-0.18 0.851-0.474 0.182-0.295 0.199-0.663 0.044-0.973L30.118 15zM28.105 14.553c-0.141 0.282-0.141 0.613 0 0.894l0.355 0.71c-0.149 0.096-0.273 0.23-0.355 0.395l-0.87 1.74-4.75 2.85c-0.448 0.269-0.613 0.837-0.38 1.305l1 2c0.054 0.107 0.124 0.2 0.207 0.279l-1.47 0.735c-0.096-0.149-0.23-0.273-0.395-0.355L20 24.382v-0.146l0.895-1.789c0.155-0.31 0.138-0.678-0.044-0.973C20.668 21.18 20.347 21 20 21h-2c-0.379 0-0.725 0.214-0.895 0.553l-0.379 0.759-0.019-0.019c-0.391-0.391-1.024-0.391-1.414 0L13.586 24h-0.172l-0.197-0.197 0.605-1.21 1.885-1.885c0.391-0.391 0.391-1.024 0-1.414l-4-4c-0.268-0.269-0.664-0.362-1.023-0.242l-3 1c-0.147 0.049-0.281 0.132-0.391 0.242L6.586 17H3.618l-0.276-0.553 1.105-0.553C4.786 15.725 5 15.379 5 15v-1.382l1.447-0.724c0.445-0.222 0.659-0.738 0.501-1.211L6.265 9.632 7.969 9.064l4.66 1.864c0.372 0.148 0.796 0.062 1.079-0.222l0.019-0.019 0.379 0.759c0.16 0.319 0.477 0.529 0.833 0.551 0.351 0.026 0.696-0.147 0.894-0.444l1.786-2.678L20 8.281V9c0 0.265 0.105 0.52 0.293 0.707l2 2C22.48 11.895 22.735 12 23 12h2c0 0.459 0.312 0.859 0.757 0.97l2.791 0.698L28.105 14.553z"/></svg>'
+      name: Lampa.Lang.translate('tryzubtv_title'),
+      icon: "<svg viewBox=\"0 0 32 32\" enable-background=\"new 0 0 32 32\" version=\"1.1\" xml:space=\"preserve\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" fill=\"#ffffff\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"> <g id=\"_x36_0\"></g> <g id=\"_x35_9\"></g> <g id=\"_x35_8\"></g> <g id=\"_x35_7\"></g> <g id=\"_x35_6\"></g> <g id=\"_x35_5\"></g> <g id=\"_x35_4\"></g> <g id=\"_x35_3\"></g> <g id=\"_x35_2\"></g> <g id=\"_x35_1\"></g> <g id=\"_x35_0\"></g> <g id=\"_x34_9\"></g> <g id=\"_x34_8\"></g> <g id=\"_x34_7\"></g> <g id=\"_x34_6\"></g> <g id=\"_x34_5\"></g> <g id=\"_x34_4\"></g> <g id=\"_x34_3\"></g> <g id=\"_x34_2\"></g> <g id=\"_x34_1\"></g> <g id=\"_x34_0\"></g> <g id=\"_x33_9\"></g> <g id=\"_x33_8\"></g> <g id=\"_x33_7\"></g> <g id=\"_x33_6\"></g> <g id=\"_x33_5\"></g> <g id=\"_x33_4\"></g> <g id=\"_x33_3\"></g> <g id=\"_x33_2\"></g> <g id=\"_x33_1\"></g> <g id=\"_x33_0\"></g> <g id=\"_x32_9\"></g> <g id=\"_x32_8\"></g> <g id=\"_x32_7\"></g> <g id=\"_x32_6\"></g> <g id=\"_x32_5\"></g> <g id=\"_x32_4_1_\"></g> <g id=\"_x32_3\"></g> <g id=\"_x32_2\"></g> <g id=\"_x32_1\"></g> <g id=\"_x32_0\"></g> <g id=\"_x31_9\"></g> <g id=\"_x31_8\"></g> <g id=\"_x31_7\"></g> <g id=\"_x31_6\"></g> <g id=\"_x31_5\"></g> <g id=\"_x31_4\"></g> <g id=\"_x31_3\"></g> <g id=\"_x31_2\"> <path d=\"M30.1181641,15l0.7763672-1.5527344c0.1357422-0.2714844,0.140625-0.5893555,0.0141602-0.8652344 c-0.1269531-0.2753906-0.3720703-0.4785156-0.6660156-0.5522461L27,11.2192383V11c0-0.5522461-0.4477539-1-1-1h-2.5859375 L22,8.5859375V7c0-0.3081055-0.1420898-0.5986328-0.3847656-0.7880859 c-0.2431641-0.1899414-0.5605469-0.2583008-0.8579102-0.1821289l-4,1 c-0.2412109,0.0605469-0.4511719,0.2084961-0.5893555,0.4155273l-1.0439453,1.5664063l-0.2294922-0.4589844 c-0.144043-0.2875977-0.4169922-0.4882813-0.734375-0.5400391c-0.3144531-0.0488281-0.6401367,0.0537109-0.8671875,0.2802734 l-0.5336914,0.5336914L8.371582,7.0712891C8.152832,6.9838867,7.909668,6.9770508,7.6835938,7.0512695l-3,1 C4.159668,8.2260742,3.8764648,8.7924805,4.0512695,9.3164063l0.7255859,2.1772461l-1.2241211,0.6118164 C3.2138672,12.2749023,3,12.6210938,3,13v1.3818359l-1.4472656,0.7236328 c-0.4941406,0.2470703-0.6943359,0.8476563-0.4472656,1.3417969l1,2C2.2749023,18.7861328,2.6210938,19,3,19h4 c0.2651367,0,0.5195313-0.1054688,0.7070313-0.2929688l0.8330078-0.8330078l2.1899414-0.7299805L13.5859375,20 l-1.2929688,1.2929688c-0.0761719,0.0756836-0.1391602,0.1635742-0.1875,0.2597656l-1,2 c-0.1923828,0.3852539-0.1166992,0.8500977,0.1875,1.1542969l1,1C12.4804688,25.8945313,12.7348633,26,13,26h1 c0.2651367,0,0.5195313-0.1054688,0.7070313-0.2929688L16,24.4140625l0.2929688,0.2929688 c0.2270508,0.2265625,0.5483398,0.3286133,0.8671875,0.2802734c0.3173828-0.0517578,0.590332-0.2524414,0.734375-0.5400391 L18,24.2358398V25c0,0.3789063,0.2138672,0.7250977,0.5527344,0.8945313L20,26.6181641V27 c0,0.3466797,0.1796875,0.668457,0.4741211,0.8505859C20.6347656,27.949707,20.8173828,28,21,28 c0.152832,0,0.3061523-0.0351563,0.4472656-0.1054688l4-2c0.1933594-0.0966797,0.3505859-0.2539063,0.4472656-0.4472656l1-2 c0.1923828-0.3852539,0.1166992-0.8500977-0.1875-1.1542969c-0.3032227-0.3037109-0.7685547-0.3793945-1.1542969-0.1875 l-1.1054688,0.5527344l-0.1386719-0.2773438l4.2060547-2.5234375c0.1630859-0.0976563,0.2949219-0.2402344,0.3798828-0.4101563 L29.6181641,18H30c0.3466797,0,0.668457-0.1796875,0.8505859-0.4741211 c0.1821289-0.2949219,0.1987305-0.6630859,0.0439453-0.9731445L30.1181641,15z M28.1054688,14.5527344 c-0.140625,0.2817383-0.140625,0.612793,0,0.8945313l0.3554688,0.7104492 c-0.1494141,0.0957031-0.2729492,0.2304688-0.3554688,0.3950195l-0.8696289,1.7397461l-4.7504883,2.8500977 c-0.4477539,0.2685547-0.6132813,0.8374023-0.3798828,1.3046875l1,2c0.0537109,0.1074219,0.1240234,0.2006836,0.206543,0.2788086 l-1.4697266,0.7348633c-0.0957031-0.1494141-0.2304688-0.2729492-0.3950195-0.3554688L20,24.3818359v-0.1459961 l0.8945313-1.7885742c0.1547852-0.3100586,0.1381836-0.6782227-0.0439453-0.9731445C20.668457,21.1796875,20.3466797,21,20,21h-2 c-0.3789063,0-0.7250977,0.2138672-0.8945313,0.5527344l-0.3793945,0.7592773l-0.019043-0.019043 c-0.390625-0.390625-1.0234375-0.390625-1.4140625,0L13.5859375,24h-0.171875l-0.1972656-0.1972656l0.6049805-1.2104492 l1.8852539-1.8852539c0.390625-0.390625,0.390625-1.0234375,0-1.4140625l-4-4 c-0.2680664-0.269043-0.6640625-0.3623047-1.0234375-0.2416992l-3,1c-0.1469727,0.0493164-0.2807617,0.1318359-0.390625,0.2416992 L6.5859375,17H3.6181641l-0.2763672-0.5527344l1.1054688-0.5527344C4.7861328,15.7250977,5,15.3789063,5,15v-1.3818359 l1.4472656-0.7236328c0.4448242-0.2226563,0.6586914-0.7387695,0.5014648-1.2109375L6.2651367,9.6323242L7.96875,9.0644531 l4.659668,1.8642578c0.3720703,0.1479492,0.7963867,0.0620117,1.0786133-0.2216797l0.019043-0.019043l0.3793945,0.7592773 c0.159668,0.3188477,0.4765625,0.5288086,0.8325195,0.5507813c0.3510742,0.0263672,0.6962891-0.1469727,0.894043-0.4433594 l1.7856445-2.6782227L20,8.2807617V9c0,0.2651367,0.1054688,0.5195313,0.2929688,0.7070313l2,2 C22.4804688,11.8945313,22.7348633,12,23,12h2c0,0.4589844,0.3125,0.8588867,0.7573242,0.9702148l2.7905273,0.6977539 L28.1054688,14.5527344z\" fill=\"#ffffff\"></path> </g> <g id=\"_x31_1\"></g> <g id=\"_x31_0\"></g> <g id=\"_x39_\"></g> <g id=\"_x38_\"></g> <g id=\"_x37_\"></g> <g id=\"_x36_\"></g> <g id=\"_x35_\"></g> <g id=\"_x34_\"></g> <g id=\"_x33_\"></g> <g id=\"_x32_\"></g> <g id=\"_x31_\"></g> <g id=\"topic\"></g> <g id=\"Guides\"></g> </g></svg>"
     });
     
     SettingsApi.addParam({
@@ -1641,7 +1542,7 @@
         type: 'button'
       },
       field: {
-        name: Lampa.Lang ? Lampa.Lang.translate('tryzubtv_settings_donate') : 'Donate'
+        name: Lampa.Lang.translate('tryzubtv_settings_donate')
       },
       onChange: function onChange() {
         openQrModal();
@@ -1653,14 +1554,14 @@
       param: {
         name: DONATE_CARD_KEY,
         type: 'trigger',
-        default: true
+        "default": true
       },
       field: {
-        name: Lampa.Lang ? Lampa.Lang.translate('tryzubtv_settings_donate_card') : 'Donate card'
+        name: Lampa.Lang.translate('tryzubtv_settings_donate_card')
       },
       onChange: function onChange() {
         var enabled = Lampa.Storage.get(DONATE_CARD_KEY, true);
-        if (!enabled && Lampa.Noty && Lampa.Lang) {
+        if (!enabled) {
           Lampa.Noty.show(Lampa.Lang.translate('tryzubtv_settings_donate_sad'));
         }
       }
@@ -1671,10 +1572,10 @@
       param: {
         name: SOURCE_TV_KEY,
         type: 'trigger',
-        default: true
+        "default": true
       },
       field: {
-        name: Lampa.Lang ? Lampa.Lang.translate('tryzubtv_settings_source_tv') : 'TV channels'
+        name: Lampa.Lang.translate('tryzubtv_settings_source_tv')
       },
       onChange: function onChange() {
         ensureAtLeastOne(SOURCE_TV_KEY);
@@ -1686,26 +1587,37 @@
       param: {
         name: SOURCE_REPLAY_KEY,
         type: 'trigger',
-        default: true
+        "default": true
       },
       field: {
-        name: Lampa.Lang ? Lampa.Lang.translate('tryzubtv_settings_source_replay') : 'Sports replays'
+        name: Lampa.Lang.translate('tryzubtv_settings_source_replay')
       },
       onChange: function onChange() {
         ensureAtLeastOne(SOURCE_REPLAY_KEY);
       }
     });
     
-    console.log('TryzubTV: Settings initialized');
+    // КНОПКА НАЛАШТУВАНЬ КАТАЛОГУ (повернуто!)
+    SettingsApi.addParam({
+      component: 'tryzubtv',
+      param: {
+        name: 'tryzubtv_catalog',
+        type: 'button'
+      },
+      field: {
+        name: Lampa.Lang.translate('tryzubtv_settings_catalog')
+      },
+      onChange: function onChange() {
+        openCatalogEditor();
+      }
+    });
   }
 
-  // Упрощенный API для replay
-  var REPLAY_BASE = IS_TIZEN
-    ? 'https://corsproxy.io/?' + encodeURIComponent('https://a.maincast.tv/items')
-    : 'https://p01--corsproxy--h7ynqrkjrc6c.code.run/https://a.maincast.tv/items';
+  // API для replay
+  var REPLAY_BASE = 'https://a.maincast.tv/items';
   
   function request(url) {
-    return request$2(url); // Используем ту же функцию
+    return request$2(url);
   }
   
   function mapVodToCard(vod) {
@@ -1718,11 +1630,11 @@
       var release_date = vod.date ? new Date(vod.date).toLocaleDateString() : '';
       var cover = '';
       if (vod.cover) {
-        cover = vod.cover.startsWith('http') ? vod.cover : "https://a.maincast.tv/assets/" + vod.cover;
+        cover = vod.cover.startsWith('http') ? vod.cover : "https://a.maincast.tv/assets/".concat(vod.cover);
       } else if (vod.cover_url) {
         cover = vod.cover_url;
       } else if (vod.poster) {
-        cover = vod.poster.startsWith('http') ? vod.poster : "https://a.maincast.tv/assets/" + vod.poster;
+        cover = vod.poster.startsWith('http') ? vod.poster : "https://a.maincast.tv/assets/".concat(vod.poster);
       }
       return {
         title: vod.name,
@@ -1739,7 +1651,6 @@
         }
       };
     } catch (e) {
-      console.error('TryzubTV: Error mapping vod to card:', e);
       return null;
     }
   }
@@ -1751,37 +1662,29 @@
   function _loadCategory() {
     _loadCategory = _asyncToGenerator(function* (disciplineId, oncomplete, onerror) {
       try {
-        console.log('TryzubTV: Loading replay category:', disciplineId);
-        var url = REPLAY_BASE + "/vod?filter={\"discipline\":" + disciplineId + "}&sort=-date&limit=100";
-        var response = yield request(url);
+        // Використовуємо проксі для Tizen
+        var url = "".concat(REPLAY_BASE, "/vod?filter={\"discipline\":").concat(disciplineId, "}&sort=-date&limit=100");
+        var requestUrl = IS_TIZEN ? 
+          'https://api.allorigins.win/raw?url=' + encodeURIComponent(url) :
+          url;
+        
+        var response = yield request(requestUrl);
         var vods = (response && response.data ? response.data : []).filter(function (vod) {
           return vod && vod.link && !vod.link.includes('youtube');
         });
         var items = vods.map(mapVodToCard).filter(Boolean);
-        
-        console.log('TryzubTV: Replay items loaded:', items.length);
-        
-        if (oncomplete) {
-          oncomplete([{
-            title: '',
-            results: items,
-            total_pages: 1,
-            params: {
-              salopower: true,
-              disciplineId: disciplineId
-            }
-          }]);
-        }
+        oncomplete([{
+          title: '',
+          results: items,
+          total_pages: 1,
+          params: {
+            salopower: true,
+            disciplineId: disciplineId
+          }
+        }]);
       } catch (error) {
-        console.error("TryzubTV: Failed to load replay category " + disciplineId, error);
+        console.error("TryzubTV: Не вдалося завантажити категорію replay ".concat(disciplineId), error);
         if (onerror) onerror(error);
-        if (oncomplete) {
-          oncomplete([{
-            title: '',
-            results: [],
-            total_pages: 1
-          }]);
-        }
       }
     });
     return _loadCategory.apply(this, arguments);
@@ -1793,138 +1696,106 @@
 
   // Компонент для replay
   function component(object) {
-    if (!Lampa || !Lampa.Maker) {
-      console.error('TryzubTV: Lampa.Maker not available for replay');
-      return null;
-    }
-    
     var comp = Lampa.Maker.make('Category', object);
-    
     comp.use({
       onCreate: function onCreate() {
         var _this = this;
+        this.activity.loader(true);
         
-        console.log('TryzubTV: Replay component onCreate, disciplineId:', object.disciplineId);
-        
-        if (this.activity && this.activity.loader) {
-          this.activity.loader(true);
-        }
-        
-        // Задержка для Tizen
+        // Затримка для Tizen
         setTimeout(function() {
           Api.loadCategory(object.disciplineId, function (lines) {
-            console.log('TryzubTV: Replay lines received:', lines && lines[0] ? lines[0].results.length : 0);
-            
-            if (_this.activity && _this.activity.loader) {
-              _this.activity.loader(false);
-            }
-            
-            if (_this.build) {
-              _this.build(lines);
-            }
+            _this.build(lines);
+            _this.activity.loader(false);
           }, function() {
-            console.log('TryzubTV: Replay load failed');
-            
-            if (_this.activity && _this.activity.loader) {
-              _this.activity.loader(false);
-            }
-            
-            if (_this.empty) {
-              _this.empty();
-            }
+            _this.activity.loader(false);
+            _this.empty();
           });
         }, IS_TIZEN ? 500 : 0);
       },
-      
       onInstance: function onInstance(line_item, line_data) {
-        if (!line_item) return;
-        
         line_item.use({
           onInstance: function onInstance(card_item, card_data) {
-            if (!card_item || !card_data) return;
-            
             card_item.use({
               onCreate: function onCreate() {
                 try {
                   var cardElement = this.render ? this.render(true) : card_item.render ? card_item.render(true) : null;
                   if (!cardElement) return;
-                  
                   var $card = $(cardElement);
                   var card_view = $card.find('.card__view');
                   if (!card_view.length || !card_data) return;
-                  
                   var title = card_data.title || '';
                   var desc = card_data.salo_description || card_data.description || '';
                   var date = card_data.salo_release_date || card_data.release_date || '';
                   if (!title && !desc && !date) return;
-                  
                   $card.addClass('card--salopower');
-                  
-                  var overlay = '<div class="card__body card__body--salopower" style="position:absolute;left:0;top:0;width:100%;height:100%;display:flex;flex-direction:column;padding:1.2em 1.5em;background-image:linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0) 100%);pointer-events:none;">' +
-                    '<div class="card__title" style="font-size:1.6em;font-weight:700;">' + title + '</div>' +
-                    '<div class="card__salopower-data" style="margin-top:auto;padding-top:1em;">' +
-                    '<div class="card__description" style="font-size:1.3em;color:rgba(255,255,255,0.7);-webkit-line-clamp:2;-webkit-box-orient:vertical;display:-webkit-box;overflow:hidden;text-overflow:ellipsis;">' + desc + '</div>' +
-                    '<div class="card__release-date" style="font-size:1.2em;color:rgba(255,255,255,0.5);margin-top:0.5em;">' + date + '</div>' +
-                    '</div>' +
-                    '</div>';
-                  
-                  card_view.append(overlay);
+                  var tpl = Lampa.Template.get('salopower_episode_card_data', {
+                    title: title,
+                    salo_description: desc,
+                    salo_release_date: date
+                  });
+                  card_view.append(tpl);
                 } catch (e) {
-                  console.error('TryzubTV: replay card overlay create error', e);
+                  console.error('TryzubTV: Помилка створення overlay replay картки', e);
                 }
               },
-              
-              onEnter: function onEnter() {
-                playReplay(card_data);
-              }
+              onEnter: function () {
+                var _onEnter = _asyncToGenerator(function* () {
+                  if (!card_data || !card_data.salo_vod_id) {
+                    return;
+                  }
+                  Lampa.Loading.start();
+                  try {
+                    var socket = SocketManager.getInstance();
+                    var key = yield socket.connect();
+                    var newLink = "https://vod-maincast.cosmonova-broadcast.tv/".concat(card_data.salo_vod_id, "/master.m3u8?key=").concat(key);
+                    Lampa.Player.play({
+                      title: card_data.title,
+                      url: newLink
+                    });
+                  } catch (error) {
+                    console.error('TryzubTV: Помилка запуску відтворення replay', error);
+                    Lampa.Noty.show('Не вдалося отримати ключ для відтворення.');
+                  } finally {
+                    Lampa.Loading.stop();
+                  }
+                });
+                return function onEnter() {
+                  return _onEnter.apply(this, arguments);
+                };
+              }()
             });
           }
         });
       }
     });
-    
     return comp;
   }
 
-  // Основная функция запуска плагина
+  // Запуск плагіна
   function startPlugin() {
-    console.log('TryzubTV: Starting plugin, IS_TIZEN:', IS_TIZEN);
+    window.tryzubtv_merged = true;
+    if (Lampa.Storage) Lampa.Storage.set('tryzubtv_merged', true);
     
-    try {
-      window.tryzubtv_merged = true;
-      if (Lampa && Lampa.Storage) {
-        Lampa.Storage.set('tryzubtv_merged', true);
-      }
-      
-      var manifest = {
-        type: 'iptv',
-        version: '1.5.1',
-        name: 'TryzubTV',
-        description: 'Ukrainian TV channels',
-        component: 'tryzubtv_main'
-      };
-      
-      if (Lampa && Lampa.Manifest) {
-        Lampa.Manifest.plugins = manifest;
-      }
-      
-      // Регистрируем компоненты
-      if (Lampa && Lampa.Component) {
-        Lampa.Component.add('tryzubtv_main', component$2);
-        Lampa.Component.add('tryzubtv_category', component$1);
-        Lampa.Component.add('salopower_category', component);
-        console.log('TryzubTV: Components registered');
-      }
-      
-      // Добавляем языковые строки
-      lang();
-      
-      // Инициализируем настройки
-      initSettings();
-      
-      // Добавляем стили
-      var style = document.createElement('style');
-      style.textContent = `
+    var manifest = {
+      type: 'iptv',
+      version: '1.5.2',
+      name: 'TryzubTV',
+      description: 'Українські ТВ канали',
+      component: 'tryzubtv_main'
+    };
+    
+    Lampa.Manifest.plugins = manifest;
+    Lampa.Component.add('tryzubtv_main', component$2);
+    Lampa.Component.add('tryzubtv_category', component$1);
+    Lampa.Component.add('salopower_category', component);
+    
+    lang();
+    initSettings();
+    
+    // Стилі
+    var style = document.createElement('style');
+    style.textContent = `
         .card--tryzubtv .card__img {
             object-fit: contain;
             object-position: center;
@@ -2004,123 +1875,74 @@
             text-decoration: none;
             color: #d8c39a;
         }
-        .tryzubtv-test-message {
+        .tryzubtv-debug {
             position: fixed;
             top: 10px;
             right: 10px;
             background: rgba(0,0,0,0.8);
-            color: white;
+            color: #0f0;
             padding: 10px;
             border-radius: 5px;
             z-index: 9999;
             font-size: 12px;
-            max-width: 300px;
+            display: none;
         }
-      `;
+    `;
+    document.head.appendChild(style);
+    
+    Lampa.Template.add('salopower_episode_card_data', `
+        <div class="card__body card__body--salopower">
+            <div class="card__title">{title}</div>
+            <div class="card__salopower-data">
+                <div class="card__description">{salo_description}</div>
+                <div class="card__release-date">{salo_release_date}</div>
+            </div>
+        </div>
+    `);
+    
+    SocketManager.getInstance().listen();
+    
+    function addMenu() {
+      var button = $("<li class=\"menu__item selector\">\n            <div class=\"menu__ico\">\n                <svg viewBox=\"0 0 32 32\" enable-background=\"new 0 0 32 32\" version=\"1.1\" xml:space=\"preserve\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" fill=\"#ffffff\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"> <g id=\"_x36_0\"></g> <g id=\"_x35_9\"></g> <g id=\"_x35_8\"></g> <g id=\"_x35_7\"></g> <g id=\"_x35_6\"></g> <g id=\"_x35_5\"></g> <g id=\"_x35_4\"></g> <g id=\"_x35_3\"></g> <g id=\"_x35_2\"></g> <g id=\"_x35_1\"></g> <g id=\"_x35_0\"></g> <g id=\"_x34_9\"></g> <g id=\"_x34_8\"></g> <g id=\"_x34_7\"></g> <g id=\"_x34_6\"></g> <g id=\"_x34_5\"></g> <g id=\"_x34_4\"></g> <g id=\"_x34_3\"></g> <g id=\"_x34_2\"></g> <g id=\"_x34_1\"></g> <g id=\"_x34_0\"></g> <g id=\"_x33_9\"></g> <g id=\"_x33_8\"></g> <g id=\"_x33_7\"></g> <g id=\"_x33_6\"></g> <g id=\"_x33_5\"></g> <g id=\"_x33_4\"></g> <g id=\"_x33_3\"></g> <g id=\"_x33_2\"></g> <g id=\"_x33_1\"></g> <g id=\"_x33_0\"></g> <g id=\"_x32_9\"></g> <g id=\"_x32_8\"></g> <g id=\"_x32_7\"></g> <g id=\"_x32_6\"></g> <g id=\"_x32_5\"></g> <g id=\"_x32_4_1_\"></g> <g id=\"_x32_3\"></g> <g id=\"_x32_2\"></g> <g id=\"_x32_1\"></g> <g id=\"_x32_0\"></g> <g id=\"_x31_9\"></g> <g id=\"_x31_8\"></g> <g id=\"_x31_7\"></g> <g id=\"_x31_6\"></g> <g id=\"_x31_5\"></g> <g id=\"_x31_4\"></g> <g id=\"_x31_3\"></g> <g id=\"_x31_2\"> <path d=\"M30.1181641,15l0.7763672-1.5527344c0.1357422-0.2714844,0.140625-0.5893555,0.0141602-0.8652344 c-0.1269531-0.2753906-0.3720703-0.4785156-0.6660156-0.5522461L27,11.2192383V11c0-0.5522461-0.4477539-1-1-1h-2.5859375 L22,8.5859375V7c0-0.3081055-0.1420898-0.5986328-0.3847656-0.7880859 c-0.2431641-0.1899414-0.5605469-0.2583008-0.8579102-0.1821289l-4,1 c-0.2412109,0.0605469-0.4511719,0.2084961-0.5893555,0.4155273l-1.0439453,1.5664063l-0.2294922-0.4589844 c-0.144043-0.2875977-0.4169922-0.4882813-0.734375-0.5400391c-0.3144531-0.0488281-0.6401367,0.0537109-0.8671875,0.2802734 l-0.5336914,0.5336914L8.371582,7.0712891C8.152832,6.9838867,7.909668,6.9770508,7.6835938,7.0512695l-3,1 C4.159668,8.2260742,3.8764648,8.7924805,4.0512695,9.3164063l0.7255859,2.1772461l-1.2241211,0.6118164 C3.2138672,12.2749023,3,12.6210938,3,13v1.3818359l-1.4472656,0.7236328 c-0.4941406,0.2470703-0.6943359,0.8476563-0.4472656,1.3417969l1,2C2.2749023,18.7861328,2.6210938,19,3,19h4 c0.2651367,0,0.5195313-0.1054688,0.7070313-0.2929688l0.8330078-0.8330078l2.1899414-0.7299805L13.5859375,20 l-1.2929688,1.2929688c-0.0761719,0.0756836-0.1391602,0.1635742-0.1875,0.2597656l-1,2 c-0.1923828,0.3852539-0.1166992,0.8500977,0.1875,1.1542969l1,1C12.4804688,25.8945313,12.7348633,26,13,26h1 c0.2651367,0,0.5195313-0.1054688,0.7070313-0.2929688L16,24.4140625l0.2929688,0.2929688 c0.2270508,0.2265625,0.5483398,0.3286133,0.8671875,0.2802734c0.3173828-0.0517578,0.590332-0.2524414,0.734375-0.5400391 L18,24.2358398V25c0,0.3789063,0.2138672,0.7250977,0.5527344,0.8945313L20,26.6181641V27 c0,0.3466797,0.1796875,0.668457,0.4741211,0.8505859C20.6347656,27.949707,20.8173828,28,21,28 c0.152832,0,0.3061523-0.0351563,0.4472656-0.1054688l4-2c0.1933594-0.0966797,0.3505859-0.2539063,0.4472656-0.4472656l1-2 c0.1923828-0.3852539,0.1166992-0.8500977-0.1875-1.1542969c-0.3032227-0.3037109-0.7685547-0.3793945-1.1542969-0.1875 l-1.1054688,0.5527344l-0.1386719-0.2773438l4.2060547-2.5234375c0.1630859-0.0976563,0.2949219-0.2402344,0.3798828-0.4101563 L29.6181641,18H30c0.3466797,0,0.668457-0.1796875,0.8505859-0.4741211 c0.1821289-0.2949219,0.1987305-0.6630859,0.0439453-0.9731445L30.1181641,15z M28.1054688,14.5527344 c-0.140625,0.2817383-0.140625,0.612793,0,0.8945313l0.3554688,0.7104492 c-0.1494141,0.0957031-0.2729492,0.2304688-0.3554688,0.3950195l-0.8696289,1.7397461l-4.7504883,2.8500977 c-0.4477539,0.2685547-0.6132813,0.8374023-0.3798828,1.3046875l1,2c0.0537109,0.1074219,0.1240234,0.2006836,0.206543,0.2788086 l-1.4697266,0.7348633c-0.0957031-0.1494141-0.2304688-0.2729492-0.3950195-0.3554688L20,24.3818359v-0.1459961 l0.8945313-1.7885742c0.1547852-0.3100586,0.1381836-0.6782227-0.0439453-0.9731445C20.668457,21.1796875,20.3466797,21,20,21h-2 c-0.3789063,0-0.7250977,0.2138672-0.8945313,0.5527344l-0.3793945,0.7592773l-0.019043-0.019043 c-0.390625-0.390625-1.0234375-0.390625-1.4140625,0L13.5859375,24h-0.171875l-0.1972656-0.1972656l0.6049805-1.2104492 l1.8852539-1.8852539c0.390625-0.390625,0.390625-1.0234375,0-1.4140625l-4-4 c-0.2680664-0.269043-0.6640625-0.3623047-1.0234375-0.2416992l-3,1c-0.1469727,0.0493164-0.2807617,0.1318359-0.390625,0.2416992 L6.5859375,17H3.6181641l-0.2763672-0.5527344l1.1054688-0.5527344C4.7861328,15.7250977,5,15.3789063,5,15v-1.3818359 l1.4472656-0.7236328c0.4448242-0.2226563,0.6586914-0.7387695,0.5014648-1.2109375L6.2651367,9.6323242L7.96875,9.0644531 l4.659668,1.8642578c0.3720703,0.1479492,0.7963867,0.0620117,1.0786133-0.2216797l0.019043-0.019043l0.3793945,0.7592773 c0.159668,0.3188477,0.4765625,0.5288086,0.8325195,0.5507813c0.3510742,0.0263672,0.6962891-0.1469727,0.894043-0.4433594 l1.7856445-2.6782227L20,8.2807617V9c0,0.2651367,0.1054688,0.5195313,0.2929688,0.7070313l2,2 C22.4804688,11.8945313,22.7348633,12,23,12h2c0,0.4589844,0.3125,0.8588867,0.7573242,0.9702148l2.7905273,0.6977539 L28.1054688,14.5527344z\" fill=\"#ffffff\"></path> </g> <g id=\"_x31_1\"></g> <g id=\"_x31_0\"></g> <g id=\"_x39_\"></g> <g id=\"_x38_\"></g> <g id=\"_x37_\"></g> <g id=\"_x36_\"></g> <g id=\"_x35_\"></g> <g id=\"_x34_\"></g> <g id=\"_x33_\"></g> <g id=\"_x32_\"></g> <g id=\"_x31_\"></g> <g id=\"topic\"></g> <g id=\"Guides\"></g> </g></svg>
+            </div>
+            <div class="menu__text">${Lampa.Lang.translate('tryzubtv_title')}</div>
+        </li>`);
       
-      document.head.appendChild(style);
-      console.log('TryzubTV: Styles added');
-      
-      // Слушаем события сокета
-      SocketManager.getInstance().listen();
-      
-      // Функция добавления в меню
-      function addMenu() {
-        console.log('TryzubTV: Adding menu item');
-        
-        var menuText = Lampa && Lampa.Lang ? Lampa.Lang.translate('tryzubtv_title') : 'TryzubTV';
-        var button = $('<li class="menu__item selector">' +
-          '<div class="menu__ico">' +
-          '<svg viewBox="0 0 32 32" fill="#ffffff" xmlns="http://www.w3.org/2000/svg"><path d="M30.118 15l0.776-1.553c0.136-0.271 0.141-0.589 0.014-0.865-0.127-0.275-0.372-0.478-0.666-0.552L27 11.219V11c0-0.552-0.448-1-1-1h-2.586L22 8.586V7c0-0.308-0.142-0.599-0.385-0.788-0.243-0.19-0.561-0.258-0.858-0.183l-4 1c-0.241 0.061-0.451 0.208-0.589 0.416l-1.044 1.566-0.229-0.459c-0.144-0.288-0.417-0.488-0.734-0.54-0.315-0.049-0.64 0.054-0.868 0.28l-0.533 0.534L8.372 7.071C8.153 6.984 7.91 6.977 7.684 7.051l-3 1C4.16 8.226 3.877 8.792 4.052 9.316l0.726 2.177-1.224 0.612C3.214 12.275 3 12.621 3 13v1.382l-1.447 0.724c-0.494 0.247-0.694 0.848-0.447 1.342l1 2C2.275 18.786 2.621 19 3 19h4c0.265 0 0.52-0.105 0.707-0.293l0.833-0.833 2.19-0.73L13.586 20l-1.293 1.293c-0.076 0.076-0.139 0.164-0.187 0.26l-1 2c-0.192 0.385-0.117 0.85 0.187 1.154l1 1C12.48 25.895 12.735 26 13 26h1c0.265 0 0.52-0.105 0.707-0.293L16 24.414l0.293 0.293c0.227 0.227 0.548 0.329 0.867 0.28 0.317-0.052 0.59-0.252 0.734-0.54L18 24.236V25c0 0.379 0.214 0.725 0.553 0.894L20 26.618V27c0 0.347 0.18 0.668 0.474 0.851C20.635 27.95 20.818 28 21 28c0.153 0 0.306-0.035 0.447-0.105l4-2c0.193-0.097 0.351-0.254 0.447-0.448l1-2c0.192-0.385 0.117-0.85-0.187-1.154-0.303-0.304-0.769-0.379-1.154-0.187l-1.105 0.553-0.139-0.277 4.206-2.523c0.163-0.098 0.295-0.24 0.38-0.41L29.618 18H30c0.347 0 0.668-0.18 0.851-0.474 0.182-0.295 0.199-0.663 0.044-0.973L30.118 15zM28.105 14.553c-0.141 0.282-0.141 0.613 0 0.894l0.355 0.71c-0.149 0.096-0.273 0.23-0.355 0.395l-0.87 1.74-4.75 2.85c-0.448 0.269-0.613 0.837-0.38 1.305l1 2c0.054 0.107 0.124 0.2 0.207 0.279l-1.47 0.735c-0.096-0.149-0.23-0.273-0.395-0.355L20 24.382v-0.146l0.895-1.789c0.155-0.31 0.138-0.678-0.044-0.973C20.668 21.18 20.347 21 20 21h-2c-0.379 0-0.725 0.214-0.895 0.553l-0.379 0.759-0.019-0.019c-0.391-0.391-1.024-0.391-1.414 0L13.586 24h-0.172l-0.197-0.197 0.605-1.21 1.885-1.885c0.391-0.391 0.391-1.024 0-1.414l-4-4c-0.268-0.269-0.664-0.362-1.023-0.242l-3 1c-0.147 0.049-0.281 0.132-0.391 0.242L6.586 17H3.618l-0.276-0.553 1.105-0.553C4.786 15.725 5 15.379 5 15v-1.382l1.447-0.724c0.445-0.222 0.659-0.738 0.501-1.211L6.265 9.632 7.969 9.064l4.66 1.864c0.372 0.148 0.796 0.062 1.079-0.222l0.019-0.019 0.379 0.759c0.16 0.319 0.477 0.529 0.833 0.551 0.351 0.026 0.696-0.147 0.894-0.444l1.786-2.678L20 8.281V9c0 0.265 0.105 0.52 0.293 0.707l2 2C22.48 11.895 22.735 12 23 12h2c0 0.459 0.312 0.859 0.757 0.97l2.791 0.698L28.105 14.553z"/></svg>' +
-          '</div>' +
-          '<div class="menu__text">' + menuText + '</div>' +
-          '</li>');
-        
-        button.on('hover:enter', function () {
-          console.log('TryzubTV: Menu item clicked');
-          
-          var title = menuText + " | Спільнота t.me/mmssixxx";
-          var emptyTitle = Lampa && Lampa.Lang ? Lampa.Lang.translate('tryzubtv_title') : 'TryzubTV';
-          var emptyDescr = Lampa && Lampa.Lang ? Lampa.Lang.translate('tryzubtv_empty') : 'No channels available';
-          
-          if (Lampa && Lampa.Activity) {
-            Lampa.Activity.push({
-              url: '',
-              title: title,
-              component: 'tryzubtv_main',
-              page: 1,
-              params: {
-                empty: {
-                  title: emptyTitle,
-                  descr: emptyDescr
-                }
-              }
-            });
+      button.on('hover:enter', function () {
+        Lampa.Activity.push({
+          url: '',
+          title: Lampa.Lang.translate('tryzubtv_title') + " | Спільнота t.me/mmssixxx",
+          component: 'tryzubtv_main',
+          page: 1,
+          params: {
+            empty: {
+              title: Lampa.Lang.translate('tryzubtv_title'),
+              descr: Lampa.Lang.translate('tryzubtv_empty')
+            }
           }
         });
-        
-        var menuList = $('.menu .menu__list').eq(0);
-        if (menuList.length) {
-          menuList.append(button);
-          console.log('TryzubTV: Menu item added successfully');
-        } else {
-          console.error('TryzubTV: Menu list not found');
-          // Пробуем снова через секунду
-          setTimeout(addMenu, 1000);
+      });
+      
+      $('.menu .menu__list').eq(0).append(button);
+    }
+    
+    if (window.appready) {
+      setTimeout(addMenu, IS_TIZEN ? 2000 : 0);
+    } else {
+      Lampa.Listener.follow('app', function (e) {
+        if (e.type == 'ready') {
+          setTimeout(addMenu, IS_TIZEN ? 2000 : 0);
         }
-      }
-      
-      // Добавляем тестовое сообщение для отладки
-      if (IS_TIZEN) {
-        var testMsg = $('<div class="tryzubtv-test-message">TryzubTV loaded<br>Platform: ' + (IS_TIZEN ? 'Tizen' : 'Other') + '</div>');
-        $('body').append(testMsg);
-        setTimeout(function() {
-          testMsg.remove();
-        }, 5000);
-      }
-      
-      // Ждем готовности приложения
-      if (window.appready) {
-        console.log('TryzubTV: App already ready, adding menu');
-        setTimeout(addMenu, 2000);
-      } else if (Lampa && Lampa.Listener) {
-        console.log('TryzubTV: Waiting for app ready');
-        Lampa.Listener.follow('app', function (e) {
-          if (e.type == 'ready') {
-            console.log('TryzubTV: App ready event received');
-            setTimeout(addMenu, 2000);
-          }
-        });
-      } else {
-        console.log('TryzubTV: No listener, trying direct menu add');
-        setTimeout(addMenu, 3000);
-      }
-      
-      console.log('TryzubTV: Plugin started successfully');
-      
-    } catch (error) {
-      console.error('TryzubTV: Error starting plugin:', error);
+      });
     }
   }
   
-  // Запуск плагина с задержкой для Tizen
-  console.log('TryzubTV: Manifest check:', Lampa && Lampa.Manifest ? Lampa.Manifest.app_digital : 'no manifest');
-  
-  if (Lampa && Lampa.Manifest && Lampa.Manifest.app_digital >= 300) {
-    console.log('TryzubTV: Starting plugin...');
+  if (Lampa.Manifest.app_digital >= 300) {
     if (IS_TIZEN) {
       setTimeout(startPlugin, 3000);
     } else {
-      setTimeout(startPlugin, 1000);
+      startPlugin();
     }
-  } else {
-    console.error('TryzubTV: Lampa not available or version too old');
-    // Пробуем все равно запуститься для совместимости
-    setTimeout(function() {
-      if (typeof Lampa !== 'undefined') {
-        startPlugin();
-      }
-    }, 5000);
   }
 
   return startPlugin;
