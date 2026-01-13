@@ -1916,23 +1916,7 @@ border: 0.2em solid #f6a5b0;
       },
       onRender: function(item) {}
     });
-
-    // Рейтинги: кольорові рейтинги
-    add({
-      component: 'interface_mod_new',
-      param: {
-        name: 'ratings_colorize_all',
-        type: 'trigger',
-        "default": RCFG_DEFAULT.ratings_colorize_all
-      },
-      field: {
-        name: Lampa.Lang.translate('interface_mod_new_ratings_colorize_all'),
-        description: Lampa.Lang.translate('interface_mod_new_ratings_colorize_all_desc')
-      },
-      onRender: function() {}
-    });
-    
-    // Рейтинги: IMDb
+     // Рейтинги: IMDb
     add({
       component: 'interface_mod_new',
       param: {
