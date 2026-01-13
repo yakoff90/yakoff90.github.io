@@ -1,3 +1,5 @@
+[file name]: interface_plus.js
+[file content begin]
 (function () {
   'use strict';
 
@@ -668,6 +670,18 @@
         background: rgba(255, 255, 255, 0.1);
         border-radius: 0.3em;
       }
+      
+      /* Стилі для режиму "тільки логотип" - приховування тексту */
+      .logo-only-mode .full-start-new__title span,
+      .logo-only-mode .full-start__title span {
+        display: none !important;
+      }
+      
+      /* Стилі для режиму "логотип і текст" */
+      .logo-text-mode .full-start-new__title span,
+      .logo-text-mode .full-start__title span {
+        display: block !important;
+      }
     `;
     var st = document.createElement('style');
     st.id = 'interface_mod_base';
@@ -931,19 +945,23 @@
           if (logoPath !== '') {
             var card = event.object.activity.render();
             var logoHtml;
-            var showTitle = Lampa.Storage.get('logo_display_mode') === 'logo_and_text' || (isEnglishLogo && Lampa.Storage.get('logo_display_mode') === 'logo_only');
+            var showTitle = Lampa.Storage.get('logo_display_mode') === 'logo_and_text';
             var titleText = showTitle ? (card.find('.full-start-new__title').text() || card.find('.full-start__title').text() || item.title || item.name) : '';
+            
+            // ВИПРАВЛЕННЯ: визначаємо режим відображення
+            var displayMode = Lampa.Storage.get('logo_display_mode', 'logo_only');
+            
             // Логіка залежно від налаштувань та ширини екрану
             if (window.innerWidth > 585) {
               if (Lampa.Storage.get('card_interfice_type') === 'new' && !card.find('div[data-name="card_interfice_cover"]').length) {
-                logoHtml = '<div><img style="display: block; margin-bottom: 0.2em; max-height: 1.8em;" src="' + Lampa.TMDB.image('/t/p/w500' + logoPath.replace('.svg', '.png')) + '" />' + (titleText ? '<span>' + titleText + '</span>' : '') + '</div>';
+                logoHtml = '<div class="logo-container ' + (displayMode === 'logo_only' ? 'logo-only-mode' : 'logo-text-mode') + '"><img style="display: block; margin-bottom: 0.2em; max-height: 1.8em;" src="' + Lampa.TMDB.image('/t/p/w500' + logoPath.replace('.svg', '.png')) + '" />' + (showTitle ? '<span>' + titleText + '</span>' : '') + '</div>';
                 card.find('.full-start-new__tagline').remove();
                 card.find('.full-start-new__title').html(logoHtml);
               } else if (Lampa.Storage.get('card_interfice_type') === 'new' && card.find('div[data-name="card_interfice_cover"]').length) {
-                logoHtml = '<div><img style="display: block; margin-bottom: 0.2em; max-height: 2.8em;" src="' + Lampa.TMDB.image('/t/p/w500' + logoPath.replace('.svg', '.png')) + '" />' + (titleText ? '<span>' + titleText + '</span>' : '') + '</div>';
+                logoHtml = '<div class="logo-container ' + (displayMode === 'logo_only' ? 'logo-only-mode' : 'logo-text-mode') + '"><img style="display: block; margin-bottom: 0.2em; max-height: 2.8em;" src="' + Lampa.TMDB.image('/t/p/w500' + logoPath.replace('.svg', '.png')) + '" />' + (showTitle ? '<span>' + titleText + '</span>' : '') + '</div>';
                 card.find('.full-start-new__title').html(logoHtml);
               } else if (Lampa.Storage.get('card_interfice_type') === 'old' && !card.find('div[data-name="card_interfice_cover"]').length) {
-                logoHtml = '<div style="height: auto !important; overflow: visible !important;"><img style="display: block; margin-bottom: 0em;" src="' + Lampa.TMDB.image('/t/p/w300' + logoPath.replace('.svg', '.png')) + '" onload="if(this.naturalHeight > 80) { let ratio = this.naturalWidth / this.naturalHeight; this.height = 80; this.width = 80 * ratio; }" />' + (titleText ? '<span style="display: block; line-height: normal;">' + titleText + '</span>' : '') + '</div>';
+                logoHtml = '<div style="height: auto !important; overflow: visible !important;" class="logo-container ' + (displayMode === 'logo_only' ? 'logo-only-mode' : 'logo-text-mode') + '"><img style="display: block; margin-bottom: 0em;" src="' + Lampa.TMDB.image('/t/p/w300' + logoPath.replace('.svg', '.png')) + '" onload="if(this.naturalHeight > 80) { let ratio = this.naturalWidth / this.naturalHeight; this.height = 80; this.width = 80 * ratio; }" />' + (showTitle ? '<span style="display: block; line-height: normal;">' + titleText + '</span>' : '') + '</div>';
                 card.find('.full-start__title-original').remove();
                 card.find('.full-start__title').css({
                   'height': 'auto !important',
@@ -953,11 +971,11 @@
               }
             } else {
               if (Lampa.Storage.get('card_interfice_type') === 'new') {
-                logoHtml = '<div><img style="display: block; margin-bottom: 0.2em; max-height: 1.8em;" src="' + Lampa.TMDB.image('/t/p/w500' + logoPath.replace('.svg', '.png')) + '" />' + (titleText ? '<span>' + titleText + '</span>' : '') + '</div>';
+                logoHtml = '<div class="logo-container ' + (displayMode === 'logo_only' ? 'logo-only-mode' : 'logo-text-mode') + '"><img style="display: block; margin-bottom: 0.2em; max-height: 1.8em;" src="' + Lampa.TMDB.image('/t/p/w500' + logoPath.replace('.svg', '.png')) + '" />' + (showTitle ? '<span>' + titleText + '</span>' : '') + '</div>';
                 card.find('.full-start-new__tagline').remove();
                 card.find('.full-start-new__title').html(logoHtml);
               } else {
-                logoHtml = '<div style="height: auto !important; overflow: visible !important;"><img style="display: block; margin-bottom: 0em;" src="' + Lampa.TMDB.image('/t/p/w300' + logoPath.replace('.svg', '.png')) + '" onload="if(this.naturalHeight > 38) { let ratio = this.naturalWidth / this.naturalHeight; this.height = 38; this.width = 38 * ratio; }" />' + (titleText ? '<span style="display: block; line-height: normal;">' + titleText + '</span>' : '') + '</div>';
+                logoHtml = '<div style="height: auto !important; overflow: visible !important;" class="logo-container ' + (displayMode === 'logo_only' ? 'logo-only-mode' : 'logo-text-mode') + '"><img style="display: block; margin-bottom: 0em;" src="' + Lampa.TMDB.image('/t/p/w300' + logoPath.replace('.svg', '.png')) + '" onload="if(this.naturalHeight > 38) { let ratio = this.naturalWidth / this.naturalHeight; this.height = 38; this.width = 38 * ratio; }" />' + (showTitle ? '<span style="display: block; line-height: normal;">' + titleText + '</span>' : '') + '</div>';
                 card.find('.full-start__title-original').remove();
                 card.find('.full-start__title').css({
                   'height': 'auto !important',
@@ -966,6 +984,9 @@
                 }).html(logoHtml);
               }
             }
+            
+            // Застосовуємо клас режиму до контейнера
+            card.find('.full-start-new__title, .full-start__title').addClass(displayMode === 'logo_only' ? 'logo-only-mode' : 'logo-text-mode');
           }
         }
       }
@@ -2160,6 +2181,8 @@ border: 0.2em solid #f6a5b0;
           settings.logo_main = Lampa.Storage.get('logo_main', '0');
           settings.logo_display_mode = Lampa.Storage.get('logo_display_mode', 'logo_only');
           // Логотипи будуть автоматично оновлені при наступному відкритті картки
+          // Застосовуємо режим відображення до поточних елементів
+          applyLogoDisplayMode();
         }
         
         // Реагуємо на зміни налаштувань рейтингів
@@ -2202,6 +2225,37 @@ border: 0.2em solid #f6a5b0;
         return res;
       };
     }
+  }
+
+  /* ============================================================
+   * ЗАСТОСУВАННЯ РЕЖИМУ ВІДОБРАЖЕННЯ ЛОГОТИПІВ
+   * ============================================================ */
+  
+  /**
+   * Застосовує режим відображення логотипів до поточних елементів
+   */
+  function applyLogoDisplayMode() {
+    var displayMode = Lampa.Storage.get('logo_display_mode', 'logo_only');
+    var isLogoEnabled = Lampa.Storage.get('logo_main') !== '1';
+    
+    if (!isLogoEnabled) return;
+    
+    // Знаходимо всі контейнери з логотипами
+    var logoContainers = document.querySelectorAll('.full-start-new__title, .full-start__title');
+    
+    logoContainers.forEach(function(container) {
+      // Видаляємо попередні класи режимів
+      container.classList.remove('logo-only-mode', 'logo-text-mode');
+      
+      // Додаємо новий клас режиму
+      container.classList.add(displayMode === 'logo_only' ? 'logo-only-mode' : 'logo-text-mode');
+      
+      // Оновлюємо відображення тексту всередині контейнера
+      var span = container.querySelector('span');
+      if (span) {
+        span.style.display = displayMode === 'logo_only' ? 'none' : 'block';
+      }
+    });
   }
 
   /* ============================================================
@@ -3761,6 +3815,9 @@ border: 0.2em solid #f6a5b0;
         
         // 5. Розмір кнопок
         applyButtonSize();
+        
+        // 6. Застосовуємо режим відображення логотипів
+        applyLogoDisplayMode();
       }, 120);
     });
   }
@@ -5874,6 +5931,9 @@ border: 0.2em solid #f6a5b0;
     // Застосовуємо розмір кнопок
     applyButtonSize();
     
+    // Застосовуємо режим відображення логотипів
+    applyLogoDisplayMode();
+    
     // Ініціалізація рейтингів
     ensureDefaultToggles();
     attachLiveSettingsHandlers();
@@ -5902,3 +5962,4 @@ border: 0.2em solid #f6a5b0;
   }
 
 })();
+[file content end]
