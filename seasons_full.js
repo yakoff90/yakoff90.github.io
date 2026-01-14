@@ -325,14 +325,19 @@
     //
     var style = document.createElement('style');
     style.textContent =
+        "    /* СТИЛЬ ДЛЯ СТАНДАРТНОЇ МІТКИ LAMPA 'СЕРІАЛ' (опускаємо її нижче) */\n" +
+        "    .card__rate {\n" +
+        "        top: 0.8em !important; /* ЗМІНА: було 0.3em, робимо нижче */\n" +
+        "    }\n" +
+        "\n" +
         "    /* Стиль для ЗАВЕРШЕНИХ сезонів (зелена мітка) */\n" +
         "    .card--season-complete {\n" +
         "        position: absolute;\n" +
         "        left: 0;\n" +
         "        margin-left: -0.65em; /*ВІДСТУП за лівий край*/\n" +
-        "        bottom: 0.20em; /* ЗМІНА: зменшено з 0.50em для опускання мітки серіалу нижче */\n" +
+        "        top: 0.3em; /* ЗМІНА: змінив з bottom: 0.50em на top: 0.3em - піднімаємо мітку сезону ВИЩЕ */\n" +
         "        background-color: rgba(61, 161, 141, 0.9);  /* Зелений фон (0.9 = трохи прозорий) */\n" +
-        "        z-index: 12;\n" +
+        "        z-index: 13; /* ЗМІНА: збільшив з 12 на 13, щоб була поверх мітки 'серіал' */\n" +
         "        width: fit-content;\n" +
         "        max-width: calc(100% - 1em);\n" +
         "        border-radius: 0.3em 0.3em 0.3em 0.3em;\n" +
@@ -346,9 +351,9 @@
         "        position: absolute;\n" +
         "        left: 0;\n" +
         "        margin-left: -0.65em; /*ВІДСТУП за лівий край*/\n" +
-        "        bottom: 0.20em; /* ЗМІНА: зменшено з 0.50em для опускання мітки серіалу нижче */\n" +
+        "        top: 0.3em; /* ЗМІНА: змінив з bottom: 0.50em на top: 0.3em - піднімаємо мітку сезону ВИЩЕ */\n" +
         "        background-color: rgba(255, 66, 66, 1); /* Яскраво-червоний фон */\n" +
-        "        z-index: 12;\n" +
+        "        z-index: 13; /* ЗМІНА: збільшив з 12 на 13, щоб була поверх мітки 'серіал' */\n" +
         "        width: fit-content;\n" +
         "        max-width: calc(100% - 1em);\n" +
         "        border-radius: 0.3em 0.3em 0.3em 0.3em;\n" +
@@ -365,7 +370,6 @@
         "        font-weight: 700;   /* жирний шрифт */\n" +
         "        font-size: 1.0em;   /* базовий розмір тексту мітки */\n" +
         "        padding: 0.39em 0.39em;  /* внутрішні відступи */\n" +
-        "        margin-bottom: 0.15em; /* ЗМІНА: додано для підняття тексту вище */\n" +
         "        white-space: nowrap;     /* не переносити рядок */\n" +
         "        display: flex;           /* flex для акуратного вирівнювання */\n" +
         "        align-items: center;     /* вертикальне вирівнювання контенту */\n" +
@@ -391,11 +395,19 @@
         "\n" +
         "    /* Адаптація для телевізорів / маленьких екранів */\n" +
         "    @media (max-width: 768px) {\n" +
+        "        .card__rate {\n" +
+        "            top: 0.9em !important;\n" +
+        "        }\n" +
+        "        \n" +
+        "        .card--season-complete,\n" +
+        "        .card--season-progress {\n" +
+        "            top: 0.4em; /* Трошки нижче на маленьких екранах */\n" +
+        "        }\n" +
+        "        \n" +
         "        .card--season-complete div,\n" +
         "        .card--season-progress div {\n" +
         "            font-size: 0.95em;  /* трішки менший шрифт на малих екранах */\n" +
         "            padding: 0.35em 0.40em; /* менші відступи для маленьких карток */\n" +
-        "            margin-bottom: 0.10em; /* ЗМІНА: менший відступ для маленьких екранів */\n" +
         "        }\n" +
         "    }\n";
     document.head.appendChild(style);
@@ -580,9 +592,8 @@
     // ===  ПОЗИЦІОНУВАННЯ МІТКИ В КАРТЦІ                      ===
     // ============================================================
     /*
-     * Виставляє .style.bottom для мітки сезону так, щоб:
-     *  - якщо є .card__quality (HD/4K і т.д.) — ми розміщуємо наш бейдж вище неї
-     *  - якщо ні — ставимо стандартний відступ віднизу
+     * Виставляє позицію для мітки сезону.
+     * Тепер мітка сезону вгорі, а стандартна мітка Lampa "серіал" нижче
      *
      * @param {HTMLElement} cardEl - елемент .card (картка)
      * @param {HTMLElement} badge  - елемент нашої мітки
@@ -590,33 +601,17 @@
     function adjustBadgePosition(cardEl, badge) {
         if (!cardEl || !badge) return;
 
-        // Шукаємо блок якості відео, який Lampa вставляє у картку (.card__quality)
-        var quality = cardEl.querySelector('.card__quality');
-
-        if (quality) {
-            // ВИПАДОК 1: у картки є мітка якості (наприклад "1080p")
-            //
-            // Нам треба підняти мітку сезону так, щоб вона була вище якості
-            // і не перекривала її.
-            var qHeight = quality.offsetHeight;
-            var qBottom = 0;
-
-            // Дізнаємося відступ .card__quality знизу (css може рухати її)
-            if (window.getComputedStyle) {
-                var styleVal = window.getComputedStyle(quality).bottom;
-                if (styleVal) {
-                    qBottom = parseFloat(styleVal) || 0;
-                }
-            }
-
-            // Тепер ставимо .bottom для нашого бейджа = висота якості + її відступ
-            // ЗМІНА: додаємо 0.15em додаткового відступу для підняття мітки вище
-            badge.style.bottom = (qHeight + qBottom + 0.15) + 'em';
-        } else {
-            // ВИПАДОК 2: в картки взагалі немає мітки якості
-            //
-            // У такому випадку нашу мітку можна розмістити просто біля низу картки.
-            badge.style.bottom = '0.20em'; // ЗМІНА: зменшено з 0.50em для опускання мітки серіалу нижче
+        // Мітка сезону завжди вгорі зліва
+        badge.style.top = '0.3em';
+        badge.style.left = '0';
+        badge.style.bottom = 'auto'; // Вимикаємо bottom, бо тепер використовуємо top
+        badge.style.marginLeft = '-0.65em';
+        
+        // Перевіряємо, чи є стандартна мітка Lampa "серіал"
+        var rateBadge = cardEl.querySelector('.card__rate');
+        if (rateBadge) {
+            // Якщо є мітка "серіал", переконуємось, що наша мітка має вищий z-index
+            badge.style.zIndex = '13';
         }
     }
 
@@ -742,7 +737,7 @@
         var badge = createBadge('...', false, true);
         view.appendChild(badge);
 
-        // --- ВИКЛИК 1: одразу пробуємо вирівняти мітку відносно card__quality
+        // --- ВИКЛИК 1: одразу пробуємо вирівняти мітку
         adjustBadgePosition(cardEl, badge);
 
         // 3. Підписуємося на зміни в цій картці (плюс/мінус card__quality)
@@ -872,7 +867,7 @@
     // ===  РЕАКЦІЯ НА ЗМІНУ РОЗМІРУ ВІКНА/ЕКРАНУ               ===
     // ============================================================
     // Тому на події resize() проходимо по всіх існуючих бейджах
-    // і перевиставляємо їм bottom.
+    // і перевиставляємо їм позицію.
     //
     window.addEventListener('resize', function () {
         var allBadgesNodeList = document.querySelectorAll('.card--season-complete, .card--season-progress');
@@ -1061,9 +1056,4 @@
   if (window.appready) start();
   else if (Lampa?.Listener) Lampa.Listener.follow('app', e=>{ if(e.type==='ready') start(); });
 })();
-
-
-
-    
-    
 })();
