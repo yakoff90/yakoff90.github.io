@@ -1,3 +1,5 @@
+[file name]: rating_my_ap.js
+[file content begin]
 /**
  * Lampa: Enhanced Ratings (MDBList + OMDb)
  * --------------------------------------------------------
@@ -607,7 +609,7 @@
     if (!ratingsContainer.length) return;
     
     // Знаходимо всі рейтинги (крім нагород)
-    var ratingElements = $('.full-start__rate:not(.rate--oscars):not(.rate--emmy):not(.rate--awards)', ratingsContainer);
+    var ratingElements = $('.full-start__rate:not(.rate--oscars):not(.rate--emmy):not(.rate--awards):not(.rate--gold)', ratingsContainer);
     
     ratingElements.each(function() {
       var $element = $(this);
@@ -1329,15 +1331,7 @@
     var ratingsContainer = getApplecationRatingsContainer();
     if (!ratingsContainer || !ratingsContainer.length) return;
 
-    var cfg = (typeof getCfg === 'function') ? getCfg() : {
-      enableImdb: true,
-      enableTmdb: true,
-      enableMc: true,
-      enableRt: true,
-      enablePop: true,
-      mcMode: 'meta',
-      colorizeAll: false
-    };
+    var cfg = getCfg();
 
     // Додаємо іконку IMDb
     (function() {
@@ -1520,15 +1514,7 @@
       return;
     }
 
-    var cfg = (typeof getCfg === 'function') ? getCfg() : {
-      enableImdb: true,
-      enableTmdb: true,
-      enableMc: true,
-      enableRt: true,
-      enablePop: true,
-      colorizeAll: true,
-      showAverage: true
-    };
+    var cfg = getCfg();
 
     $('.rate--avg', ratingsContainer).remove();
     if (!cfg.showAverage) {
@@ -1579,7 +1565,7 @@
     ratingsContainer.prepend(avgElement);
 
     try {
-      applyAwardsColor(ratingsContainer, (typeof getCfg === 'function') ? getCfg() : null);
+      applyAwardsColor(ratingsContainer, cfg);
     } catch (e) {}
 
     removeLoadingAnimation();
@@ -1768,7 +1754,7 @@
     var ratingsContainer = $('.applecation__ratings');
     if (!ratingsContainer.length) return;
     
-    var ratingElements = $('.full-start__rate:not(.rate--oscars):not(.rate--emmy):not(.rate--awards)', ratingsContainer);
+    var ratingElements = $('.full-start__rate:not(.rate--oscars):not(.rate--emmy):not(.rate--awards):not(.rate--gold)', ratingsContainer);
     
     if (colorizeAll) {
       // Додаємо кольорові класи до всіх рейтингів
@@ -2083,3 +2069,4 @@
   }
 
 })();
+[file content end]
