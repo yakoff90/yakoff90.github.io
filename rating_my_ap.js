@@ -594,34 +594,29 @@
    */
   function applyRatingColorsToAll() {
     var cfg = getCfg();
-    if (!cfg.colorizeAll) {
-      // Вимикаємо кольори - видаляємо всі кольорові класи
-      var ratingsContainer = $('.applecation__ratings');
-      if (ratingsContainer.length) {
-        ratingsContainer.find('.full-start__rate').removeClass('rating--green rating--blue rating--orange rating--red');
-      }
-      return;
-    }
-    
     var ratingsContainer = $('.applecation__ratings');
     if (!ratingsContainer.length) return;
     
-    // Знаходимо всі рейтинги (крім нагород)
-    var ratingElements = $('.full-start__rate:not(.rate--oscars):not(.rate--emmy):not(.rate--awards)', ratingsContainer);
+    var ratingElements = $('.full-start__rate:not(.rate--oscars):not(.rate--emmy):not(.rate--awards):not(.rate--gold)', ratingsContainer);
     
-    ratingElements.each(function() {
-      var $element = $(this);
-      // Знаходимо числове значення рейтингу
-      var ratingText = $element.find('div:first-child').text().trim();
-      var ratingValue = parseFloat(ratingText);
-      
-      if (!isNaN(ratingValue)) {
-        // Видаляємо попередні кольорові класи
-        $element.removeClass('rating--green rating--blue rating--orange rating--red');
-        // Додаємо правильний клас
-        $element.addClass(getRatingClass(ratingValue));
-      }
-    });
+    if (cfg.colorizeAll) {
+      // Додаємо кольорові класи до всіх рейтингів
+      ratingElements.each(function() {
+        var $element = $(this);
+        var ratingText = $element.find('div:first-child').text().trim();
+        var ratingValue = parseFloat(ratingText);
+        
+        if (!isNaN(ratingValue)) {
+          // Видаляємо попередні кольорові класи
+          $element.removeClass('rating--green rating--blue rating--orange rating--red');
+          // Додаємо правильний клас
+          $element.addClass(getRatingClass(ratingValue));
+        }
+      });
+    } else {
+      // Видаляємо кольорові класи з усіх рейтингів
+      ratingElements.removeClass('rating--green rating--blue rating--orange rating--red');
+    }
   }
 
   /**
@@ -1588,9 +1583,7 @@
     ratingsContainer.addClass('show');
     
     // Застосовуємо кольори до всіх рейтингів
-    if (cfg.colorizeAll) {
-      setTimeout(applyRatingColorsToAll, 100);
-    }
+    applyRatingColorsToAll();
   }
 
   /*
@@ -1765,27 +1758,7 @@
    * Увімкнення/вимкнення кольорового виділення
    */
   function toggleColorizeAll(colorizeAll) {
-    var ratingsContainer = $('.applecation__ratings');
-    if (!ratingsContainer.length) return;
-    
-    var ratingElements = $('.full-start__rate:not(.rate--oscars):not(.rate--emmy):not(.rate--awards)', ratingsContainer);
-    
-    if (colorizeAll) {
-      // Додаємо кольорові класи до всіх рейтингів
-      ratingElements.each(function() {
-        var $element = $(this);
-        var ratingText = $element.find('div:first-child').text().trim();
-        var ratingValue = parseFloat(ratingText);
-        
-        if (!isNaN(ratingValue)) {
-          $element.removeClass('rating--green rating--blue rating--orange rating--red');
-          $element.addClass(getRatingClass(ratingValue));
-        }
-      });
-    } else {
-      // Видаляємо кольорові класи з усіх рейтингів
-      ratingElements.removeClass('rating--green rating--blue rating--orange rating--red');
-    }
+    applyRatingColorsToAll();
   }
 
   /**
