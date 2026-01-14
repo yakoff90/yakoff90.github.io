@@ -1,3 +1,5 @@
+[file name]: rating_my_ap.js
+[file content begin]
 /**
  * Lampa: Enhanced Ratings (MDBList + OMDb)
  * --------------------------------------------------------
@@ -594,29 +596,34 @@
    */
   function applyRatingColorsToAll() {
     var cfg = getCfg();
+    if (!cfg.colorizeAll) {
+      // Вимикаємо кольори - видаляємо всі кольорові класи
+      var ratingsContainer = $('.applecation__ratings');
+      if (ratingsContainer.length) {
+        ratingsContainer.find('.full-start__rate').removeClass('rating--green rating--blue rating--orange rating--red');
+      }
+      return;
+    }
+    
     var ratingsContainer = $('.applecation__ratings');
     if (!ratingsContainer.length) return;
     
-    var ratingElements = $('.full-start__rate:not(.rate--oscars):not(.rate--emmy):not(.rate--awards):not(.rate--gold)', ratingsContainer);
+    // Знаходимо всі рейтинги (крім нагород)
+    var ratingElements = $('.full-start__rate:not(.rate--oscars):not(.rate--emmy):not(.rate--awards)', ratingsContainer);
     
-    if (cfg.colorizeAll) {
-      // Додаємо кольорові класи до всіх рейтингів
-      ratingElements.each(function() {
-        var $element = $(this);
-        var ratingText = $element.find('div:first-child').text().trim();
-        var ratingValue = parseFloat(ratingText);
-        
-        if (!isNaN(ratingValue)) {
-          // Видаляємо попередні кольорові класи
-          $element.removeClass('rating--green rating--blue rating--orange rating--red');
-          // Додаємо правильний клас
-          $element.addClass(getRatingClass(ratingValue));
-        }
-      });
-    } else {
-      // Видаляємо кольорові класи з усіх рейтингів
-      ratingElements.removeClass('rating--green rating--blue rating--orange rating--red');
-    }
+    ratingElements.each(function() {
+      var $element = $(this);
+      // Знаходимо числове значення рейтингу
+      var ratingText = $element.find('div:first-child').text().trim();
+      var ratingValue = parseFloat(ratingText);
+      
+      if (!isNaN(ratingValue)) {
+        // Видаляємо попередні кольорові класи
+        $element.removeClass('rating--green rating--blue rating--orange rating--red');
+        // Додаємо правильний клас
+        $element.addClass(getRatingClass(ratingValue));
+      }
+    });
   }
 
   /**
@@ -1331,7 +1338,8 @@
       enableRt: true,
       enablePop: true,
       mcMode: 'meta',
-      colorizeAll: false
+      colorizeAll: false,
+      showAwards: true
     };
 
     // Додаємо іконку IMDb
@@ -1460,44 +1468,46 @@
       ratingsContainer.append(pcElement);
     })();
 
-    // Додаємо нагороди
-    if (data.awards && data.awards > 0) {
-      var awardsElement = $(
-        '<div class="full-start__rate rate--awards rate--gold">' +
-        '<div>' + data.awards + '</div>' +
-        '<div class="source--name"></div>' +
-        '</div>'
-      );
-      awardsElement.find('.source--name')
-        .html(iconImg(ICONS.awards, 'Awards', 20))
-        .attr('title', Lampa.Lang.translate('awards_other_label'));
-      ratingsContainer.prepend(awardsElement);
-    }
+    // Додаємо нагороди (якщо увімкнено в налаштуваннях)
+    if (cfg.showAwards) {
+      if (data.awards && data.awards > 0) {
+        var awardsElement = $(
+          '<div class="full-start__rate rate--awards rate--gold">' +
+          '<div>' + data.awards + '</div>' +
+          '<div class="source--name"></div>' +
+          '</div>'
+        );
+        awardsElement.find('.source--name')
+          .html(iconImg(ICONS.awards, 'Awards', 20))
+          .attr('title', Lampa.Lang.translate('awards_other_label'));
+        ratingsContainer.prepend(awardsElement);
+      }
 
-    if (data.emmy && data.emmy > 0) {
-      var emmyElement = $(
-        '<div class="full-start__rate rate--emmy rate--gold">' +
-        '<div>' + data.emmy + '</div>' +
-        '<div class="source--name"></div>' +
-        '</div>'
-      );
-      emmyElement.find('.source--name')
-        .html(emmyIconInline())
-        .attr('title', Lampa.Lang.translate('emmy_label'));
-      ratingsContainer.prepend(emmyElement);
-    }
+      if (data.emmy && data.emmy > 0) {
+        var emmyElement = $(
+          '<div class="full-start__rate rate--emmy rate--gold">' +
+          '<div>' + data.emmy + '</div>' +
+          '<div class="source--name"></div>' +
+          '</div>'
+        );
+        emmyElement.find('.source--name')
+          .html(emmyIconInline())
+          .attr('title', Lampa.Lang.translate('emmy_label'));
+        ratingsContainer.prepend(emmyElement);
+      }
 
-    if (data.oscars && data.oscars > 0) {
-      var oscarsElement = $(
-        '<div class="full-start__rate rate--oscars rate--gold">' +
-        '<div>' + data.oscars + '</div>' +
-        '<div class="source--name"></div>' +
-        '</div>'
-      );
-      oscarsElement.find('.source--name')
-        .html(oscarIconInline())
-        .attr('title', Lampa.Lang.translate('oscars_label'));
-      ratingsContainer.prepend(oscarsElement);
+      if (data.oscars && data.oscars > 0) {
+        var oscarsElement = $(
+          '<div class="full-start__rate rate--oscars rate--gold">' +
+          '<div>' + data.oscars + '</div>' +
+          '<div class="source--name"></div>' +
+          '</div>'
+        );
+        oscarsElement.find('.source--name')
+          .html(oscarIconInline())
+          .attr('title', Lampa.Lang.translate('oscars_label'));
+        ratingsContainer.prepend(oscarsElement);
+      }
     }
 
     try {
@@ -1583,7 +1593,9 @@
     ratingsContainer.addClass('show');
     
     // Застосовуємо кольори до всіх рейтингів
-    applyRatingColorsToAll();
+    if (cfg.colorizeAll) {
+      setTimeout(applyRatingColorsToAll, 100);
+    }
   }
 
   /*
@@ -1735,22 +1747,48 @@
   }
 
   /**
-   * Ховає/показує блоки з нагородами
+   * Ховає/показує блоки з нагородами (ВИПРАВЛЕНО для Applecation)
    */
   function toggleAwards(showAwards) {
-    var nodes = document.querySelectorAll('.rate--oscars, .rate--emmy, .rate--awards');
-    nodes.forEach(function(n) {
-      n.style.display = showAwards ? '' : 'none';
+    var render = Lampa.Activity.active().activity.render();
+    if (!render || !render[0]) return;
+    
+    // Шукаємо контейнер з рейтингами в поточному render
+    var ratingsContainer = $('.applecation__ratings', render);
+    if (!ratingsContainer.length) return;
+    
+    // Шукаємо всі елементи нагород у цьому контейнері
+    var awardElements = $('.rate--oscars, .rate--emmy, .rate--awards', ratingsContainer);
+    
+    awardElements.each(function() {
+      var $el = $(this);
+      if (showAwards) {
+        $el.css('display', ''); // Показуємо
+      } else {
+        $el.css('display', 'none'); // Ховаємо
+      }
     });
   }
 
   /**
-   * Ховає/показує блок середнього рейтингу
+   * Ховає/показує блок середнього рейтингу (ВИПРАВЛЕНО для Applecation)
    */
   function toggleAverage(showAverage) {
-    var nodes = document.querySelectorAll('.rate--avg');
-    nodes.forEach(function(n) {
-      n.style.display = showAverage ? '' : 'none';
+    var render = Lampa.Activity.active().activity.render();
+    if (!render || !render[0]) return;
+    
+    var ratingsContainer = $('.applecation__ratings', render);
+    if (!ratingsContainer.length) return;
+    
+    var avgElements = $('.rate--avg', ratingsContainer);
+    
+    avgElements.each(function() {
+      var $el = $(this);
+      if (showAverage) {
+        $el.css('display', ''); // Показуємо
+      } else {
+        $el.css('display', 'none'); // Ховаємо
+      }
     });
   }
 
@@ -1758,7 +1796,27 @@
    * Увімкнення/вимкнення кольорового виділення
    */
   function toggleColorizeAll(colorizeAll) {
-    applyRatingColorsToAll();
+    var ratingsContainer = $('.applecation__ratings');
+    if (!ratingsContainer.length) return;
+    
+    var ratingElements = $('.full-start__rate:not(.rate--oscars):not(.rate--emmy):not(.rate--awards)', ratingsContainer);
+    
+    if (colorizeAll) {
+      // Додаємо кольорові класи до всіх рейтингів
+      ratingElements.each(function() {
+        var $element = $(this);
+        var ratingText = $element.find('div:first-child').text().trim();
+        var ratingValue = parseFloat(ratingText);
+        
+        if (!isNaN(ratingValue)) {
+          $element.removeClass('rating--green rating--blue rating--orange rating--red');
+          $element.addClass(getRatingClass(ratingValue));
+        }
+      });
+    } else {
+      // Видаляємо кольорові класи з усіх рейтингів
+      ratingElements.removeClass('rating--green rating--blue rating--orange rating--red');
+    }
   }
 
   /**
@@ -2056,3 +2114,4 @@
   }
 
 })();
+[file content end]
