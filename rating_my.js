@@ -3,7 +3,8 @@
  * --------------------------------------------------------
  * - Працює на старих WebView: локальні шими/поліфіли (localStorage, Promise, fetch, DOM-методи)
  * - Бере рейтинги з MDBList (+ OMDb для віку/нагород) і малює їх у деталці
- * - Має секцію налаштувань “Рейтинги”, живе застосування стилів без перезавантаження
+ * - Має секцію налаштувань "Рейтинги", живе застосування стилів без перезавантаження
+ * - Відображає рейтинги у правому нижньому куті картки фільму
  */
 
 (function() {
@@ -479,6 +480,52 @@
     /* --- Налаштування --- */
     ".settings-param__descr,.settings-param__subtitle{white-space:pre-line;}" +
 
+    /* --- Рейтинги у картці фільму (правий нижній кут) --- */
+    ".card-placeholder__rate {" +
+    "    position: absolute !important;" +
+    "    bottom: 0 !important;" +
+    "    right: 0 !important;" +
+    "    z-index: 2 !important;" +
+    "    background: linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.9) 100%) !important;" +
+    "    border-radius: 4px 0 0 0 !important;" +
+    "    padding: 3px 6px !important;" +
+    "    min-width: 40px !important;" +
+    "    text-align: center !important;" +
+    "    display: flex !important;" +
+    "    align-items: center !important;" +
+    "    justify-content: center !important;" +
+    "}" +
+    ".card-placeholder__rate .full-start__rate {" +
+    "    margin: 0 !important;" +
+    "    font-size: 14px !important;" +
+    "    line-height: 1 !important;" +
+    "    display: flex !important;" +
+    "    align-items: center !important;" +
+    "}" +
+    ".card-placeholder__rate .full-start__rate > div:first-child {" +
+    "    margin-right: 4px !important;" +
+    "    font-weight: bold !important;" +
+    "}" +
+    ".card-placeholder__rate .source--name img {" +
+    "    height: 16px !important;" +
+    "    width: auto !important;" +
+    "}" +
+    ".card-placeholder__rate .rate--avg {" +
+    "    color: #FFD700 !important;" +
+    "}" +
+    ".card-placeholder__rate .rate--green {" +
+    "    color: #2ecc71 !important;" +
+    "}" +
+    ".card-placeholder__rate .rate--blue {" +
+    "    color: #60a5fa !important;" +
+    "}" +
+    ".card-placeholder__rate .rate--orange {" +
+    "    color: #f59e0b !important;" +
+    "}" +
+    ".card-placeholder__rate .rate--red {" +
+    "    color: #ef4444 !important;" +
+    "}" +
+
     /* --- Адаптив (Mobile) --- */
     "@media (max-width: 600px){" +
     "  .full-start-new__rate-line{flex-wrap:wrap;}" +
@@ -495,6 +542,17 @@
     "  }" +
     "  .loading-dots-container{font-size:.8em; padding:.4em .8em;}" +
     "  .lmp-award-icon{height:16px;}" +
+    "  .card-placeholder__rate {" +
+    "    padding: 2px 4px !important;" +
+    "    min-width: 35px !important;" +
+    "    font-size: 12px !important;" +
+    "  }" +
+    "  .card-placeholder__rate .full-start__rate {" +
+    "    font-size: 12px !important;" +
+    "  }" +
+    "  .card-placeholder__rate .source--name img {" +
+    "    height: 12px !important;" +
+    "  }" +
     "}" +
 
     /* --- Адаптив (Small Mobile) --- */
@@ -506,6 +564,17 @@
     "    --lmp-h-avg:12px; --lmp-h-oscar:12px; --lmp-h-emmy:14px;" +
     "  }" +
     "  .lmp-award-icon{height:12px;}" +
+    "  .card-placeholder__rate {" +
+    "    padding: 1px 3px !important;" +
+    "    min-width: 30px !important;" +
+    "    font-size: 10px !important;" +
+    "  }" +
+    "  .card-placeholder__rate .full-start__rate {" +
+    "    font-size: 10px !important;" +
+    "  }" +
+    "  .card-placeholder__rate .source--name img {" +
+    "    height: 10px !important;" +
+    "  }" +
     "}" +
     "</style>";
 
@@ -1578,7 +1647,130 @@
 
   /*
   |==========================================================================
-  | 7. ГОЛОВНИЙ ПРОЦЕС (Orchestrator)
+  | 7. ДОДАТКОВИЙ РЕНДЕР ДЛЯ КАРТОК (Card View)
+  |==========================================================================
+  */
+
+  /**
+   * Оновлює рейтинги у картках фільмів (правий нижній кут)
+   */
+  function updateCardRatings() {
+    var cards = document.querySelectorAll('.card-placeholder');
+    if (!cards.length) return;
+
+    cards.forEach(function(card) {
+      var cardId = card.getAttribute('data-id');
+      var cardType = card.getAttribute('data-type') || 'movie';
+      
+      if (!cardId) return;
+      
+      // Перевіряємо, чи вже є рейтинг на картці
+      var existingRate = card.querySelector('.card-placeholder__rate');
+      if (existingRate) return;
+      
+      // Шукаємо дані рейтингів у кеші
+      var cacheKey = cardType + '_' + cardId;
+      var cachedData = getCachedRatings(cacheKey);
+      
+      if (cachedData) {
+        renderCardRating(card, cachedData);
+      }
+    });
+  }
+
+  /**
+   * Рендерить рейтинг на картці
+   */
+  function renderCardRating(cardElement, ratingData) {
+    var cfg = getCfg();
+    
+    // Визначаємо, який рейтинг показувати на картці
+    var ratingToShow = null;
+    var iconToShow = null;
+    var colorClass = '';
+    
+    if (cfg.enableImdb && ratingData.imdb_display) {
+      ratingToShow = parseFloat(ratingData.imdb_display).toFixed(1);
+      iconToShow = ICONS.imdb;
+      if (cfg.colorizeAll) {
+        colorClass = getRatingClass(ratingData.imdb_for_avg || parseFloat(ratingData.imdb_display));
+      }
+    } else if (cfg.enableTmdb && ratingData.tmdb_display) {
+      ratingToShow = parseFloat(ratingData.tmdb_display).toFixed(1);
+      iconToShow = ICONS.tmdb;
+      if (cfg.colorizeAll) {
+        colorClass = getRatingClass(ratingData.tmdb_for_avg || parseFloat(ratingData.tmdb_display));
+      }
+    } else if (cfg.showAverage && ratingData.tmdb_for_avg && ratingData.imdb_for_avg) {
+      // Розраховуємо середнє для картки
+      var parts = [];
+      if (cfg.enableTmdb && ratingData.tmdb_for_avg && !isNaN(ratingData.tmdb_for_avg)) parts.push(parseFloat(ratingData.tmdb_for_avg));
+      if (cfg.enableImdb && ratingData.imdb_for_avg && !isNaN(ratingData.imdb_for_avg)) parts.push(parseFloat(ratingData.imdb_for_avg));
+      
+      if (parts.length > 0) {
+        var sum = parts.reduce(function(a, b) { return a + b; }, 0);
+        var avg = sum / parts.length;
+        ratingToShow = avg.toFixed(1);
+        iconToShow = ICONS.total_star;
+        if (cfg.colorizeAll) {
+          colorClass = getRatingClass(avg);
+        }
+      }
+    }
+    
+    if (!ratingToShow || !iconToShow) return;
+    
+    // Створюємо елемент рейтингу
+    var rateElement = document.createElement('div');
+    rateElement.className = 'card-placeholder__rate';
+    
+    var rateHtml = '<div class="full-start__rate ' + colorClass + '">' +
+      '<div>' + ratingToShow + '</div>' +
+      '<div class="source--name">' + iconImg(iconToShow, '', 16) + '</div>' +
+      '</div>';
+    
+    rateElement.innerHTML = rateHtml;
+    
+    // Додаємо рейтинг до картки
+    cardElement.style.position = 'relative';
+    cardElement.appendChild(rateElement);
+  }
+
+  /**
+   * Спостерігач для нових карток
+   */
+  var cardObserver = null;
+
+  /**
+   * Ініціалізація спостереження за картками
+   */
+  function initCardObserver() {
+    if (cardObserver) return;
+    
+    cardObserver = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        if (mutation.type === 'childList' && mutation.addedNodes.length) {
+          setTimeout(updateCardRatings, 100);
+        }
+      });
+    });
+    
+    // Спостереження за основним контейнером
+    var mainContainer = document.querySelector('.content__container, .cub__sections, .selector--render');
+    if (mainContainer) {
+      cardObserver.observe(mainContainer, {
+        childList: true,
+        subtree: true
+      });
+    }
+    
+    // Первинне оновлення
+    setTimeout(updateCardRatings, 500);
+  }
+
+  /*
+  |==========================================================================
+  | 8. ГОЛОВНИЙ ПРОЦЕС (Orchestrator)
   |==========================================================================
   */
 
@@ -1588,9 +1780,6 @@
   function fetchAdditionalRatings(card) {
     var render = Lampa.Activity.active().activity.render();
     if (!render) return;
-
-    // Видалено виклик refreshConfigFromStorage() - він більше не потрібен
-    // refreshConfigFromStorage();
 
     var normalizedCard = {
       id: card.id,
@@ -1698,7 +1887,7 @@
 
   /*
   |==========================================================================
-  | 8. НАЛАШТУВАННЯ (SETTINGS)
+  | 9. НАЛАШТУВАННЯ (SETTINGS)
   |==========================================================================
   */
 
@@ -2005,7 +2194,7 @@
 
   /*
   |==========================================================================
-  | 9. ЗАПУСК (LAUNCH)
+  | 10. ЗАПУСК (LAUNCH)
   |==========================================================================
   */
 
@@ -2031,11 +2220,11 @@
 
   initRatingsPluginUI();
 
-  // Видалено виклик refreshConfigFromStorage()
-  // refreshConfigFromStorage();
-
   window.addEventListener('resize', reapplyOnResize);
   window.addEventListener('orientationchange', reapplyOnResize);
+
+  // Ініціалізація спостерігача за картками
+  setTimeout(initCardObserver, 1000);
 
   if (!window.combined_ratings_plugin) {
     startPlugin();
