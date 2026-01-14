@@ -325,40 +325,42 @@
   /**
    * Локалізація (Переклади)
    */
-  Lampa.Lang.add({
-    oscars_label: {
-      uk: 'Оскар'
-    },
-    emmy_label: {
-      uk: 'Еммі'
-    },
-    awards_other_label: {
-      uk: 'Нагороди'
-    },
-    popcorn_label: {
-      uk: 'Глядачі'
-    },
-    source_tmdb: {
-      ru: 'TMDB',
-      en: 'TMDB',
-      uk: 'TMDB'
-    },
-    source_imdb: {
-      ru: 'IMDb',
-      en: 'IMDb',
-      uk: 'IMDb'
-    },
-    source_mc: {
-      ru: 'Metacritic',
-      en: 'Metacritic',
-      uk: 'Metacritic'
-    },
-    source_rt: {
-      ru: 'Rotten',
-      en: 'Rotten',
-      uk: 'Rotten'
-    }
-  });
+  if (window.Lampa && Lampa.Lang) {
+    Lampa.Lang.add({
+      oscars_label: {
+        uk: 'Оскар'
+      },
+      emmy_label: {
+        uk: 'Еммі'
+      },
+      awards_other_label: {
+        uk: 'Нагороди'
+      },
+      popcorn_label: {
+        uk: 'Глядачі'
+      },
+      source_tmdb: {
+        ru: 'TMDB',
+        en: 'TMDB',
+        uk: 'TMDB'
+      },
+      source_imdb: {
+        ru: 'IMDb',
+        en: 'IMDb',
+        uk: 'IMDb'
+      },
+      source_mc: {
+        ru: 'Metacritic',
+        en: 'Metacritic',
+        uk: 'Metacritic'
+      },
+      source_rt: {
+        ru: 'Rotten',
+        en: 'Rotten',
+        uk: 'Rotten'
+      }
+    });
+  }
 
   /**
    * CSS стилі плагіну - адаптовано для Applecation
@@ -1331,16 +1333,7 @@
     var ratingsContainer = getApplecationRatingsContainer();
     if (!ratingsContainer || !ratingsContainer.length) return;
 
-    var cfg = (typeof getCfg === 'function') ? getCfg() : {
-      enableImdb: true,
-      enableTmdb: true,
-      enableMc: true,
-      enableRt: true,
-      enablePop: true,
-      mcMode: 'meta',
-      colorizeAll: false,
-      showAwards: true
-    };
+    var cfg = getCfg();
 
     // Додаємо іконку IMDb
     (function() {
@@ -1525,15 +1518,7 @@
       return;
     }
 
-    var cfg = (typeof getCfg === 'function') ? getCfg() : {
-      enableImdb: true,
-      enableTmdb: true,
-      enableMc: true,
-      enableRt: true,
-      enablePop: true,
-      colorizeAll: true,
-      showAverage: true
-    };
+    var cfg = getCfg();
 
     $('.rate--avg', ratingsContainer).remove();
     if (!cfg.showAverage) {
@@ -1584,7 +1569,7 @@
     ratingsContainer.prepend(avgElement);
 
     try {
-      applyAwardsColor(ratingsContainer, (typeof getCfg === 'function') ? getCfg() : null);
+      applyAwardsColor(ratingsContainer, cfg);
     } catch (e) {}
 
     removeLoadingAnimation();
@@ -1750,72 +1735,84 @@
    * Ховає/показує блоки з нагородами (ВИПРАВЛЕНО для Applecation)
    */
   function toggleAwards(showAwards) {
-    var render = Lampa.Activity.active().activity.render();
-    if (!render || !render[0]) return;
-    
-    // Шукаємо контейнер з рейтингами в поточному render
-    var ratingsContainer = $('.applecation__ratings', render);
-    if (!ratingsContainer.length) return;
-    
-    // Шукаємо всі елементи нагород у цьому контейнері
-    var awardElements = $('.rate--oscars, .rate--emmy, .rate--awards', ratingsContainer);
-    
-    awardElements.each(function() {
-      var $el = $(this);
-      if (showAwards) {
-        $el.css('display', ''); // Показуємо
-      } else {
-        $el.css('display', 'none'); // Ховаємо
-      }
-    });
+    try {
+      var render = Lampa.Activity.active().activity.render();
+      if (!render || !render[0]) return;
+      
+      // Шукаємо контейнер з рейтингами в поточному render
+      var ratingsContainer = $('.applecation__ratings', render);
+      if (!ratingsContainer.length) return;
+      
+      // Шукаємо всі елементи нагород у цьому контейнері
+      var awardElements = $('.rate--oscars, .rate--emmy, .rate--awards', ratingsContainer);
+      
+      awardElements.each(function() {
+        var $el = $(this);
+        if (showAwards) {
+          $el.css('display', ''); // Показуємо
+        } else {
+          $el.css('display', 'none'); // Ховаємо
+        }
+      });
+    } catch (e) {
+      console.error('toggleAwards error:', e);
+    }
   }
 
   /**
    * Ховає/показує блок середнього рейтингу (ВИПРАВЛЕНО для Applecation)
    */
   function toggleAverage(showAverage) {
-    var render = Lampa.Activity.active().activity.render();
-    if (!render || !render[0]) return;
-    
-    var ratingsContainer = $('.applecation__ratings', render);
-    if (!ratingsContainer.length) return;
-    
-    var avgElements = $('.rate--avg', ratingsContainer);
-    
-    avgElements.each(function() {
-      var $el = $(this);
-      if (showAverage) {
-        $el.css('display', ''); // Показуємо
-      } else {
-        $el.css('display', 'none'); // Ховаємо
-      }
-    });
+    try {
+      var render = Lampa.Activity.active().activity.render();
+      if (!render || !render[0]) return;
+      
+      var ratingsContainer = $('.applecation__ratings', render);
+      if (!ratingsContainer.length) return;
+      
+      var avgElements = $('.rate--avg', ratingsContainer);
+      
+      avgElements.each(function() {
+        var $el = $(this);
+        if (showAverage) {
+          $el.css('display', ''); // Показуємо
+        } else {
+          $el.css('display', 'none'); // Ховаємо
+        }
+      });
+    } catch (e) {
+      console.error('toggleAverage error:', e);
+    }
   }
 
   /**
    * Увімкнення/вимкнення кольорового виділення
    */
   function toggleColorizeAll(colorizeAll) {
-    var ratingsContainer = $('.applecation__ratings');
-    if (!ratingsContainer.length) return;
-    
-    var ratingElements = $('.full-start__rate:not(.rate--oscars):not(.rate--emmy):not(.rate--awards)', ratingsContainer);
-    
-    if (colorizeAll) {
-      // Додаємо кольорові класи до всіх рейтингів
-      ratingElements.each(function() {
-        var $element = $(this);
-        var ratingText = $element.find('div:first-child').text().trim();
-        var ratingValue = parseFloat(ratingText);
-        
-        if (!isNaN(ratingValue)) {
-          $element.removeClass('rating--green rating--blue rating--orange rating--red');
-          $element.addClass(getRatingClass(ratingValue));
-        }
-      });
-    } else {
-      // Видаляємо кольорові класи з усіх рейтингів
-      ratingElements.removeClass('rating--green rating--blue rating--orange rating--red');
+    try {
+      var ratingsContainer = $('.applecation__ratings');
+      if (!ratingsContainer.length) return;
+      
+      var ratingElements = $('.full-start__rate:not(.rate--oscars):not(.rate--emmy):not(.rate--awards)', ratingsContainer);
+      
+      if (colorizeAll) {
+        // Додаємо кольорові класи до всіх рейтингів
+        ratingElements.each(function() {
+          var $element = $(this);
+          var ratingText = $element.find('div:first-child').text().trim();
+          var ratingValue = parseFloat(ratingText);
+          
+          if (!isNaN(ratingValue)) {
+            $element.removeClass('rating--green rating--blue rating--orange rating--red');
+            $element.addClass(getRatingClass(ratingValue));
+          }
+        });
+      } else {
+        // Видаляємо кольорові класи з усіх рейтингів
+        ratingElements.removeClass('rating--green rating--blue rating--orange rating--red');
+      }
+    } catch (e) {
+      console.error('toggleColorizeAll error:', e);
     }
   }
 
@@ -1928,146 +1925,153 @@
     if (window.lmp_ratings_add_param_ready) return;
     window.lmp_ratings_add_param_ready = true;
 
-    Lampa.SettingsApi.addComponent({
-      component: 'lmp_ratings',
-      name: 'Рейтинги',
-      icon: '<svg width="24" height="24" viewBox="0 0 24 24" ' +
-        'fill="none" xmlns="http://www.w3.org/2000/svg">' +
-        '<path d="M12 3l3.09 6.26L22 10.27l-5 4.87L18.18 21 ' +
-        '12 17.77 5.82 21 7 15.14l-5-4.87 6.91-1.01L12 3z" ' +
-        'stroke="currentColor" stroke-width="2" ' +
-        'fill="none" stroke-linejoin="round" stroke-linecap="round"/>' +
-        '</svg>'
-    });
+    if (Lampa.SettingsApi) {
+      Lampa.SettingsApi.addComponent({
+        component: 'lmp_ratings',
+        name: 'Рейтинги',
+        icon: '<svg width="24" height="24" viewBox="0 0 24 24" ' +
+          'fill="none" xmlns="http://www.w3.org/2000/svg">' +
+          '<path d="M12 3l3.09 6.26L22 10.27l-5 4.87L18.18 21 ' +
+          '12 17.77 5.82 21 7 15.14l-5-4.87 6.91-1.01L12 3z" ' +
+          'stroke="currentColor" stroke-width="2" ' +
+          'fill="none" stroke-linejoin="round" stroke-linecap="round"/>' +
+          '</svg>'
+      });
 
-    Lampa.SettingsApi.addParam({
-      component: 'lmp_ratings',
-      param: {
-        name: 'ratings_show_awards',
-        type: 'trigger',
-        values: '',
-        "default": RCFG_DEFAULT.ratings_show_awards
-      },
-      field: {
-        name: 'Нагороди',
-        description: 'Показувати Оскари, Еммі та інші нагороди.'
-      },
-      onRender: function(item) {}
-    });
+      Lampa.SettingsApi.addParam({
+        component: 'lmp_ratings',
+        param: {
+          name: 'ratings_show_awards',
+          type: 'trigger',
+          values: '',
+          "default": RCFG_DEFAULT.ratings_show_awards
+        },
+        field: {
+          name: 'Нагороди',
+          description: 'Показувати Оскари, Еммі та інші нагороди.'
+        },
+        onRender: function(item) {}
+      });
 
-    Lampa.SettingsApi.addParam({
-      component: 'lmp_ratings',
-      param: {
-        name: 'ratings_show_average',
-        type: 'trigger',
-        values: '',
-        "default": RCFG_DEFAULT.ratings_show_average
-      },
-      field: {
-        name: 'Середній рейтинг',
-        description: 'Показувати середній рейтинг'
-      },
-      onRender: function(item) {}
-    });
+      Lampa.SettingsApi.addParam({
+        component: 'lmp_ratings',
+        param: {
+          name: 'ratings_show_average',
+          type: 'trigger',
+          values: '',
+          "default": RCFG_DEFAULT.ratings_show_average
+        },
+        field: {
+          name: 'Середній рейтинг',
+          description: 'Показувати середній рейтинг'
+        },
+        onRender: function(item) {}
+      });
 
-    Lampa.SettingsApi.addParam({
-      component: 'lmp_ratings',
-      param: {
-        name: 'ratings_colorize_all',
-        type: 'trigger',
-        "default": RCFG_DEFAULT.ratings_colorize_all
-      },
-      field: {
-        name: 'Кольорові оцінки рейтингів',
-        description: 'Кольорове виділення оцінок рейтингів'
-      },
-      onRender: function() {}
-    });
-    
-    Lampa.SettingsApi.addParam({
-      component: 'lmp_ratings',
-      param: {
-        name: 'ratings_enable_imdb',
-        type: 'trigger',
-        "default": RCFG_DEFAULT.ratings_enable_imdb
-      },
-      field: {
-        name: 'IMDb',
-        description: 'Показувати/ховати джерело'
-      }
-    });
-    
-    Lampa.SettingsApi.addParam({
-      component: 'lmp_ratings',
-      param: {
-        name: 'ratings_enable_tmdb',
-        type: 'trigger',
-        "default": RCFG_DEFAULT.ratings_enable_tmdb
-      },
-      field: {
-        name: 'TMDB',
-        description: 'Показувати/ховати джерело'
-      }
-    });
-    
-    Lampa.SettingsApi.addParam({
-      component: 'lmp_ratings',
-      param: {
-        name: 'ratings_enable_mc',
-        type: 'trigger',
-        "default": RCFG_DEFAULT.ratings_enable_mc
-      },
-      field: {
-        name: 'Metacritic',
-        description: 'Показувати/ховати джерело'
-      }
-    });
-    
-    Lampa.SettingsApi.addParam({
-      component: 'lmp_ratings',
-      param: {
-        name: 'ratings_enable_rt',
-        type: 'trigger',
-        "default": RCFG_DEFAULT.ratings_enable_rt
-      },
-      field: {
-        name: 'RottenTomatoes',
-        description: 'Показувати/ховати джерело'
-      }
-    });
-    
-    Lampa.SettingsApi.addParam({
-      component: 'lmp_ratings',
-      param: {
-        name: 'ratings_enable_popcorn',
-        type: 'trigger',
-        "default": RCFG_DEFAULT.ratings_enable_popcorn
-      },
-      field: {
-        name: 'Popcornmeter',
-        description: 'Показувати/ховати джерело'
-      }
-    });
+      Lampa.SettingsApi.addParam({
+        component: 'lmp_ratings',
+        param: {
+          name: 'ratings_colorize_all',
+          type: 'trigger',
+          "default": RCFG_DEFAULT.ratings_colorize_all
+        },
+        field: {
+          name: 'Кольорові оцінки рейтингів',
+          description: 'Кольорове виділення оцінок рейтингів'
+        },
+        onRender: function() {}
+      });
+      
+      Lampa.SettingsApi.addParam({
+        component: 'lmp_ratings',
+        param: {
+          name: 'ratings_enable_imdb',
+          type: 'trigger',
+          "default": RCFG_DEFAULT.ratings_enable_imdb
+        },
+        field: {
+          name: 'IMDb',
+          description: 'Показувати/ховати джерело'
+        }
+      });
+      
+      Lampa.SettingsApi.addParam({
+        component: 'lmp_ratings',
+        param: {
+          name: 'ratings_enable_tmdb',
+          type: 'trigger',
+          "default": RCFG_DEFAULT.ratings_enable_tmdb
+        },
+        field: {
+          name: 'TMDB',
+          description: 'Показувати/ховати джерело'
+        }
+      });
+      
+      Lampa.SettingsApi.addParam({
+        component: 'lmp_ratings',
+        param: {
+          name: 'ratings_enable_mc',
+          type: 'trigger',
+          "default": RCFG_DEFAULT.ratings_enable_mc
+        },
+        field: {
+          name: 'Metacritic',
+          description: 'Показувати/ховати джерело'
+        }
+      });
+      
+      Lampa.SettingsApi.addParam({
+        component: 'lmp_ratings',
+        param: {
+          name: 'ratings_enable_rt',
+          type: 'trigger',
+          "default": RCFG_DEFAULT.ratings_enable_rt
+        },
+        field: {
+          name: 'RottenTomatoes',
+          description: 'Показувати/ховати джерело'
+        }
+      });
+      
+      Lampa.SettingsApi.addParam({
+        component: 'lmp_ratings',
+        param: {
+          name: 'ratings_enable_popcorn',
+          type: 'trigger',
+          "default": RCFG_DEFAULT.ratings_enable_popcorn
+        },
+        field: {
+          name: 'Popcornmeter',
+          description: 'Показувати/ховати джерело'
+        }
+      });
 
-    Lampa.SettingsApi.addParam({
-      component: 'lmp_ratings',
-      param: {
-        type: 'button',
-        component: 'lmp_clear_cache'
-      },
-      field: {
-        name: 'Очистити кеш рейтингів'
-      },
-      onChange: function() {
-        lmpRatingsClearCache();
-      }
-    });
+      Lampa.SettingsApi.addParam({
+        component: 'lmp_ratings',
+        param: {
+          type: 'button',
+          component: 'lmp_clear_cache'
+        },
+        field: {
+          name: 'Очистити кеш рейтингів'
+        },
+        onChange: function() {
+          lmpRatingsClearCache();
+        }
+      });
+    }
   }
 
   /**
    * Ініціалізація UI налаштувань
    */
   function initRatingsPluginUI() {
+    if (!window.Lampa) {
+      setTimeout(initRatingsPluginUI, 100);
+      return;
+    }
+    
     ensureDefaultToggles();
     addSettingsSection();
     patchStorageSetOnce();
@@ -2088,12 +2092,19 @@
    * Ініціалізація (основний слухач)
    */
   function startPlugin() {
+    if (!window.Lampa) {
+      setTimeout(startPlugin, 100);
+      return;
+    }
+    
     window.combined_ratings_plugin = true;
     Lampa.Listener.follow('full', function(e) {
       if (e.type === 'complite') {
         setTimeout(function() {
           fetchAdditionalRatings(e.data.movie || e.object || {});
-          __lmpTenFixStart();
+          if (window.__lmpTenFixStart) {
+            window.__lmpTenFixStart();
+          }
         }, 500);
       }
     });
@@ -2101,17 +2112,29 @@
 
   // --- Початок виконання коду ---
 
-  Lampa.Template.add('lmp_enh_styles', pluginStyles);
-  $('body').append(Lampa.Template.get('lmp_enh_styles', {}, true));
+  // Чекаємо на завантаження Lampa
+  function initPlugin() {
+    if (!window.Lampa || !window.$) {
+      setTimeout(initPlugin, 100);
+      return;
+    }
+    
+    // Додаємо стилі
+    Lampa.Template.add('lmp_enh_styles', pluginStyles);
+    $('body').append(Lampa.Template.get('lmp_enh_styles', {}, true));
 
-  initRatingsPluginUI();
+    initRatingsPluginUI();
 
-  window.addEventListener('resize', reapplyOnResize);
-  window.addEventListener('orientationchange', reapplyOnResize);
+    window.addEventListener('resize', reapplyOnResize);
+    window.addEventListener('orientationchange', reapplyOnResize);
 
-  if (!window.combined_ratings_plugin) {
-    startPlugin();
+    if (!window.combined_ratings_plugin) {
+      startPlugin();
+    }
   }
+
+  // Запускаємо ініціалізацію
+  initPlugin();
 
 })();
 [file content end]
