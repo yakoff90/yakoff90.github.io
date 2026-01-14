@@ -3,8 +3,8 @@
  * --------------------------------------------------------
  * - Працює на старих WebView: локальні шими/поліфіли (localStorage, Promise, fetch, DOM-методи)
  * - Бере рейтинги з MDBList (+ OMDb для віку/нагород) і малює їх у деталці
+ * - Адаптовано для Applecation: відображає рейтинги у картці перед описом фільму
  * - Має секцію налаштувань "Рейтинги", живе застосування стилів без перезавантаження
- * - Відображає рейтинги у правому нижньому куті картки фільму
  */
 
 (function() {
@@ -12,10 +12,12 @@
 
   /*
   |==========================================================================
-  | localStorage shim
-  | (Фолбек, якщо localStorage вимкнено або недоступний)
+  | 1. ШИМИ / ПОЛІФІЛИ
+  | (Для старих Android Webview)
   |==========================================================================
   */
+
+  // localStorage shim
   (function() {
     var ok = true;
     try {
@@ -45,14 +47,9 @@
     }
   })();
 
-  /*
-  |==========================================================================
-  | Promise (мінімальний поліфіл)
-  | (Достатньо для then/catch/all)
-  |==========================================================================
-  */
+  // Promise polyfill
   (function(global) {
-    if (global.Promise) return; // Вже є
+    if (global.Promise) return;
     var PENDING = 0,
       FULFILLED = 1,
       REJECTED = 2;
@@ -161,14 +158,9 @@
     global.Promise = MiniPromise;
   })(typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : this));
 
-  /*
-  |==========================================================================
-  | fetch polyfill
-  | (З урахуванням Lampa.Reguest для обходу CORS)
-  |==========================================================================
-  */
+  // fetch polyfill
   (function(global) {
-    if (global.fetch) return; // Вже є
+    if (global.fetch) return;
 
     function Response(body, init) {
       this.status = init && init.status || 200;
@@ -194,7 +186,6 @@
       var headers = init.headers || {};
       var body = init.body || null;
 
-      // Якщо є Lampa.Reguest — використовуємо його (обхід CORS)
       if (global.Lampa && Lampa.Reguest) {
         return new Promise(function(resolve) {
           new Lampa.Reguest().native(
@@ -222,7 +213,6 @@
         });
       }
 
-      // Звичайний XMLHttpRequest-фолбек
       return new Promise(function(resolve, reject) {
         try {
           var xhr = new XMLHttpRequest();
@@ -307,8 +297,8 @@
    */
   var LMP_ENH_CONFIG = {
     apiKeys: {
-      mdblist: 'nmqhlb9966w9m86h3yntb0dpz', // ключ до MDBList
-      omdb: '358837db' // ключ до OMDb
+      mdblist: 'nmqhlb9966w9m86h3yntb0dpz',
+      omdb: '358837db'
     }
   };
 
@@ -369,9 +359,79 @@
   });
 
   /**
-   * CSS стилі плагіну
+   * CSS стилі плагіну - адаптовано для Applecation
    */
   var pluginStyles = "<style>" +
+    /* --- Загальні стилі --- */
+    ".full-start-new.applecation .full-start-new__rate-line {" +
+    "    display: flex !important;" +
+    "    align-items: center !important;" +
+    "    flex-wrap: wrap !important;" +
+    "    gap: 0.8em !important;" +
+    "    margin-bottom: 0.5em !important;" +
+    "    opacity: 0 !important;" +
+    "    transform: translateY(15px) !important;" +
+    "    transition: opacity 0.4s ease-out, transform 0.4s ease-out !important;" +
+    "}" +
+    
+    ".full-start-new.applecation .full-start-new__rate-line.show {" +
+    "    opacity: 1 !important;" +
+    "    transform: translateY(0) !important;" +
+    "}" +
+    
+    /* --- Стилі для рейтингів у Applecation --- */
+    ".full-start-new.applecation .applecation__ratings {" +
+    "    display: flex !important;" +
+    "    align-items: center !important;" +
+    "    flex-wrap: wrap !important;" +
+    "    gap: 0.8em !important;" +
+    "    margin-bottom: 0.5em !important;" +
+    "}" +
+    
+    ".full-start-new.applecation .applecation__ratings .full-start__rate {" +
+    "    display: flex !important;" +
+    "    align-items: center !important;" +
+    "    gap: 0.35em !important;" +
+    "    font-size: 0.95em !important;" +
+    "    font-weight: 600 !important;" +
+    "    color: #fff !important;" +
+    "}" +
+    
+    ".full-start-new.applecation .applecation__ratings .source--name {" +
+    "    display: flex !important;" +
+    "    align-items: center !important;" +
+    "    justify-content: center !important;" +
+    "}" +
+    
+    ".full-start-new.applecation .applecation__ratings .source--name img {" +
+    "    width: auto !important;" +
+    "    height: var(--lmp-h-default, 1.8em) !important;" +
+    "    object-fit: contain !important;" +
+    "}" +
+    
+    /* --- Специфічні висоти іконок --- */
+    ".full-start-new.applecation .rate--imdb .source--name img { height: 1.8em !important; }" +
+    ".full-start-new.applecation .rate--kp .source--name img { height: 1.5em !important; }" +
+    ".full-start-new.applecation .rate--tmdb .source--name img { height: 1.8em !important; }" +
+    ".full-start-new.applecation .rate--mc .source--name img { height: 1.8em !important; }" +
+    ".full-start-new.applecation .rate--rt .source--name img { height: 1.8em !important; }" +
+    ".full-start-new.applecation .rate--popcorn .source--name img { height: 1.8em !important; }" +
+    ".full-start-new.applecation .rate--avg .source--name img { height: 1.4em !important; }" +
+    ".full-start-new.applecation .rate--oscars .source--name img," +
+    ".full-start-new.applecation .rate--emmy .source--name img," +
+    ".full-start-new.applecation .rate--awards .source--name img { height: 1.4em !important; }" +
+    
+    /* --- Кольоровий режим --- */
+    ".rate--oscars, .rate--emmy, .rate--awards, .rate--gold {" +
+    "    color: gold !important;" +
+    "}" +
+    
+    /* --- Кольори оцінок --- */
+    ".full-start__rate.rating--green  { color: #2ecc71 !important; }" +
+    ".full-start__rate.rating--blue   { color: #60a5fa !important; }" +
+    ".full-start__rate.rating--orange { color: #f59e0b !important; }" +
+    ".full-start__rate.rating--red    { color: #ef4444 !important; }" +
+    
     /* --- Лоадер "Пошук..." --- */
     ".loading-dots-container {" +
     "    display: flex;" +
@@ -401,47 +461,15 @@
     "    0%, 80%, 100% { transform: translateY(0); opacity: 0.6; }" +
     "    40% { transform: translateY(-0.5em); opacity: 1; }" +
     "}" +
-
-    /* --- CSS Змінні (розміри іконок) --- */
-    ":root{" +
-    "  --lmp-h-imdb:24px;" +
-    "  --lmp-h-mc:24px;" +
-    "  --lmp-h-rt:26px;" +
-    "  --lmp-h-popcorn:26px;" +
-    "  --lmp-h-tmdb:26px;" +
-    "  --lmp-h-awards:20px;" +
-    "  --lmp-h-avg:20px;" +
-    "  --lmp-h-oscar:22px;" +
-    "  --lmp-h-emmy:24px;" +
-    "}" +
-
-    /* --- Кольоровий режим --- */
-    ".rate--oscars, .rate--emmy, .rate--awards, .rate--gold {" +
-    "    color: gold;" +
-    "}" +
-
-    /* --- Кольори оцінок --- */
-    ".full-start__rate.rating--green  { color: #2ecc71; }" + /* ≥ 8.0  */
-    ".full-start__rate.rating--blue   { color: #60a5fa; }" + /* 6.0–7.9 */
-    ".full-start__rate.rating--orange { color: #f59e0b; }" + /* 4.0–5.9 */
-    ".full-start__rate.rating--red    { color: #ef4444; }" + /* < 4.0   */
-
-    /* --- Ущільнення відступів --- */
-    ".full-start-new__rate-line .full-start__rate {" +
-    "    margin-right: 0.3em !important;" +
-    "}" +
-    ".full-start-new__rate-line .full-start__rate:last-child {" +
-    "    margin-right: 0 !important;" +
-    "}" +
-
-    /* --- Приховування рядка під час завантаження --- */
+    
+    /* --- Приховування під час завантаження --- */
     ".full-start-new__rate-line.lmp-is-loading-ratings > :not(#lmp-search-loader)," +
     ".full-start__rate-line.lmp-is-loading-ratings > :not(#lmp-search-loader) {" +
     "    opacity: 0 !important;" +
     "    pointer-events: none !important;" +
     "    transition: opacity 0.15s;" +
     "}" +
-
+    
     /* --- Вирівнювання іконок нагород --- */
     ".lmp-award-icon{" +
     "  display:inline-flex;" +
@@ -458,122 +486,17 @@
     "  display:block;" +
     "  object-fit:contain;" +
     "}" +
-    ".lmp-award-icon--oscar img{height:var(--lmp-h-oscar);}" +
-    ".lmp-award-icon--emmy  img{height:var(--lmp-h-emmy);}" +
-
-    /* --- Базові розміри іконок сервісів --- */
-    ".rate--imdb    .source--name img{height:var(--lmp-h-imdb);}" +
-    ".rate--mc      .source--name img{height:var(--lmp-h-mc);}" +
-    ".rate--rt      .source--name img{height:var(--lmp-h-rt);}" +
-    ".rate--popcorn .source--name img{height:var(--lmp-h-popcorn);}" +
-    ".rate--tmdb    .source--name img{height:var(--lmp-h-tmdb);}" +
-    ".rate--awards  .source--name img{height:var(--lmp-h-awards);}" +
-    ".rate--avg     .source--name img{height:var(--lmp-h-avg);}" +
-
-    /* --- Вирівнювання іконок --- */
-    ".full-start__rate .source--name{" +
-    "  display:inline-flex;" +
-    "  align-items:center;" +
-    "  justify-content:center;" +
-    "}" +
-
-    /* --- Налаштування --- */
-    ".settings-param__descr,.settings-param__subtitle{white-space:pre-line;}" +
-
-    /* --- Рейтинги у картці фільму (правий нижній кут) --- */
-    ".card-placeholder__rate {" +
-    "    position: absolute !important;" +
-    "    bottom: 0 !important;" +
-    "    right: 0 !important;" +
-    "    z-index: 2 !important;" +
-    "    background: linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.9) 100%) !important;" +
-    "    border-radius: 4px 0 0 0 !important;" +
-    "    padding: 3px 6px !important;" +
-    "    min-width: 40px !important;" +
-    "    text-align: center !important;" +
-    "    display: flex !important;" +
-    "    align-items: center !important;" +
-    "    justify-content: center !important;" +
-    "}" +
-    ".card-placeholder__rate .full-start__rate {" +
-    "    margin: 0 !important;" +
-    "    font-size: 14px !important;" +
-    "    line-height: 1 !important;" +
-    "    display: flex !important;" +
-    "    align-items: center !important;" +
-    "}" +
-    ".card-placeholder__rate .full-start__rate > div:first-child {" +
-    "    margin-right: 4px !important;" +
-    "    font-weight: bold !important;" +
-    "}" +
-    ".card-placeholder__rate .source--name img {" +
-    "    height: 16px !important;" +
-    "    width: auto !important;" +
-    "}" +
-    ".card-placeholder__rate .rate--avg {" +
-    "    color: #FFD700 !important;" +
-    "}" +
-    ".card-placeholder__rate .rate--green {" +
-    "    color: #2ecc71 !important;" +
-    "}" +
-    ".card-placeholder__rate .rate--blue {" +
-    "    color: #60a5fa !important;" +
-    "}" +
-    ".card-placeholder__rate .rate--orange {" +
-    "    color: #f59e0b !important;" +
-    "}" +
-    ".card-placeholder__rate .rate--red {" +
-    "    color: #ef4444 !important;" +
-    "}" +
-
+    
+    /* --- Приховування стандартного рейтингу Кінопошуку --- */
+    ".full-start__rate.rate--kp, .rate--kp{display:none!important;}" +
+    
     /* --- Адаптив (Mobile) --- */
     "@media (max-width: 600px){" +
-    "  .full-start-new__rate-line{flex-wrap:wrap;}" +
-    "  .full-start__rate{" +
-    "    margin-right:.25em !important;" +
-    "    margin-bottom:.25em;" +
-    "    font-size:16px;" +
-    "    min-width:unset;" +
+    "  .full-start-new.applecation .applecation__ratings {" +
+    "    gap: 0.5em !important;" +
     "  }" +
-    "  :root{" +
-    "    --lmp-h-imdb:14px; --lmp-h-mc:14px; --lmp-h-rt:16px;" +
-    "    --lmp-h-popcorn:16px; --lmp-h-tmdb:16px; --lmp-h-awards:14px;" +
-    "    --lmp-h-avg:14px; --lmp-h-oscar:14px; --lmp-h-emmy:16px;" +
-    "  }" +
-    "  .loading-dots-container{font-size:.8em; padding:.4em .8em;}" +
-    "  .lmp-award-icon{height:16px;}" +
-    "  .card-placeholder__rate {" +
-    "    padding: 2px 4px !important;" +
-    "    min-width: 35px !important;" +
-    "    font-size: 12px !important;" +
-    "  }" +
-    "  .card-placeholder__rate .full-start__rate {" +
-    "    font-size: 12px !important;" +
-    "  }" +
-    "  .card-placeholder__rate .source--name img {" +
-    "    height: 12px !important;" +
-    "  }" +
-    "}" +
-
-    /* --- Адаптив (Small Mobile) --- */
-    "@media (max-width: 360px){" +
-    "  .full-start__rate{font-size:14px;}" +
-    "  :root{" +
-    "    --lmp-h-imdb:12px; --lmp-h-mc:12px; --lmp-h-rt:14px;" +
-    "    --lmp-h-popcorn:14px; --lmp-h-tmdb:14px; --lmp-h-awards:12px;" +
-    "    --lmp-h-avg:12px; --lmp-h-oscar:12px; --lmp-h-emmy:14px;" +
-    "  }" +
-    "  .lmp-award-icon{height:12px;}" +
-    "  .card-placeholder__rate {" +
-    "    padding: 1px 3px !important;" +
-    "    min-width: 30px !important;" +
-    "    font-size: 10px !important;" +
-    "  }" +
-    "  .card-placeholder__rate .full-start__rate {" +
-    "    font-size: 10px !important;" +
-    "  }" +
-    "  .card-placeholder__rate .source--name img {" +
-    "    height: 10px !important;" +
+    "  .full-start-new.applecation .applecation__ratings .full-start__rate {" +
+    "    font-size: 0.85em !important;" +
     "  }" +
     "}" +
     "</style>";
@@ -581,7 +504,7 @@
   /**
    * Налаштування кешу
    */
-  var CACHE_TIME = 3 * 24 * 60 * 60 * 1000; // 3 дні
+  var CACHE_TIME = 3 * 24 * 60 * 60 * 1000;
   var RATING_CACHE_KEY = 'lmp_enh_rating_cache';
   var ID_MAPPING_CACHE = 'lmp_rating_id_cache';
 
@@ -634,17 +557,6 @@
     if (type === 'movie' || type === 'tv') return type;
     return card.name || card.original_name ? 'tv' : 'movie';
   }
-
-  /**
-   * Приховує стандартний рейтинг Кінопошуку
-   */
-  (function() {
-    try {
-      var kpCss = '<style>.full-start__rate.rate--kp, .rate--kp{display:none!important;}</style>';
-      Lampa.Template.add('lmp_hide_kp', kpCss);
-      $('body').append(Lampa.Template.get('lmp_hide_kp', {}, true));
-    } catch (e) {}
-  })();
 
   /**
    * Повертає CSS-клас для кольору рейтингу
@@ -717,8 +629,8 @@
       '<div class="loading-dots__dot"></div>' +
       '</div>';
 
-    var realSel = '.full-start-new__rate-line:not([data-lmp-fake]), .full-start__rate-line:not([data-lmp-fake])';
-    var rateLine = $(realSel, render).first();
+    // Для Applecation шукаємо блок з рейтингами
+    var rateLine = $('.applecation__ratings', render).first();
     if (rateLine.length) {
       rateLine.append(loaderHtml);
       dimRateLine(rateLine);
@@ -726,12 +638,12 @@
     }
 
     var fake = $(
-      '<div class="full-start-new__rate-line" ' +
+      '<div class="applecation__ratings" ' +
       '     id="lmp-loader-fake" data-lmp-fake="1" ' +
       '     style="min-height:28px; display:flex; align-items:center;"></div>'
     );
 
-    var anchor = $('.full-start-new__title, .full-start__title', render).first();
+    var anchor = $('.applecation__meta', render).first();
     if (anchor.length) anchor.after(fake);
     else $(render).append(fake);
 
@@ -741,7 +653,7 @@
       if (__lmpRateLineObs) __lmpRateLineObs.disconnect();
     } catch (_) {}
     __lmpRateLineObs = new MutationObserver(function() {
-      var rl = $(realSel, render).first();
+      var rl = $('.applecation__ratings', render).first();
       var loader = $('#lmp-search-loader', render);
       if (rl.length && loader.length) {
         rl.append(loader);
@@ -778,7 +690,7 @@
     $('#lmp-search-loader', render).remove();
     $('#lmp-loader-fake', render).remove();
 
-    var rl = $('.full-start-new__rate-line:not([data-lmp-fake]), .full-start__rate-line:not([data-lmp-fake])', render).first();
+    var rl = $('.applecation__ratings', render).first();
     if (rl.length) undimRateLine(rl);
 
     try {
@@ -873,7 +785,7 @@
         if (!render || !render[0]) return;
 
         var target =
-          render[0].querySelector('.full-start-new__rate-line, .full-start__rate-line') ||
+          render[0].querySelector('.applecation__ratings') ||
           render[0];
 
         scan(target);
@@ -1290,7 +1202,7 @@
 
   /*
   |==========================================================================
-  | 6. РЕНДЕР (RENDER)
+  | 6. РЕНДЕР (RENDER) - АДАПТОВАНО ДЛЯ APPLECATION
   |==========================================================================
   */
 
@@ -1310,45 +1222,6 @@
         pgElement.removeClass('hide').text(localized);
       }
     }
-
-    var imdbContainer = $('.rate--imdb', render);
-    if (imdbContainer.length) {
-      var cfg = getCfg();
-      if (!cfg.enableImdb || !data.imdb_display) {
-        imdbContainer.addClass('hide')
-          .removeClass('rating--green rating--blue rating--orange rating--red');
-      } else {
-        imdbContainer.removeClass('hide');
-        var imdbDivs = imdbContainer.find('> div');
-        if (imdbDivs.length >= 2) {
-          imdbDivs.eq(0).text(parseFloat(data.imdb_display).toFixed(1));
-          imdbDivs.eq(1).addClass('source--name').html(iconImg(ICONS.imdb, 'IMDb', 22));
-        }
-        imdbContainer.removeClass('rating--green rating--blue rating--orange rating--red');
-        if (cfg.colorizeAll && data.imdb_for_avg && !isNaN(data.imdb_for_avg)) {
-          imdbContainer.addClass(getRatingClass(parseFloat(data.imdb_for_avg)));
-        }
-      }
-    }
-
-    var tmdbContainer = $('.rate--tmdb', render);
-    if (tmdbContainer.length) {
-      var cfg = getCfg();
-      if (!cfg.enableTmdb || !data.tmdb_display) {
-        tmdbContainer.addClass('hide')
-          .removeClass('rating--green rating--blue rating--orange rating--red');
-      } else {
-        var tmdbDivs = tmdbContainer.find('> div');
-        if (tmdbDivs.length >= 2) {
-          tmdbDivs.eq(0).text(parseFloat(data.tmdb_display).toFixed(1));
-          tmdbDivs.eq(1).addClass('source--name').html(iconImg(ICONS.tmdb, 'TMDB', 24));
-        }
-        tmdbContainer.removeClass('hide rating--green rating--blue rating--orange rating--red');
-        if (cfg.colorizeAll && data.tmdb_for_avg && !isNaN(data.tmdb_for_avg)) {
-          tmdbContainer.addClass(getRatingClass(parseFloat(data.tmdb_for_avg)));
-        }
-      }
-    }
   }
 
   /**
@@ -1366,14 +1239,41 @@
   }
 
   /**
-   * Вставляє нові бейджі (MC, RT, Popcorn, Awards)
+   * Створює або знаходить контейнер для рейтингів у Applecation
+   */
+  function getApplecationRatingsContainer() {
+    var render = Lampa.Activity.active().activity.render();
+    if (!render) return null;
+    
+    // Шукаємо існуючий контейнер для рейтингів у Applecation
+    var ratingsContainer = $('.applecation__ratings', render);
+    
+    // Якщо контейнера немає, створюємо його
+    if (!ratingsContainer.length) {
+      // Шукаємо місце для вставки (після мета-інформації)
+      var metaContainer = $('.applecation__meta', render);
+      if (metaContainer.length) {
+        ratingsContainer = $('<div class="applecation__ratings"></div>');
+        metaContainer.after(ratingsContainer);
+      } else {
+        // Якщо мета-інформації немає, вставляємо після заголовка
+        var titleContainer = $('.full-start-new__title', render);
+        if (titleContainer.length) {
+          ratingsContainer = $('<div class="applecation__ratings"></div>');
+          titleContainer.after(ratingsContainer);
+        }
+      }
+    }
+    
+    return ratingsContainer;
+  }
+
+  /**
+   * Вставляє нові бейджі (MC, RT, Popcorn, Awards) у Applecation
    */
   function insertRatings(data) {
-    var render = Lampa.Activity.active().activity.render();
-    if (!render) return;
-
-    var rateLine = $('.full-start-new__rate-line:not([data-lmp-fake]), .full-start__rate-line:not([data-lmp-fake])', render);
-    if (!rateLine.length) return;
+    var ratingsContainer = getApplecationRatingsContainer();
+    if (!ratingsContainer || !ratingsContainer.length) return;
 
     var cfg = (typeof getCfg === 'function') ? getCfg() : {
       enableImdb: true,
@@ -1385,12 +1285,45 @@
       colorizeAll: false
     };
 
+    // Додаємо іконку IMDb
     (function() {
-      var cont = $('.rate--mc', rateLine);
-      if (!cfg.enableMc) {
-        cont.remove();
-        return;
-      }
+      if (!cfg.enableImdb || !data.imdb_display) return;
+      
+      var imdbVal = data.imdb_for_avg ? parseFloat(data.imdb_for_avg) : null;
+      var imdbText = imdbVal ? imdbVal.toFixed(1) : 'N/A';
+      
+      var imdbElement = $(
+        '<div class="full-start__rate rate--imdb' + (cfg.colorizeAll && imdbVal ? ' ' + getRatingClass(imdbVal) : '') + '">' +
+        '<div>' + imdbText + '</div>' +
+        '<div class="source--name"></div>' +
+        '</div>'
+      );
+      imdbElement.find('.source--name').html(iconImg(ICONS.imdb, 'IMDb', 22));
+      
+      ratingsContainer.append(imdbElement);
+    })();
+
+    // Додаємо іконку TMDB
+    (function() {
+      if (!cfg.enableTmdb || !data.tmdb_display) return;
+      
+      var tmdbVal = data.tmdb_for_avg ? parseFloat(data.tmdb_for_avg) : null;
+      var tmdbText = tmdbVal ? tmdbVal.toFixed(1) : 'N/A';
+      
+      var tmdbElement = $(
+        '<div class="full-start__rate rate--tmdb' + (cfg.colorizeAll && tmdbVal ? ' ' + getRatingClass(tmdbVal) : '') + '">' +
+        '<div>' + tmdbText + '</div>' +
+        '<div class="source--name"></div>' +
+        '</div>'
+      );
+      tmdbElement.find('.source--name').html(iconImg(ICONS.tmdb, 'TMDB', 24));
+      
+      ratingsContainer.append(tmdbElement);
+    })();
+
+    // Додаємо Metacritic
+    (function() {
+      if (!cfg.enableMc) return;
 
       var mcVal = null;
       if (data.mc_user_for_avg && !isNaN(data.mc_user_for_avg)) {
@@ -1404,39 +1337,23 @@
         mcVal = (md > 10) ? (md / 10) : md;
       }
 
-      if (mcVal == null || isNaN(mcVal)) {
-        cont.remove();
-        return;
-      }
+      if (mcVal == null || isNaN(mcVal)) return;
 
       var mcText = mcVal.toFixed(1);
+      var mcElement = $(
+        '<div class="full-start__rate rate--mc' + (cfg.colorizeAll ? ' ' + getRatingClass(mcVal) : '') + '">' +
+        '<div>' + mcText + '</div>' +
+        '<div class="source--name"></div>' +
+        '</div>'
+      );
+      mcElement.find('.source--name').html(iconImg(ICONS.metacritic, 'Metacritic', 22));
 
-      if (!cont.length) {
-        cont = $(
-          '<div class="full-start__rate rate--mc">' +
-          '<div>' + mcText + '</div>' +
-          '<div class="source--name"></div>' +
-          '</div>'
-        );
-        cont.find('.source--name').html(iconImg(ICONS.metacritic, 'Metacritic', 22));
-
-        var afterImdb = $('.rate--imdb', rateLine);
-        if (afterImdb.length) cont.insertAfter(afterImdb);
-        else rateLine.append(cont);
-      } else {
-        cont.find('> div').eq(0).text(mcText);
-      }
-
-      cont.removeClass('rating--green rating--blue rating--orange rating--red');
-      if (cfg.colorizeAll) cont.addClass(getRatingClass(mcVal));
+      ratingsContainer.append(mcElement);
     })();
 
+    // Додаємо Rotten Tomatoes
     (function() {
-      var cont = $('.rate--rt', rateLine);
-      if (!cfg.enableRt) {
-        cont.remove();
-        return;
-      }
+      if (!cfg.enableRt) return;
 
       var rtVal = null;
       if (data.rt_for_avg && !isNaN(data.rt_for_avg)) rtVal = parseFloat(data.rt_for_avg);
@@ -1445,46 +1362,26 @@
         rtVal = (rtd > 10) ? (rtd / 10) : rtd;
       }
 
-      if (rtVal == null || isNaN(rtVal)) {
-        cont.remove();
-        return;
-      }
+      if (rtVal == null || isNaN(rtVal)) return;
 
       var rtText = rtVal.toFixed(1);
       var rtIconUrl = data.rt_fresh ? ICONS.rotten_good : ICONS.rotten_bad;
       var extra = data.rt_fresh ? 'border-radius:4px;' : '';
 
-      if (!cont.length) {
-        cont = $(
-          '<div class="full-start__rate rate--rt">' +
-          '<div>' + rtText + '</div>' +
-          '<div class="source--name"></div>' +
-          '</div>'
-        );
-        cont.find('.source--name').html(iconImg(rtIconUrl, 'Rotten Tomatoes', 22, extra));
+      var rtElement = $(
+        '<div class="full-start__rate rate--rt' + (cfg.colorizeAll ? ' ' + getRatingClass(rtVal) : '') + '">' +
+        '<div>' + rtText + '</div>' +
+        '<div class="source--name"></div>' +
+        '</div>'
+      );
+      rtElement.find('.source--name').html(iconImg(rtIconUrl, 'Rotten Tomatoes', 22, extra));
 
-        var afterMc = $('.rate--mc', rateLine);
-        if (afterMc.length) cont.insertAfter(afterMc);
-        else {
-          var afterImdb2 = $('.rate--imdb', rateLine);
-          if (afterImdb2.length) cont.insertAfter(afterImdb2);
-          else rateLine.prepend(cont);
-        }
-      } else {
-        cont.find('> div').eq(0).text(rtText);
-        cont.find('.source--name').html(iconImg(rtIconUrl, 'Rotten Tomatoes', 22, extra));
-      }
-
-      cont.removeClass('rating--green rating--blue rating--orange rating--red');
-      if (cfg.colorizeAll) cont.addClass(getRatingClass(rtVal));
+      ratingsContainer.append(rtElement);
     })();
 
+    // Додаємо Popcorn
     (function() {
-      var cont = $('.rate--popcorn', rateLine);
-      if (!cfg.enablePop) {
-        cont.remove();
-        return;
-      }
+      if (!cfg.enablePop) return;
 
       var pcVal = null;
       if (data.popcorn_for_avg && !isNaN(data.popcorn_for_avg)) pcVal = parseFloat(data.popcorn_for_avg);
@@ -1493,35 +1390,22 @@
         pcVal = (pcd > 10) ? (pcd / 10) : pcd;
       }
 
-      if (pcVal == null || isNaN(pcVal)) {
-        cont.remove();
-        return;
-      }
+      if (pcVal == null || isNaN(pcVal)) return;
 
       var pcText = pcVal.toFixed(1);
+      var pcElement = $(
+        '<div class="full-start__rate rate--popcorn' + (cfg.colorizeAll ? ' ' + getRatingClass(pcVal) : '') + '">' +
+        '<div>' + pcText + '</div>' +
+        '<div class="source--name"></div>' +
+        '</div>'
+      );
+      pcElement.find('.source--name').html(iconImg(ICONS.popcorn, 'Audience', 22));
 
-      if (!cont.length) {
-        cont = $(
-          '<div class="full-start__rate rate--popcorn">' +
-          '<div>' + pcText + '</div>' +
-          '<div class="source--name"></div>' +
-          '</div>'
-        );
-        cont.find('.source--name').html(iconImg(ICONS.popcorn, 'Audience', 22));
-
-        var anchors = rateLine.find('.rate--rt, .rate--mc, .rate--tmdb, .rate--imdb');
-        if (anchors.length) cont.insertAfter(anchors.last());
-        else rateLine.prepend(cont);
-      } else {
-        cont.find('> div').eq(0).text(pcText);
-        cont.find('.source--name').html(iconImg(ICONS.popcorn, 'Audience', 22));
-      }
-
-      cont.removeClass('rating--green rating--blue rating--orange rating--red');
-      if (cfg.colorizeAll) cont.addClass(getRatingClass(pcVal));
+      ratingsContainer.append(pcElement);
     })();
 
-    if (data.awards && data.awards > 0 && !$('.rate--awards', rateLine).length) {
+    // Додаємо нагороди
+    if (data.awards && data.awards > 0) {
       var awardsElement = $(
         '<div class="full-start__rate rate--awards rate--gold">' +
         '<div>' + data.awards + '</div>' +
@@ -1531,10 +1415,10 @@
       awardsElement.find('.source--name')
         .html(iconImg(ICONS.awards, 'Awards', 20))
         .attr('title', Lampa.Lang.translate('awards_other_label'));
-      rateLine.prepend(awardsElement);
+      ratingsContainer.prepend(awardsElement);
     }
 
-    if (data.emmy && data.emmy > 0 && !$('.rate--emmy', rateLine).length) {
+    if (data.emmy && data.emmy > 0) {
       var emmyElement = $(
         '<div class="full-start__rate rate--emmy rate--gold">' +
         '<div>' + data.emmy + '</div>' +
@@ -1544,10 +1428,10 @@
       emmyElement.find('.source--name')
         .html(emmyIconInline())
         .attr('title', Lampa.Lang.translate('emmy_label'));
-      rateLine.prepend(emmyElement);
+      ratingsContainer.prepend(emmyElement);
     }
 
-    if (data.oscars && data.oscars > 0 && !$('.rate--oscars', rateLine).length) {
+    if (data.oscars && data.oscars > 0) {
       var oscarsElement = $(
         '<div class="full-start__rate rate--oscars rate--gold">' +
         '<div>' + data.oscars + '</div>' +
@@ -1557,23 +1441,23 @@
       oscarsElement.find('.source--name')
         .html(oscarIconInline())
         .attr('title', Lampa.Lang.translate('oscars_label'));
-      rateLine.prepend(oscarsElement);
+      ratingsContainer.prepend(oscarsElement);
     }
 
     try {
-      applyAwardsColor(rateLine, cfg);
+      applyAwardsColor(ratingsContainer, cfg);
     } catch (e) {}
   }
 
   /**
-   * Розраховує та вставляє середній рейтинг (AVG)
+   * Розраховує та вставляє середній рейтинг (AVG) у Applecation
    */
   function calculateAverageRating(data) {
-    var render = Lampa.Activity.active().activity.render();
-    if (!render) return;
-
-    var rateLine = $('.full-start-new__rate-line:not([data-lmp-fake]), .full-start__rate-line:not([data-lmp-fake])', render);
-    if (!rateLine.length) return;
+    var ratingsContainer = getApplecationRatingsContainer();
+    if (!ratingsContainer || !ratingsContainer.length) {
+      removeLoadingAnimation();
+      return;
+    }
 
     var cfg = (typeof getCfg === 'function') ? getCfg() : {
       enableImdb: true,
@@ -1585,13 +1469,12 @@
       showAverage: true
     };
 
-    $('.rate--avg', rateLine).remove();
+    $('.rate--avg', ratingsContainer).remove();
     if (!cfg.showAverage) {
       try {
-        applyAwardsColor(rateLine, cfg);
+        applyAwardsColor(ratingsContainer, cfg);
       } catch (e) {}
       removeLoadingAnimation();
-      undimRateLine(rateLine);
       return;
     }
 
@@ -1614,7 +1497,6 @@
 
     if (!parts.length) {
       removeLoadingAnimation();
-      undimRateLine(rateLine);
       return;
     }
 
@@ -1633,144 +1515,21 @@
     var starHtml = iconImg(ICONS.total_star, 'AVG', 20);
     avgElement.find('.source--name').html(starHtml);
 
-    var firstRate = $('.full-start__rate:first', rateLine);
-    if (firstRate.length) firstRate.before(avgElement);
-    else rateLine.prepend(avgElement);
+    ratingsContainer.prepend(avgElement);
 
     try {
-      applyAwardsColor(rateLine, (typeof getCfg === 'function') ? getCfg() : null);
+      applyAwardsColor(ratingsContainer, (typeof getCfg === 'function') ? getCfg() : null);
     } catch (e) {}
 
     removeLoadingAnimation();
-    undimRateLine(rateLine);
+    
+    // Додаємо клас show для анімації появи
+    ratingsContainer.addClass('show');
   }
 
   /*
   |==========================================================================
-  | 7. ДОДАТКОВИЙ РЕНДЕР ДЛЯ КАРТОК (Card View)
-  |==========================================================================
-  */
-
-  /**
-   * Оновлює рейтинги у картках фільмів (правий нижній кут)
-   */
-  function updateCardRatings() {
-    var cards = document.querySelectorAll('.card-placeholder');
-    if (!cards.length) return;
-
-    cards.forEach(function(card) {
-      var cardId = card.getAttribute('data-id');
-      var cardType = card.getAttribute('data-type') || 'movie';
-      
-      if (!cardId) return;
-      
-      // Перевіряємо, чи вже є рейтинг на картці
-      var existingRate = card.querySelector('.card-placeholder__rate');
-      if (existingRate) return;
-      
-      // Шукаємо дані рейтингів у кеші
-      var cacheKey = cardType + '_' + cardId;
-      var cachedData = getCachedRatings(cacheKey);
-      
-      if (cachedData) {
-        renderCardRating(card, cachedData);
-      }
-    });
-  }
-
-  /**
-   * Рендерить рейтинг на картці
-   */
-  function renderCardRating(cardElement, ratingData) {
-    var cfg = getCfg();
-    
-    // Визначаємо, який рейтинг показувати на картці
-    var ratingToShow = null;
-    var iconToShow = null;
-    var colorClass = '';
-    
-    if (cfg.enableImdb && ratingData.imdb_display) {
-      ratingToShow = parseFloat(ratingData.imdb_display).toFixed(1);
-      iconToShow = ICONS.imdb;
-      if (cfg.colorizeAll) {
-        colorClass = getRatingClass(ratingData.imdb_for_avg || parseFloat(ratingData.imdb_display));
-      }
-    } else if (cfg.enableTmdb && ratingData.tmdb_display) {
-      ratingToShow = parseFloat(ratingData.tmdb_display).toFixed(1);
-      iconToShow = ICONS.tmdb;
-      if (cfg.colorizeAll) {
-        colorClass = getRatingClass(ratingData.tmdb_for_avg || parseFloat(ratingData.tmdb_display));
-      }
-    } else if (cfg.showAverage && ratingData.tmdb_for_avg && ratingData.imdb_for_avg) {
-      // Розраховуємо середнє для картки
-      var parts = [];
-      if (cfg.enableTmdb && ratingData.tmdb_for_avg && !isNaN(ratingData.tmdb_for_avg)) parts.push(parseFloat(ratingData.tmdb_for_avg));
-      if (cfg.enableImdb && ratingData.imdb_for_avg && !isNaN(ratingData.imdb_for_avg)) parts.push(parseFloat(ratingData.imdb_for_avg));
-      
-      if (parts.length > 0) {
-        var sum = parts.reduce(function(a, b) { return a + b; }, 0);
-        var avg = sum / parts.length;
-        ratingToShow = avg.toFixed(1);
-        iconToShow = ICONS.total_star;
-        if (cfg.colorizeAll) {
-          colorClass = getRatingClass(avg);
-        }
-      }
-    }
-    
-    if (!ratingToShow || !iconToShow) return;
-    
-    // Створюємо елемент рейтингу
-    var rateElement = document.createElement('div');
-    rateElement.className = 'card-placeholder__rate';
-    
-    var rateHtml = '<div class="full-start__rate ' + colorClass + '">' +
-      '<div>' + ratingToShow + '</div>' +
-      '<div class="source--name">' + iconImg(iconToShow, '', 16) + '</div>' +
-      '</div>';
-    
-    rateElement.innerHTML = rateHtml;
-    
-    // Додаємо рейтинг до картки
-    cardElement.style.position = 'relative';
-    cardElement.appendChild(rateElement);
-  }
-
-  /**
-   * Спостерігач для нових карток
-   */
-  var cardObserver = null;
-
-  /**
-   * Ініціалізація спостереження за картками
-   */
-  function initCardObserver() {
-    if (cardObserver) return;
-    
-    cardObserver = new MutationObserver(function(mutations) {
-      mutations.forEach(function(mutation) {
-        if (mutation.type === 'childList' && mutation.addedNodes.length) {
-          setTimeout(updateCardRatings, 100);
-        }
-      });
-    });
-    
-    // Спостереження за основним контейнером
-    var mainContainer = document.querySelector('.content__container, .cub__sections, .selector--render');
-    if (mainContainer) {
-      cardObserver.observe(mainContainer, {
-        childList: true,
-        subtree: true
-      });
-    }
-    
-    // Первинне оновлення
-    setTimeout(updateCardRatings, 500);
-  }
-
-  /*
-  |==========================================================================
-  | 8. ГОЛОВНИЙ ПРОЦЕС (Orchestrator)
+  | 7. ГОЛОВНИЙ ПРОЦЕС (Orchestrator)
   |==========================================================================
   */
 
@@ -1887,7 +1646,7 @@
 
   /*
   |==========================================================================
-  | 9. НАЛАШТУВАННЯ (SETTINGS)
+  | 8. НАЛАШТУВАННЯ (SETTINGS)
   |==========================================================================
   */
 
@@ -2175,7 +1934,6 @@
         lmpRatingsClearCache();
       }
     });
-
   }
 
   /**
@@ -2194,7 +1952,7 @@
 
   /*
   |==========================================================================
-  | 10. ЗАПУСК (LAUNCH)
+  | 9. ЗАПУСК (LAUNCH)
   |==========================================================================
   */
 
@@ -2222,9 +1980,6 @@
 
   window.addEventListener('resize', reapplyOnResize);
   window.addEventListener('orientationchange', reapplyOnResize);
-
-  // Ініціалізація спостерігача за картками
-  setTimeout(initCardObserver, 1000);
 
   if (!window.combined_ratings_plugin) {
     startPlugin();
