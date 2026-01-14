@@ -394,7 +394,6 @@
     "    gap: 0.35em !important;" +
     "    font-size: 0.95em !important;" +
     "    font-weight: 600 !important;" +
-    "    color: #fff !important;" +
     "}" +
     
     ".full-start-new.applecation .applecation__ratings .source--name {" +
@@ -426,17 +425,31 @@
     "    color: gold !important;" +
     "}" +
     
-    /* --- Кольори оцінок --- */
-    ".full-start__rate.rating--green  { color: #2ecc71 !important; }" +
-    ".full-start__rate.rating--blue   { color: #60a5fa !important; }" +
-    ".full-start__rate.rating--orange { color: #f59e0b !important; }" +
-    ".full-start__rate.rating--red    { color: #ef4444 !important; }" +
+    /* --- Кольори оцінок - ВАЖЛИВО: дуже специфічні селектори з !important --- */
+    ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--green," +
+    ".full-start-new .full-start__rate.rating--green {" +
+    "    color: #2ecc71 !important;" +
+    "}" +
     
-    /* --- Кольорова класифікація для всіх рейтингів --- */
-    ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--green  { color: #2ecc71 !important; }" +
-    ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--blue   { color: #60a5fa !important; }" +
-    ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--orange { color: #f59e0b !important; }" +
-    ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--red    { color: #ef4444 !important; }" +
+    ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--blue," +
+    ".full-start-new .full-start__rate.rating--blue {" +
+    "    color: #60a5fa !important;" +
+    "}" +
+    
+    ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--orange," +
+    ".full-start-new .full-start__rate.rating--orange {" +
+    "    color: #f59e0b !important;" +
+    "}" +
+    
+    ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--red," +
+    ".full-start-new .full-start__rate.rating--red {" +
+    "    color: #ef4444 !important;" +
+    "}" +
+    
+    /* --- Стиль для білого кольору коли кольоровий режим вимкнений --- */
+    ".full-start-new.applecation .applecation__ratings .full-start__rate {" +
+    "    color: #fff !important;" +
+    "}" +
     
     /* --- Лоадер "Пошук..." --- */
     ".loading-dots-container {" +
@@ -581,12 +594,19 @@
    */
   function applyRatingColorsToAll() {
     var cfg = getCfg();
-    if (!cfg.colorizeAll) return;
+    if (!cfg.colorizeAll) {
+      // Вимикаємо кольори - видаляємо всі кольорові класи
+      var ratingsContainer = $('.applecation__ratings');
+      if (ratingsContainer.length) {
+        ratingsContainer.find('.full-start__rate').removeClass('rating--green rating--blue rating--orange rating--red');
+      }
+      return;
+    }
     
     var ratingsContainer = $('.applecation__ratings');
     if (!ratingsContainer.length) return;
     
-    // Знаходимо всі рейтинги
+    // Знаходимо всі рейтинги (крім нагород)
     var ratingElements = $('.full-start__rate:not(.rate--oscars):not(.rate--emmy):not(.rate--awards)', ratingsContainer);
     
     ratingElements.each(function() {
@@ -1325,9 +1345,10 @@
       
       var imdbVal = data.imdb_for_avg ? parseFloat(data.imdb_for_avg) : null;
       var imdbText = imdbVal ? imdbVal.toFixed(1) : 'N/A';
+      var colorClass = cfg.colorizeAll && imdbVal ? getRatingClass(imdbVal) : '';
       
       var imdbElement = $(
-        '<div class="full-start__rate rate--imdb' + (cfg.colorizeAll && imdbVal ? ' ' + getRatingClass(imdbVal) : '') + '">' +
+        '<div class="full-start__rate rate--imdb ' + colorClass + '">' +
         '<div>' + imdbText + '</div>' +
         '<div class="source--name"></div>' +
         '</div>'
@@ -1343,9 +1364,10 @@
       
       var tmdbVal = data.tmdb_for_avg ? parseFloat(data.tmdb_for_avg) : null;
       var tmdbText = tmdbVal ? tmdbVal.toFixed(1) : 'N/A';
+      var colorClass = cfg.colorizeAll && tmdbVal ? getRatingClass(tmdbVal) : '';
       
       var tmdbElement = $(
-        '<div class="full-start__rate rate--tmdb' + (cfg.colorizeAll && tmdbVal ? ' ' + getRatingClass(tmdbVal) : '') + '">' +
+        '<div class="full-start__rate rate--tmdb ' + colorClass + '">' +
         '<div>' + tmdbText + '</div>' +
         '<div class="source--name"></div>' +
         '</div>'
@@ -1374,8 +1396,10 @@
       if (mcVal == null || isNaN(mcVal)) return;
 
       var mcText = mcVal.toFixed(1);
+      var colorClass = cfg.colorizeAll ? getRatingClass(mcVal) : '';
+      
       var mcElement = $(
-        '<div class="full-start__rate rate--mc' + (cfg.colorizeAll ? ' ' + getRatingClass(mcVal) : '') + '">' +
+        '<div class="full-start__rate rate--mc ' + colorClass + '">' +
         '<div>' + mcText + '</div>' +
         '<div class="source--name"></div>' +
         '</div>'
@@ -1399,11 +1423,12 @@
       if (rtVal == null || isNaN(rtVal)) return;
 
       var rtText = rtVal.toFixed(1);
+      var colorClass = cfg.colorizeAll ? getRatingClass(rtVal) : '';
       var rtIconUrl = data.rt_fresh ? ICONS.rotten_good : ICONS.rotten_bad;
       var extra = data.rt_fresh ? 'border-radius:4px;' : '';
 
       var rtElement = $(
-        '<div class="full-start__rate rate--rt' + (cfg.colorizeAll ? ' ' + getRatingClass(rtVal) : '') + '">' +
+        '<div class="full-start__rate rate--rt ' + colorClass + '">' +
         '<div>' + rtText + '</div>' +
         '<div class="source--name"></div>' +
         '</div>'
@@ -1427,8 +1452,10 @@
       if (pcVal == null || isNaN(pcVal)) return;
 
       var pcText = pcVal.toFixed(1);
+      var colorClass = cfg.colorizeAll ? getRatingClass(pcVal) : '';
+      
       var pcElement = $(
-        '<div class="full-start__rate rate--popcorn' + (cfg.colorizeAll ? ' ' + getRatingClass(pcVal) : '') + '">' +
+        '<div class="full-start__rate rate--popcorn ' + colorClass + '">' +
         '<div>' + pcText + '</div>' +
         '<div class="source--name"></div>' +
         '</div>'
