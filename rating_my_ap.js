@@ -349,112 +349,66 @@
   });
 
   /**
-   * CSS стилі плагіну - адаптовано для Applecation
+   * CSS стилі плагіну - НАЙБІЛЬШ УНІВЕРСАЛЬНІ
    */
   var pluginStyles = "<style>" +
-    /* --- Загальні стилі для Applecation та стандартного інтерфейсу --- */
-    ".full-start-new.applecation .applecation__ratings .full-start__rate," +
-    ".full-start-new .full-start__rate," +
-    ".applecation__ratings .full-start__rate {" +
+    /* --- УНІВЕРСАЛЬНІ стилі для всіх рейтингів --- */
+    ".lmp-rating-item {" +
     "    display: flex !important;" +
     "    align-items: center !important;" +
     "    gap: 0.35em !important;" +
     "    font-size: 0.95em !important;" +
     "    font-weight: 600 !important;" +
+    "    color: #fff !important;" +
+    "    margin-right: 0.8em !important;" +
     "}" +
     
-    /* --- Кольори оцінок - РОБОЧІ селектори для всіх варіантів --- */
-    ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--green," +
-    ".full-start-new .full-start__rate.rating--green," +
-    ".applecation__ratings .full-start__rate.rating--green {" +
+    ".lmp-rating-item:last-child {" +
+    "    margin-right: 0 !important;" +
+    "}" +
+    
+    ".lmp-rating-value {" +
+    "    display: inline-block !important;" +
+    "    margin-right: 0.2em !important;" +
+    "}" +
+    
+    ".lmp-rating-icon {" +
+    "    width: auto !important;" +
+    "    height: 1.8em !important;" +
+    "    object-fit: contain !important;" +
+    "    display: inline-block !important;" +
+    "    vertical-align: middle !important;" +
+    "}" +
+    
+    /* --- Кольори оцінок - НАЙПРОСТІШІ селектори --- */
+    ".lmp-rating-green {" +
     "    color: #2ecc71 !important;" +
     "}" +
     
-    ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--blue," +
-    ".full-start-new .full-start__rate.rating--blue," +
-    ".applecation__ratings .full-start__rate.rating--blue {" +
+    ".lmp-rating-blue {" +
     "    color: #60a5fa !important;" +
     "}" +
     
-    ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--orange," +
-    ".full-start-new .full-start__rate.rating--orange," +
-    ".applecation__ratings .full-start__rate.rating--orange {" +
+    ".lmp-rating-orange {" +
     "    color: #f59e0b !important;" +
     "}" +
     
-    ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--red," +
-    ".full-start-new .full-start__rate.rating--red," +
-    ".applecation__ratings .full-start__rate.rating--red {" +
+    ".lmp-rating-red {" +
     "    color: #ef4444 !important;" +
     "}" +
     
-    /* --- Стилі для контейнерів --- */
-    ".full-start-new.applecation .applecation__ratings {" +
+    /* --- Контейнер для рейтингів --- */
+    ".lmp-ratings-container {" +
     "    display: flex !important;" +
     "    align-items: center !important;" +
     "    flex-wrap: wrap !important;" +
     "    gap: 0.8em !important;" +
     "    margin-bottom: 0.5em !important;" +
-    "    opacity: 0 !important;" +
-    "    transform: translateY(15px) !important;" +
-    "    transition: opacity 0.4s ease-out, transform 0.4s ease-out !important;" +
     "}" +
     
-    ".full-start-new.applecation .applecation__ratings.show {" +
+    ".lmp-ratings-container.show {" +
     "    opacity: 1 !important;" +
     "    transform: translateY(0) !important;" +
-    "}" +
-    
-    ".full-start-new.applecation .applecation__ratings .source--name," +
-    ".full-start-new .full-start__rate .source--name," +
-    ".applecation__ratings .full-start__rate .source--name {" +
-    "    display: flex !important;" +
-    "    align-items: center !important;" +
-    "    justify-content: center !important;" +
-    "}" +
-    
-    ".full-start-new.applecation .applecation__ratings .source--name img," +
-    ".full-start-new .full-start__rate .source--name img," +
-    ".applecation__ratings .full-start__rate .source--name img {" +
-    "    width: auto !important;" +
-    "    height: var(--lmp-h-default, 1.8em) !important;" +
-    "    object-fit: contain !important;" +
-    "}" +
-    
-    /* --- Специфічні висоти іконок --- */
-    ".full-start-new.applecation .rate--imdb .source--name img," +
-    ".full-start-new .rate--imdb .source--name img," +
-    ".applecation__ratings .rate--imdb .source--name img { height: 1.8em !important; }" +
-    
-    ".full-start-new.applecation .rate--kp .source--name img," +
-    ".full-start-new .rate--kp .source--name img," +
-    ".applecation__ratings .rate--kp .source--name img { height: 1.5em !important; }" +
-    
-    ".full-start-new.applecation .rate--tmdb .source--name img," +
-    ".full-start-new .rate--tmdb .source--name img," +
-    ".applecation__ratings .rate--tmdb .source--name img { height: 1.8em !important; }" +
-    
-    ".full-start-new.applecation .rate--mc .source--name img," +
-    ".full-start-new .rate--mc .source--name img," +
-    ".applecation__ratings .rate--mc .source--name img { height: 1.8em !important; }" +
-    
-    ".full-start-new.applecation .rate--rt .source--name img," +
-    ".full-start-new .rate--rt .source--name img," +
-    ".applecation__ratings .rate--rt .source--name img { height: 1.8em !important; }" +
-    
-    ".full-start-new.applecation .rate--popcorn .source--name img," +
-    ".full-start-new .rate--popcorn .source--name img," +
-    ".applecation__ratings .rate--popcorn .source--name img { height: 1.8em !important; }" +
-    
-    ".full-start-new.applecation .rate--avg .source--name img," +
-    ".full-start-new .rate--avg .source--name img," +
-    ".applecation__ratings .rate--avg .source--name img { height: 1.4em !important; }" +
-    
-    /* --- Стандартний колір (коли кольоровий режим вимкнений) --- */
-    ".full-start-new.applecation .applecation__ratings .full-start__rate," +
-    ".full-start-new .full-start__rate," +
-    ".applecation__ratings .full-start__rate {" +
-    "    color: #fff !important;" +
     "}" +
     
     /* --- Лоадер "Пошук..." --- */
@@ -487,25 +441,15 @@
     "    40% { transform: translateY(-0.5em); opacity: 1; }" +
     "}" +
     
-    /* --- Приховування під час завантаження --- */
-    ".full-start-new__rate-line.lmp-is-loading-ratings > :not(#lmp-search-loader)," +
-    ".full-start__rate-line.lmp-is-loading-ratings > :not(#lmp-search-loader) {" +
-    "    opacity: 0 !important;" +
-    "    pointer-events: none !important;" +
-    "    transition: opacity 0.15s;" +
-    "}" +
-    
     /* --- Приховування стандартного рейтингу Кінопошуку --- */
-    ".full-start__rate.rate--kp, .rate--kp{display:none!important;}" +
+    ".full-start__rate.rate--kp, .rate--kp { display: none !important; }" +
     
     /* --- Адаптив (Mobile) --- */
     "@media (max-width: 600px){" +
-    "  .full-start-new.applecation .applecation__ratings," +
-    "  .full-start-new .applecation__ratings {" +
+    "  .lmp-ratings-container {" +
     "    gap: 0.5em !important;" +
     "  }" +
-    "  .full-start-new.applecation .applecation__ratings .full-start__rate," +
-    "  .full-start-new .applecation__ratings .full-start__rate {" +
+    "  .lmp-rating-item {" +
     "    font-size: 0.85em !important;" +
     "  }" +
     "}" +
@@ -573,48 +517,55 @@
   function getRatingClass(rating) {
     var r = parseFloat(rating);
     if (isNaN(r)) return '';
-    if (r >= 8.0) return 'rating--green';
-    if (r >= 6.0) return 'rating--blue';
-    if (r >= 4.0) return 'rating--orange';
-    return 'rating--red';
+    if (r >= 8.0) return 'lmp-rating-green';
+    if (r >= 6.0) return 'lmp-rating-blue';
+    if (r >= 4.0) return 'lmp-rating-orange';
+    return 'lmp-rating-red';
   }
 
   /**
-   * Застосовує кольорові класи до всіх рейтингів (УНІВЕРСАЛЬНА функція)
+   * Застосовує кольорові класи до всіх рейтингів (СИЛЬНА функція)
    */
   function applyRatingColorsToAll() {
     var cfg = getCfg();
     if (!cfg.colorizeAll) {
-      // Вимикаємо кольори - видаляємо всі кольорові класи з усіх контейнерів
-      var allContainers = [
-        '.applecation__ratings',
-        '.full-start-new.applecation .applecation__ratings',
-        '.full-start-new .applecation__ratings'
-      ];
-      
-      allContainers.forEach(function(selector) {
-        var container = $(selector);
-        if (container.length) {
-          container.find('.full-start__rate').removeClass('rating--green rating--blue rating--orange rating--red');
-        }
+      // Вимикаємо кольори - видаляємо всі кольорові класи
+      document.querySelectorAll('.lmp-rating-item').forEach(function(el) {
+        el.classList.remove('lmp-rating-green', 'lmp-rating-blue', 'lmp-rating-orange', 'lmp-rating-red');
       });
       return;
     }
     
-    // Знаходимо всі можливі контейнери з рейтингами
-    var allRatingElements = $('.full-start__rate');
+    // Знаходимо всі наші рейтинги
+    var allRatingElements = document.querySelectorAll('.lmp-rating-item');
     
-    allRatingElements.each(function() {
-      var $element = $(this);
+    allRatingElements.forEach(function(el) {
       // Знаходимо числове значення рейтингу
-      var ratingText = $element.find('div:first-child').text().trim();
+      var ratingText = '';
+      var valueSpan = el.querySelector('.lmp-rating-value');
+      if (valueSpan) {
+        ratingText = valueSpan.textContent.trim();
+      } else {
+        // Якщо немає span, шукаємо будь-який текст
+        var children = el.childNodes;
+        for (var i = 0; i < children.length; i++) {
+          if (children[i].nodeType === 3) { // Текстовий вузол
+            var text = children[i].textContent.trim();
+            if (text && /\d/.test(text)) {
+              ratingText = text;
+              break;
+            }
+          }
+        }
+      }
+      
       var ratingValue = parseFloat(ratingText);
       
       if (!isNaN(ratingValue)) {
         // Видаляємо попередні кольорові класи
-        $element.removeClass('rating--green rating--blue rating--orange rating--red');
+        el.classList.remove('lmp-rating-green', 'lmp-rating-blue', 'lmp-rating-orange', 'lmp-rating-red');
         // Додаємо правильний клас
-        $element.addClass(getRatingClass(ratingValue));
+        el.classList.add(getRatingClass(ratingValue));
       }
     });
   }
@@ -622,13 +573,8 @@
   /**
    * Генерує HTML для іконки сервісу
    */
-  function iconImg(url, alt, sizePx, extraStyle) {
-    return '<img style="' +
-      'width:auto; display:inline-block; vertical-align:middle; ' +
-      'object-fit:contain; ' +
-      (extraStyle || '') + ' ' +
-      '" ' +
-      'src="' + url + '" alt="' + (alt || '') + '">';
+  function iconImg(url, alt, sizePx) {
+    return '<img class="lmp-rating-icon" src="' + url + '" alt="' + (alt || '') + '" style="height: ' + (sizePx || '1.8') + 'em">';
   }
 
   /**
@@ -664,29 +610,22 @@
       '<div class="loading-dots__dot"></div>' +
       '</div>';
 
-    // Для Applecation шукаємо блок з рейтингами
-    var rateLine = $('.applecation__ratings', render).first();
+    // Шукаємо наш контейнер
+    var rateLine = $('.lmp-ratings-container', render).first();
     if (rateLine.length) {
       rateLine.append(loaderHtml);
       dimRateLine(rateLine);
       return;
     }
 
-    // Шукаємо стандартний контейнер рейтингів
-    var standardRateLine = $('.full-start__rate-line', render).first();
-    if (standardRateLine.length) {
-      standardRateLine.append(loaderHtml);
-      dimRateLine(standardRateLine);
-      return;
-    }
-
     var fake = $(
-      '<div class="applecation__ratings" ' +
+      '<div class="lmp-ratings-container" ' +
       '     id="lmp-loader-fake" data-lmp-fake="1" ' +
       '     style="min-height:28px; display:flex; align-items:center;"></div>'
     );
 
-    var anchor = $('.applecation__meta', render).first();
+    // Спробуємо вставити після заголовка або мета-даних
+    var anchor = $('.full-start__title, .full-start-new__title, .applecation__meta, .full-start__meta', render).first();
     if (anchor.length) anchor.after(fake);
     else $(render).append(fake);
 
@@ -696,7 +635,7 @@
       if (__lmpRateLineObs) __lmpRateLineObs.disconnect();
     } catch (_) {}
     __lmpRateLineObs = new MutationObserver(function() {
-      var rl = $('.applecation__ratings', render).first();
+      var rl = $('.lmp-ratings-container', render).first();
       var loader = $('#lmp-search-loader', render);
       if (rl.length && loader.length) {
         rl.append(loader);
@@ -733,12 +672,8 @@
     $('#lmp-search-loader', render).remove();
     $('#lmp-loader-fake', render).remove();
 
-    // Знаходимо всі можливі контейнери
-    var rl = $('.applecation__ratings', render).first();
+    var rl = $('.lmp-ratings-container', render).first();
     if (rl.length) undimRateLine(rl);
-    
-    var standardRateLine = $('.full-start__rate-line', render).first();
-    if (standardRateLine.length) undimRateLine(standardRateLine);
 
     try {
       if (__lmpRateLineObs) __lmpRateLineObs.disconnect();
@@ -783,7 +718,7 @@
 
     function scan(root) {
       try {
-        var nodes = root.querySelectorAll('.full-start__rate > div:first-child');
+        var nodes = root.querySelectorAll('.lmp-rating-value');
         for (var i = 0; i < nodes.length; i++) fixTenIn(nodes[i]);
       } catch (e) {}
     }
@@ -795,12 +730,7 @@
           Lampa.Activity.active().activity.render();
         if (!render || !render[0]) return;
 
-        var target =
-          render[0].querySelector('.applecation__ratings') ||
-          render[0].querySelector('.full-start__rate-line') ||
-          render[0];
-
-        scan(target);
+        scan(render[0]);
 
         var MObs = window.MutationObserver || window.WebKitMutationObserver;
         if (!MObs) return;
@@ -815,15 +745,15 @@
             var m = muts[i];
             if (m.type === 'characterData') {
               var p = m.target && m.target.parentNode;
-              if (p && p.nodeType === 1 && p.matches('.full-start__rate > div:first-child')) fixTenIn(p);
+              if (p && p.nodeType === 1 && p.classList.contains('lmp-rating-value')) fixTenIn(p);
             } else if (m.type === 'childList') {
               var added = m.addedNodes || [];
               for (var j = 0; j < added.length; j++) {
                 var n = added[j];
                 if (!n || n.nodeType !== 1) continue;
-                if (n.matches && n.matches('.full-start__rate > div:first-child')) fixTenIn(n);
+                if (n.classList && n.classList.contains('lmp-rating-value')) fixTenIn(n);
                 if (n.querySelectorAll) {
-                  var inner = n.querySelectorAll('.full-start__rate > div:first-child');
+                  var inner = n.querySelectorAll('.lmp-rating-value');
                   for (var k = 0; k < inner.length; k++) fixTenIn(inner[k]);
                 }
               }
@@ -831,7 +761,7 @@
           }
         });
 
-        obs.observe(target, {
+        obs.observe(render[0], {
           subtree: true,
           childList: true,
           characterData: true
@@ -1207,7 +1137,7 @@
 
   /*
   |==========================================================================
-  | 6. РЕНДЕР (RENDER) - АДАПТОВАНО ДЛЯ APPLECATION
+  | 6. РЕНДЕР (RENDER) - УНІВЕРСАЛЬНИЙ ПІДХІД
   |==========================================================================
   */
 
@@ -1236,55 +1166,60 @@
     var render = Lampa.Activity.active().activity.render();
     if (!render) return null;
     
-    // Спочатку шукаємо Applecation контейнер
-    var ratingsContainer = $('.applecation__ratings', render);
-    
-    // Якщо немає Applecation, шукаємо стандартний контейнер
-    if (!ratingsContainer.length) {
-      ratingsContainer = $('.full-start__rate-line', render);
-    }
+    // Шукаємо наш контейнер
+    var ratingsContainer = $('.lmp-ratings-container', render);
     
     // Якщо контейнера немає, створюємо його
     if (!ratingsContainer.length) {
-      // Визначаємо тип інтерфейсу
-      var isApplecation = $('.full-start-new.applecation', render).length > 0;
+      // Створюємо новий контейнер
+      ratingsContainer = $('<div class="lmp-ratings-container"></div>');
       
-      if (isApplecation) {
-        // Для Applecation створюємо відповідний контейнер
-        ratingsContainer = $('<div class="applecation__ratings"></div>');
-        
-        // Шукаємо місце для вставки
-        var metaContainer = $('.applecation__meta', render);
-        if (metaContainer.length) {
-          metaContainer.after(ratingsContainer);
-        } else {
-          var titleContainer = $('.full-start-new__title', render);
-          if (titleContainer.length) {
-            titleContainer.after(ratingsContainer);
-          } else {
-            $(render).append(ratingsContainer);
-          }
+      // Спробуємо знайти найкраще місце для вставки
+      var possibleAnchors = [
+        '.full-start__title',
+        '.full-start-new__title',
+        '.applecation__meta',
+        '.full-start__meta',
+        '.full-start__subtitle',
+        '.full-start__buttons',
+        '.full-start__desc',
+        '.full-start__content'
+      ];
+      
+      var anchor = null;
+      for (var i = 0; i < possibleAnchors.length; i++) {
+        var testAnchor = $(possibleAnchors[i], render);
+        if (testAnchor.length) {
+          anchor = testAnchor;
+          break;
         }
+      }
+      
+      if (anchor && anchor.length) {
+        // Вставляємо після знайденого елемента
+        anchor.after(ratingsContainer);
       } else {
-        // Для стандартного інтерфейсу
-        ratingsContainer = $('<div class="full-start__rate-line"></div>');
-        
-        // Шукаємо місце для вставки
-        var metaContainer = $('.full-start__meta', render);
-        if (metaContainer.length) {
-          metaContainer.after(ratingsContainer);
+        // Якщо нічого не знайшли, вставляємо на початок контенту
+        var content = $('.full-start__content, .full-start-new__content', render);
+        if (content.length) {
+          content.prepend(ratingsContainer);
         } else {
-          var titleContainer = $('.full-start__title', render);
-          if (titleContainer.length) {
-            titleContainer.after(ratingsContainer);
-          } else {
-            $(render).append(ratingsContainer);
-          }
+          $(render).prepend(ratingsContainer);
         }
       }
     }
     
     return ratingsContainer;
+  }
+
+  /**
+   * Створює HTML для рейтингу
+   */
+  function createRatingItem(ratingValue, iconHtml, ratingClass) {
+    return '<div class="lmp-rating-item ' + (ratingClass || '') + '">' +
+      '<span class="lmp-rating-value">' + ratingValue + '</span>' +
+      iconHtml +
+      '</div>';
   }
 
   /**
@@ -1303,6 +1238,9 @@
       colorizeAll: false
     };
 
+    // Очищаємо контейнер перед додаванням нових рейтингів
+    ratingsContainer.empty();
+
     // Додаємо іконку IMDb
     (function() {
       if (!cfg.enableImdb || !data.imdb_display) return;
@@ -1311,13 +1249,11 @@
       var imdbText = imdbVal ? imdbVal.toFixed(1) : 'N/A';
       var colorClass = cfg.colorizeAll && imdbVal ? getRatingClass(imdbVal) : '';
       
-      var imdbElement = $(
-        '<div class="full-start__rate rate--imdb ' + colorClass + '">' +
-        '<div>' + imdbText + '</div>' +
-        '<div class="source--name"></div>' +
-        '</div>'
+      var imdbElement = createRatingItem(
+        imdbText,
+        iconImg(ICONS.imdb, 'IMDb', 1.8),
+        colorClass
       );
-      imdbElement.find('.source--name').html(iconImg(ICONS.imdb, 'IMDb', 22));
       
       ratingsContainer.append(imdbElement);
     })();
@@ -1330,13 +1266,11 @@
       var tmdbText = tmdbVal ? tmdbVal.toFixed(1) : 'N/A';
       var colorClass = cfg.colorizeAll && tmdbVal ? getRatingClass(tmdbVal) : '';
       
-      var tmdbElement = $(
-        '<div class="full-start__rate rate--tmdb ' + colorClass + '">' +
-        '<div>' + tmdbText + '</div>' +
-        '<div class="source--name"></div>' +
-        '</div>'
+      var tmdbElement = createRatingItem(
+        tmdbText,
+        iconImg(ICONS.tmdb, 'TMDB', 1.8),
+        colorClass
       );
-      tmdbElement.find('.source--name').html(iconImg(ICONS.tmdb, 'TMDB', 24));
       
       ratingsContainer.append(tmdbElement);
     })();
@@ -1362,13 +1296,11 @@
       var mcText = mcVal.toFixed(1);
       var colorClass = cfg.colorizeAll ? getRatingClass(mcVal) : '';
       
-      var mcElement = $(
-        '<div class="full-start__rate rate--mc ' + colorClass + '">' +
-        '<div>' + mcText + '</div>' +
-        '<div class="source--name"></div>' +
-        '</div>'
+      var mcElement = createRatingItem(
+        mcText,
+        iconImg(ICONS.metacritic, 'Metacritic', 1.8),
+        colorClass
       );
-      mcElement.find('.source--name').html(iconImg(ICONS.metacritic, 'Metacritic', 22));
 
       ratingsContainer.append(mcElement);
     })();
@@ -1389,15 +1321,12 @@
       var rtText = rtVal.toFixed(1);
       var colorClass = cfg.colorizeAll ? getRatingClass(rtVal) : '';
       var rtIconUrl = data.rt_fresh ? ICONS.rotten_good : ICONS.rotten_bad;
-      var extra = data.rt_fresh ? 'border-radius:4px;' : '';
-
-      var rtElement = $(
-        '<div class="full-start__rate rate--rt ' + colorClass + '">' +
-        '<div>' + rtText + '</div>' +
-        '<div class="source--name"></div>' +
-        '</div>'
+      
+      var rtElement = createRatingItem(
+        rtText,
+        '<img class="lmp-rating-icon" src="' + rtIconUrl + '" alt="Rotten Tomatoes" style="height: 1.8em; border-radius: 4px;">',
+        colorClass
       );
-      rtElement.find('.source--name').html(iconImg(rtIconUrl, 'Rotten Tomatoes', 22, extra));
 
       ratingsContainer.append(rtElement);
     })();
@@ -1418,13 +1347,11 @@
       var pcText = pcVal.toFixed(1);
       var colorClass = cfg.colorizeAll ? getRatingClass(pcVal) : '';
       
-      var pcElement = $(
-        '<div class="full-start__rate rate--popcorn ' + colorClass + '">' +
-        '<div>' + pcText + '</div>' +
-        '<div class="source--name"></div>' +
-        '</div>'
+      var pcElement = createRatingItem(
+        pcText,
+        iconImg(ICONS.popcorn, 'Audience', 1.8),
+        colorClass
       );
-      pcElement.find('.source--name').html(iconImg(ICONS.popcorn, 'Audience', 22));
 
       ratingsContainer.append(pcElement);
     })();
@@ -1450,9 +1377,15 @@
       showAverage: true
     };
 
-    $('.rate--avg', ratingsContainer).remove();
+    // Видаляємо старий середній рейтинг
+    $('.lmp-rating-item:has(.lmp-rating-icon[alt="AVG"])', ratingsContainer).remove();
+    
     if (!cfg.showAverage) {
       removeLoadingAnimation();
+      // Застосовуємо кольори до всіх рейтингів
+      if (cfg.colorizeAll) {
+        setTimeout(applyRatingColorsToAll, 100);
+      }
       return;
     }
 
@@ -1483,24 +1416,19 @@
     var avg = sum / parts.length;
     var colorClass = cfg.colorizeAll ? getRatingClass(avg) : '';
 
-    var avgElement = $(
-      '<div class="full-start__rate rate--avg ' + colorClass + '">' +
-      '<div>' + avg.toFixed(1) + '</div>' +
-      '<div class="source--name"></div>' +
-      '</div>'
+    var avgElement = createRatingItem(
+      avg.toFixed(1),
+      '<img class="lmp-rating-icon" src="' + ICONS.total_star + '" alt="AVG" style="height: 1.4em">',
+      colorClass
     );
 
-    var starHtml = iconImg(ICONS.total_star, 'AVG', 20);
-    avgElement.find('.source--name').html(starHtml);
-
+    // Додаємо середній рейтинг на початок
     ratingsContainer.prepend(avgElement);
 
     removeLoadingAnimation();
     
-    // Додаємо клас show для анімації появи (тільки для Applecation)
-    if (ratingsContainer.hasClass('applecation__ratings')) {
-      ratingsContainer.addClass('show');
-    }
+    // Додаємо клас show для анімації появи
+    ratingsContainer.addClass('show');
     
     // Застосовуємо кольори до всіх рейтингів
     if (cfg.colorizeAll) {
@@ -1655,8 +1583,8 @@
    * Ховає/показує блок середнього рейтингу
    */
   function toggleAverage(showAverage) {
-    var nodes = document.querySelectorAll('.rate--avg');
-    nodes.forEach(function(n) {
+    var avgItems = document.querySelectorAll('.lmp-rating-item:has(.lmp-rating-icon[alt="AVG"])');
+    avgItems.forEach(function(n) {
       n.style.display = showAverage ? '' : 'none';
     });
   }
@@ -1665,7 +1593,6 @@
    * Увімкнення/вимкнення кольорового виділення
    */
   function toggleColorizeAll(colorizeAll) {
-    // Використовуємо універсальну функцію
     applyRatingColorsToAll();
   }
 
