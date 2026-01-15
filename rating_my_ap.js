@@ -7,6 +7,7 @@
  * - Бере рейтинги з MDBList (+ OMDb для віку/нагород) і малює їх у деталці
  * - Адаптовано для Applecation: відображає рейтинги у картці перед описом фільму
  * - Має секцію налаштувань "Рейтинги", живе застосування стилів без перезавантаження
+ * - Сумісний з іншими плагінами кольорів рейтингів
  */
 
 (function() {
@@ -407,30 +408,48 @@
     ".full-start-new.applecation .rate--popcorn .source--name img { height: 1.8em !important; }" +
     ".full-start-new.applecation .rate--avg .source--name img { height: 1.4em !important; }" +
     
-    /* --- Кольори оцінок - ВАЖЛИВО: ВИДАЛЕНО конфліктуюче правило з білим кольором --- */
+    /* --- Кольори оцінок - СУМІСНІ з іншими плагінами --- */
+    /* Зелені кольори (високий рейтинг) */
     ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--green," +
-    ".full-start-new .full-start__rate.rating--green {" +
-    "    color: #2ecc71 !important;" +
+    ".full-start-new .full-start__rate.rating--green," +
+    ".full-start-new.applecation .applecation__ratings .full-start__rate.green," +
+    ".full-start-new .full-start__rate.green," +
+    ".full-start-new.applecation .applecation__ratings .full-start__rate.r-good," +
+    ".full-start-new .full-start__rate.r-good {" +
+    "    color: #2ecc71 !important;" + /* Зелений */
     "}" +
     
+    /* Сині кольори (середній рейтинг) */
     ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--blue," +
-    ".full-start-new .full-start__rate.rating--blue {" +
-    "    color: #60a5fa !important;" +
+    ".full-start-new .full-start__rate.rating--blue," +
+    ".full-start-new.applecation .applecation__ratings .full-start__rate.blue," +
+    ".full-start-new .full-start__rate.blue," +
+    ".full-start-new.applecation .applecation__ratings .full-start__rate.r-mid," +
+    ".full-start-new .full-start__rate.r-mid {" +
+    "    color: #60a5fa !important;" + /* Синій */
     "}" +
     
+    /* Помаранчеві кольори (низький рейтинг) */
     ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--orange," +
-    ".full-start-new .full-start__rate.rating--orange {" +
-    "    color: #f59e0b !important;" +
+    ".full-start-new .full-start__rate.rating--orange," +
+    ".full-start-new.applecation .applecation__ratings .full-start__rate.orange," +
+    ".full-start-new .full-start__rate.orange," +
+    ".full-start-new.applecation .applecation__ratings .full-start__rate.r-bad," +
+    ".full-start-new .full-start__rate.r-bad {" +
+    "    color: #f59e0b !important;" + /* Помаранчевий */
     "}" +
     
+    /* Червоні кольори (дуже низький рейтинг) */
     ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--red," +
-    ".full-start-new .full-start__rate.rating--red {" +
-    "    color: #ef4444 !important;" +
+    ".full-start-new .full-start__rate.rating--red," +
+    ".full-start-new.applecation .applecation__ratings .full-start__rate.red," +
+    ".full-start-new .full-start__rate.red {" +
+    "    color: #ef4444 !important;" + /* Червоний */
     "}" +
     
-    /* --- ДОДАНО: Загальний білий колір БЕЗ !important --- */
+    /* --- Загальний білий колір БЕЗ !important --- */
     ".full-start-new.applecation .applecation__ratings .full-start__rate {" +
-    "    color: #fff;" + /* Видалено !important */
+    "    color: #fff;" + /* Видалено !important для сумісності */
     "}" +
     
     /* --- Лоадер "Пошук..." --- */
@@ -542,37 +561,68 @@
   }
 
   /**
-   * Повертає CSS-клас для кольору рейтингу
+   * Повертає CSS-клас для кольору рейтингу (сумісний з іншими плагінами)
    */
   function getRatingClass(rating) {
     var r = parseFloat(rating);
     if (isNaN(r)) return '';
-    if (r >= 8.0) return 'rating--green';
-    if (r >= 6.0) return 'rating--blue';
-    if (r >= 4.0) return 'rating--orange';
-    return 'rating--red';
+    
+    // Перевіряємо, чи є інші плагіни та використовуємо їхню логіку
+    if (typeof window.ratingColor === 'function') {
+      // Сумісність з другим плагіном
+      if (r >= 7) return 'green';
+      if (r >= 5) return 'orange';
+      return 'red';
+    } else if (typeof window.colorizeRating === 'function') {
+      // Сумісність з третім плагіном
+      if (r >= 7) return 'r-good';
+      if (r >= 5) return 'r-mid';
+      return 'r-bad';
+    } else {
+      // Власна логіка вашого плагіна
+      if (r >= 8.0) return 'rating--green';
+      if (r >= 6.0) return 'rating--blue';
+      if (r >= 4.0) return 'rating--orange';
+      return 'rating--red';
+    }
   }
 
   /**
-   * Застосовує кольорові класи до всіх рейтингів
+   * Отримує всі можливі кольорові класи (для видалення)
+   */
+  function getAllColorClasses() {
+    return [
+      // Класи вашого плагіна
+      'rating--green', 'rating--blue', 'rating--orange', 'rating--red',
+      // Класи другого плагіна
+      'green', 'orange', 'red',
+      // Класи третього плагіна
+      'r-good', 'r-mid', 'r-bad'
+    ];
+  }
+
+  /**
+   * Застосовує кольорові класи до всіх рейтингів (сумісна версія)
    */
   function applyRatingColorsToAll() {
     var cfg = getCfg();
-    if (!cfg.colorizeAll) {
-      // Вимикаємо кольори - видаляємо всі кольорові класи
-      var ratingsContainer = $('.applecation__ratings');
-      if (ratingsContainer.length) {
-        ratingsContainer.find('.full-start__rate').removeClass('rating--green rating--blue rating--orange rating--red');
-      }
-      return;
-    }
-    
     var ratingsContainer = $('.applecation__ratings');
     if (!ratingsContainer.length) return;
     
-    // Знаходимо всі рейтинги
     var ratingElements = $('.full-start__rate', ratingsContainer);
     
+    if (!cfg.colorizeAll) {
+      // Вимикаємо кольори - видаляємо всі кольорові класи
+      ratingElements.each(function() {
+        var $element = $(this);
+        getAllColorClasses().forEach(function(className) {
+          $element.removeClass(className);
+        });
+      });
+      return;
+    }
+    
+    // Увімкнення кольорів
     ratingElements.each(function() {
       var $element = $(this);
       // Знаходимо числове значення рейтингу
@@ -580,10 +630,16 @@
       var ratingValue = parseFloat(ratingText);
       
       if (!isNaN(ratingValue)) {
-        // Видаляємо попередні кольорові класи
-        $element.removeClass('rating--green rating--blue rating--orange rating--red');
+        // Видаляємо всі попередні кольорові класи
+        getAllColorClasses().forEach(function(className) {
+          $element.removeClass(className);
+        });
+        
         // Додаємо правильний клас
-        $element.addClass(getRatingClass(ratingValue));
+        var colorClass = getRatingClass(ratingValue);
+        if (colorClass) {
+          $element.addClass(colorClass);
+        }
       }
     });
   }
@@ -1216,7 +1272,7 @@
   }
 
   /**
-   * Вставляє нові бейджі (MC, RT, Popcorn) у Applecation
+   * Вставляє нові бейджі (MC, RT, Popcorn) у Applecation (сумісна версія)
    */
   function insertRatings(data) {
     var ratingsContainer = getApplecationRatingsContainer();
@@ -1588,7 +1644,7 @@
   }
 
   /**
-   * Увімкнення/вимкнення кольорового виділення
+   * Увімкнення/вимкнення кольорового виділення (сумісна версія)
    */
   function toggleColorizeAll(colorizeAll) {
     var ratingsContainer = $('.applecation__ratings');
@@ -1604,13 +1660,26 @@
         var ratingValue = parseFloat(ratingText);
         
         if (!isNaN(ratingValue)) {
-          $element.removeClass('rating--green rating--blue rating--orange rating--red');
-          $element.addClass(getRatingClass(ratingValue));
+          // Видаляємо всі кольорові класи перед додаванням нового
+          getAllColorClasses().forEach(function(className) {
+            $element.removeClass(className);
+          });
+          
+          // Додаємо правильний клас
+          var colorClass = getRatingClass(ratingValue);
+          if (colorClass) {
+            $element.addClass(colorClass);
+          }
         }
       });
     } else {
-      // Видаляємо кольорові класи з усіх рейтингів
-      ratingElements.removeClass('rating--green rating--blue rating--orange rating--red');
+      // Видаляємо всі кольорові класи з усіх рейтингів
+      ratingElements.each(function() {
+        var $element = $(this);
+        getAllColorClasses().forEach(function(className) {
+          $element.removeClass(className);
+        });
+      });
     }
   }
 
