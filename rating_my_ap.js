@@ -1,3 +1,5 @@
+[file name]: rating_my_ap.js
+[file content begin]
 /**
  * Lampa: Enhanced Ratings (MDBList + OMDb)
  * --------------------------------------------------------
@@ -406,29 +408,58 @@
     ".full-start-new.applecation .rate--avg .source--name img { height: 1.4em !important; }" +
     
     /* --- Кольори оцінок - ВАЖЛИВО: дуже специфічні селектори з !important --- */
-    ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--green," +
-    ".full-start-new .full-start__rate.rating--green {" +
+    /* Базовий колір (коли кольоровий режим вимкнений) */
+    ".full-start-new.applecation .applecation__ratings .full-start__rate {" +
+    "    color: #ffffff !important;" +
+    "}" +
+    
+    /* Зелений колір для високих рейтингів */
+    ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--green {" +
+    "    color: #2ecc71 !important;" +
+    "    fill: #2ecc71 !important;" +
+    "    stroke: #2ecc71 !important;" +
+    "}" +
+    
+    /* Синій колір для середніх рейтингів */
+    ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--blue {" +
+    "    color: #60a5fa !important;" +
+    "    fill: #60a5fa !important;" +
+    "    stroke: #60a5fa !important;" +
+    "}" +
+    
+    /* Помаранчевий колір для низьких рейтингів */
+    ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--orange {" +
+    "    color: #f59e0b !important;" +
+    "    fill: #f59e0b !important;" +
+    "    stroke: #f59e0b !important;" +
+    "}" +
+    
+    /* Червоний колір для дуже низьких рейтингів */
+    ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--red {" +
+    "    color: #ef4444 !important;" +
+    "    fill: #ef4444 !important;" +
+    "    stroke: #ef4444 !important;" +
+    "}" +
+    
+    /* Альтернативні селектори для максимальної специфічності */
+    ".full-start-new.applecation .applecation__ratings > .full-start__rate.rating--green," +
+    ".applecation__ratings > .full-start__rate.rating--green {" +
     "    color: #2ecc71 !important;" +
     "}" +
     
-    ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--blue," +
-    ".full-start-new .full-start__rate.rating--blue {" +
+    ".full-start-new.applecation .applecation__ratings > .full-start__rate.rating--blue," +
+    ".applecation__ratings > .full-start__rate.rating--blue {" +
     "    color: #60a5fa !important;" +
     "}" +
     
-    ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--orange," +
-    ".full-start-new .full-start__rate.rating--orange {" +
+    ".full-start-new.applecation .applecation__ratings > .full-start__rate.rating--orange," +
+    ".applecation__ratings > .full-start__rate.rating--orange {" +
     "    color: #f59e0b !important;" +
     "}" +
     
-    ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--red," +
-    ".full-start-new .full-start__rate.rating--red {" +
+    ".full-start-new.applecation .applecation__ratings > .full-start__rate.rating--red," +
+    ".applecation__ratings > .full-start__rate.rating--red {" +
     "    color: #ef4444 !important;" +
-    "}" +
-    
-    /* --- Стиль для білого кольору коли кольоровий режим вимкнений --- */
-    ".full-start-new.applecation .applecation__ratings .full-start__rate {" +
-    "    color: #fff !important;" +
     "}" +
     
     /* --- Лоадер "Пошук..." --- */
@@ -581,7 +612,10 @@
         // Видаляємо попередні кольорові класи
         $element.removeClass('rating--green rating--blue rating--orange rating--red');
         // Додаємо правильний клас
-        $element.addClass(getRatingClass(ratingValue));
+        var colorClass = getRatingClass(ratingValue);
+        if (colorClass) {
+          $element.addClass(colorClass);
+        }
       }
     });
   }
@@ -1220,14 +1254,10 @@
     var ratingsContainer = getApplecationRatingsContainer();
     if (!ratingsContainer || !ratingsContainer.length) return;
 
-    var cfg = (typeof getCfg === 'function') ? getCfg() : {
-      enableImdb: true,
-      enableTmdb: true,
-      enableMc: true,
-      enableRt: true,
-      enablePop: true,
-      colorizeAll: false
-    };
+    var cfg = getCfg();
+    
+    // Очищаємо попередні рейтинги перед додаванням нових
+    ratingsContainer.empty();
 
     // Додаємо іконку IMDb
     (function() {
@@ -1366,19 +1396,18 @@
       return;
     }
 
-    var cfg = (typeof getCfg === 'function') ? getCfg() : {
-      enableImdb: true,
-      enableTmdb: true,
-      enableMc: true,
-      enableRt: true,
-      enablePop: true,
-      colorizeAll: true,
-      showAverage: true
-    };
+    var cfg = getCfg();
 
+    // Видаляємо старий середній рейтинг перед обчисленням нового
     $('.rate--avg', ratingsContainer).remove();
+    
     if (!cfg.showAverage) {
       removeLoadingAnimation();
+      // Все одно потрібно застосувати кольори до інших рейтингів
+      if (cfg.colorizeAll) {
+        applyRatingColorsToAll();
+      }
+      ratingsContainer.addClass('show');
       return;
     }
 
@@ -1401,6 +1430,11 @@
 
     if (!parts.length) {
       removeLoadingAnimation();
+      // Все одно потрібно застосувати кольори до інших рейтингів
+      if (cfg.colorizeAll) {
+        applyRatingColorsToAll();
+      }
+      ratingsContainer.addClass('show');
       return;
     }
 
@@ -1419,6 +1453,7 @@
     var starHtml = iconImg(ICONS.total_star, 'AVG', 20);
     avgElement.find('.source--name').html(starHtml);
 
+    // Вставляємо середній рейтинг на початок контейнера
     ratingsContainer.prepend(avgElement);
 
     removeLoadingAnimation();
@@ -1469,8 +1504,6 @@
       updateHiddenElements(currentRatingsData);
       insertRatings(currentRatingsData);
       calculateAverageRating(currentRatingsData);
-
-      applyStylesToAll();
     }
 
     function proceedWithImdbId() {
@@ -1634,6 +1667,14 @@
       if (typeof k === 'string' && k.indexOf('ratings_') === 0) {
         setTimeout(function() {
           applyStylesToAll();
+          // Якщо у нас є поточні дані, перерендеримо рейтинги
+          if (currentRatingsData) {
+            var ratingsContainer = getApplecationRatingsContainer();
+            if (ratingsContainer && ratingsContainer.length) {
+              insertRatings(currentRatingsData);
+              calculateAverageRating(currentRatingsData);
+            }
+          }
         }, 0);
       }
       return out;
@@ -1888,3 +1929,4 @@
   }
 
 })();
+[file content end]
