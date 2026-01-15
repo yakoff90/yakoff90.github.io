@@ -1,3 +1,5 @@
+[file name]: rating_my_ap.js
+[file content begin]
 /**
  * Lampa: Enhanced Ratings (MDBList + OMDb)
  * --------------------------------------------------------
@@ -405,7 +407,7 @@
     ".full-start-new.applecation .rate--popcorn .source--name img { height: 1.8em !important; }" +
     ".full-start-new.applecation .rate--avg .source--name img { height: 1.4em !important; }" +
     
-    /* --- Кольори оцінок - ВАЖЛИВО: дуже специфічні селектори з !important --- */
+    /* --- Кольори оцінок - ВАЖЛИВО: ВИДАЛЕНО конфліктуюче правило з білим кольором --- */
     ".full-start-new.applecation .applecation__ratings .full-start__rate.rating--green," +
     ".full-start-new .full-start__rate.rating--green {" +
     "    color: #2ecc71 !important;" +
@@ -426,9 +428,9 @@
     "    color: #ef4444 !important;" +
     "}" +
     
-    /* --- Стиль для білого кольору коли кольоровий режим вимкнений --- */
+    /* --- ДОДАНО: Загальний білий колір БЕЗ !important --- */
     ".full-start-new.applecation .applecation__ratings .full-start__rate {" +
-    "    color: #fff !important;" +
+    "    color: #fff;" + /* Видалено !important */
     "}" +
     
     /* --- Лоадер "Пошук..." --- */
@@ -1888,3 +1890,4 @@
   }
 
 })();
+[file content end]
