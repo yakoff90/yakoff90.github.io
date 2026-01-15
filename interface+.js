@@ -124,15 +124,6 @@
       uk: 'Кольорова та перефразована інформаційна панель'
     },
 
-    interface_mod_new_colored_ratings: {
-      en: 'Colored rating',
-      uk: 'Кольоровий рейтинг'
-    },
-    interface_mod_new_colored_ratings_desc: {
-      en: 'Enable colored rating highlight',
-      uk: 'Увімкнути кольорове виділення рейтингу в повній картці'
-    },
-
     interface_mod_new_colored_status: {
       en: 'Colored statuses',
       uk: 'Кольорові статуси'
@@ -256,7 +247,6 @@
    */
   var settings = {
     info_panel: getBool('interface_mod_new_info_panel', true),
-    colored_ratings: getBool('interface_mod_new_colored_ratings', false),
     colored_status: getBool('interface_mod_new_colored_status', false),
     colored_age: getBool('interface_mod_new_colored_age', false),
     theme: (Lampa.Storage.get('interface_mod_new_theme_select', 'default') || 'default'),
@@ -482,20 +472,6 @@
     add({
       component: 'interface_mod_new',
       param: {
-        name: 'interface_mod_new_colored_ratings',
-        type: 'trigger',
-        values: true,
-        default: false
-      },
-      field: {
-        name: Lampa.Lang.translate('interface_mod_new_colored_ratings'),
-        description: Lampa.Lang.translate('interface_mod_new_colored_ratings_desc')
-      }
-    });
-
-    add({
-      component: 'interface_mod_new',
-      param: {
         name: 'interface_mod_new_colored_status',
         type: 'trigger',
         values: true,
@@ -700,12 +676,6 @@
             case 'interface_mod_new_info_panel':
               settings.info_panel = getBool(key, true);
               rebuildInfoPanelActive();
-              break;
-              
-            case 'interface_mod_new_colored_ratings':
-              settings.colored_ratings = getBool(key, false);
-              if (settings.colored_ratings) updateVoteColors();
-              else clearVoteColors();
               break;
               
             case 'interface_mod_new_colored_status':
@@ -1004,78 +974,6 @@
         details.empty();
         buildInfoPanel(details, movie, isTvShow, __ifx_last.originalHTML);
       }, 100);
-    });
-  }
-
-  /* ============================================================
-   * КОЛЬОРОВІ РЕЙТИНГИ
-   * ============================================================ */
-
-  /**
-   * Застосовує кольори до всіх видимих рейтингів
-   */
-  function updateVoteColors() {
-    if (!getBool('interface_mod_new_colored_ratings', false)) return;
-
-    var SEL = [
-      '.card__vote',
-      '.full-start__rate',
-      '.full-start-new__rate',
-      '.info__rate',
-      '.card__imdb-rate',
-      '.card__kinopoisk-rate'
-    ].join(',');
-
-    function paint(el) {
-      var txt = ($(el).text() || '').trim();
-      var m = txt.match(/(\d+(\.\d+)?)/);
-      if (!m) return;
-      var v = parseFloat(m[0]);
-      if (isNaN(v) || v < 0 || v > 10) return;
-
-      var color = (v <= 3) ? 'red' : (v < 6) ? 'orange' : (v < 8) ? 'cornflowerblue' : 'lawngreen';
-      $(el).css('color', color);
-    }
-
-    $(SEL).each(function () {
-      paint(this);
-    });
-  }
-
-  /**
-   * Скидає кольори рейтингів до стандартних
-   */
-  function clearVoteColors() {
-    var SEL = '.card__vote, .full-start__rate, .full-start-new__rate, .info__rate, .card__imdb-rate, .card__kinopoisk-rate';
-    $(SEL).css({
-      color: '',
-      border: ''
-    });
-  }
-
-  /**
-   * Встановлює MutationObserver для динамічного оновлення рейтингів
-   */
-  var __voteObserverDebounce = null; // OPTIMIZATION: Debounce timer
-  function setupVoteColorsObserver() {
-    setTimeout(function () {
-      if (getBool('interface_mod_new_colored_ratings', false)) updateVoteColors();
-    }, 400);
-
-    var obs = new MutationObserver(function () {
-      if (getBool('interface_mod_new_colored_ratings', false)) {
-        // OPTIMIZATION: Debounce heavy DOM scan
-        if (__voteObserverDebounce) clearTimeout(__voteObserverDebounce);
-        __voteObserverDebounce = setTimeout(updateVoteColors, 200); // Was 80ms
-      }
-    });
-    obs.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
-
-    Lampa.Listener.follow('full', function (e) {
-      if (e.type === 'complite' && getBool('interface_mod_new_colored_ratings', false)) setTimeout(updateVoteColors, 100);
     });
   }
 
@@ -1884,9 +1782,6 @@
     injectFallbackCss();
     initInterfaceModSettingsUI();
     newInfoPanel();
-    setupVoteColorsObserver();
-
-    if (settings.colored_ratings) updateVoteColors();
 
     setStatusBaseCssEnabled(settings.colored_status);
     if (settings.colored_status) enableStatusColoring();
