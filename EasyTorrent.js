@@ -562,7 +562,7 @@
     var seasonPatterns = [
       { re: /(?:^|[^a-zа-я0-9])(\d{1,2})(?:\s*[-]\s*(\d{1,2}))?\s*сезон(?:а|ы|ів)?(?:$|[^a-zа-я0-9])/i, base: 75, name: "N сезон" },
       { re: /(?:^|[^a-zа-я0-9])сезон(?:а|ы|и|ів)?\s*(\d{1,2})(?:\s*[-]\s*(\d{1,2}))?(?:$|[^a-zа-я0-9])/i, base: 70, name: "Сезон N" },
-      { re: /(?:^|[^a-zа-я0-9])сезон(?:а|ы|и|ів)?\s*:\s*(\d{1,2})(?:\s*[-]\s*(\d{1,2]))?/i, base: 66, name: "Сезон: N" },
+      { re: /(?:^|[^a-zа-я0-9])сезон(?:а|ы|и|ів)?\s*:\s*(\d{1,2})(?:\s*[-]\s*(\d{1,2}))?/i, base: 66, name: "Сезон: N" },
       { re: /\bseason\s*[: ]\s*(\d{1,2})(?:\s*[-]\s*(\d{1,2}))?\b/i, base: 55, name: "Season:" },
       { re: /\bseason\s*(\d{1,2})\b/i, base: 52, name: "Season N" },
       { re: /\[\s*s(\d{1,2})\s*\]/i, base: 80, name: "[Sxx]" },
@@ -1101,15 +1101,28 @@
       });
     }
     
-    // Сортування за оцінкою
+    // ВИПРАВЛЕНА ФУНКЦІЯ СОРТУВАННЯ
     scoredTorrents.sort(function(a, b) {
-      if (b.score !== a.score) return b.score - a.score;
-      if (b.features.bitrate !== a.features.bitrate) {
+      // Спочатку за оцінкою (вищі оцінки перші)
+      if (a.score !== b.score) {
+        return b.score - a.score;
+      }
+      
+      // Потім за бітрейтом
+      if (a.features.bitrate !== b.features.bitrate) {
         return b.features.bitrate - a.features.bitrate;
       }
+      
+      // Потім за кількістю сідів
       var aSeeds = a.element.Seeds || a.element.seeds || a.element.Seeders || a.element.seeders || 0;
       var bSeeds = b.element.Seeds || b.element.seeds || b.element.Seeders || b.element.seeders || 0;
-      return bSeeds - aSeeds;
+      
+      if (aSeeds !== bSeeds) {
+        return bSeeds - aSeeds;
+      }
+      
+      // Якщо все однакове, зберігаємо оригінальний порядок
+      return a.originalIndex - b.originalIndex;
     });
     
     // Логування всіх оцінок
@@ -1182,19 +1195,30 @@
       item.element._recommendBreakdown = item.breakdown;
       item.element._recommendFeatures = item.features;
       
-      // Визначення рангу
-      var rank = -1;
-      for (var j = 0; j < recommendedTorrents.length; j++) {
-        if (recommendedTorrents[j].element === item.element) {
-          rank = j;
-          break;
-        }
-      }
+      // Визначення рангу на основі відсортованого списку
+      var rank = i; // Ранг відповідає позиції в відсортованому списку
       item.element._recommendRank = rank;
-      item.element._recommendIsIdeal = rank === 0 && item.score >= 150;
+      
+      // Перевірка чи це ідеальний торрент
+      var isRecommended = rank < recCount && 
+                         (item.element.Seeds || item.element.seeds || 
+                          item.element.Seeders || item.element.seeders || 0) >= minSeeds;
+      
+      item.element._recommendIsIdeal = rank === 0 && isRecommended && item.score >= 150;
+      item.element._recommendIsRecommended = isRecommended;
     }
     
+    // ВІДСОРТОВАНІ РЕЗУЛЬТАТИ ПОВЕРТАЄМО БЕЗПОСЕРЕДНЬО
+    // Це найважливіша зміна - ми повертаємо відсортований список
+    var sortedResults = scoredTorrents.map(function(item) {
+      return item.element;
+    });
+    
     console.log("[EasyTorrent] Рекомендації збережені: " + recommendedTorrents.length + " шт.");
+    console.log("[EasyTorrent] Повертаємо відсортований список з " + sortedResults.length + " торрентів");
+    
+    // Повертаємо відсортовані результати
+    return sortedResults;
   }
 
   function renderTorrentBadge(eventData) {
@@ -1217,7 +1241,7 @@
     var showScores = Lampa.Storage.get("easytorrent_show_scores", true);
     
     // Перевірка чи потрібно відображати бейдж
-    if (!torrent._recommendIsIdeal && rank >= recCount && !showScores) {
+    if (!torrent._recommendIsIdeal && !torrent._recommendIsRecommended && rank >= recCount && !showScores) {
       return;
     }
     
@@ -1246,12 +1270,14 @@
     if (torrent._recommendIsIdeal) {
       badgeType = "ideal";
       badgeLabel = getLocalizedText("ideal_badge");
-    } else if (rank < recCount) {
+    } else if (torrent._recommendIsRecommended) {
       badgeType = "recommended";
       badgeLabel = getLocalizedText("recommended_badge") + " • #" + (rank + 1);
-    } else {
+    } else if (showScores) {
       badgeType = "neutral";
       badgeLabel = "Оцінка";
+    } else {
+      return; // Не показувати бейдж для нерекомендованих торрентів без оцінок
     }
     
     // Створення панелі
@@ -1582,37 +1608,13 @@
         requestData,
         function(results) {
           if (results && results.Results && Array.isArray(results.Results)) {
-            processTorrentResults(results.Results, requestData);
+            // ВИПРАВЛЕННЯ: Отримуємо відсортовані результати
+            var sortedResults = processTorrentResults(results.Results, requestData);
             
-            // Сортування результатів
-            var originalResults = results.Results;
-            var recCount = currentConfig.preferences.recommendation_count || 3;
-            var minSeeds = currentConfig.preferences.min_seeds || 0;
-            
-            // Фільтрація рекомендованих
-            var recommended = originalResults.filter(function(torrent) {
-              var seeds = torrent.Seeds || torrent.seeds || torrent.Seeders || torrent.seeders || 0;
-              return (torrent._recommendScore || 0) > 0 && seeds >= minSeeds;
-            }).sort(function(a, b) {
-              return (b._recommendScore || 0) - (a._recommendScore || 0);
-            }).slice(0, recCount);
-            
-            // Інші торренти
-            var others = originalResults.filter(function(torrent) {
-              return recommended.indexOf(torrent) === -1;
-            });
-            
-            // Об'єднання
-            var sortedResults = recommended.concat(others);
-            
-            // Оновлення рангів
-            for (var i = 0; i < sortedResults.length; i++) {
-              sortedResults[i]._recommendRank = i;
-              sortedResults[i]._recommendIsIdeal = i === 0 && (sortedResults[i]._recommendScore || 0) >= 150;
+            if (sortedResults && Array.isArray(sortedResults)) {
+              // Замінюємо оригінальні результати відсортованими
+              results.Results = sortedResults;
             }
-            
-            // Заміна результатів
-            results.Results = sortedResults;
           }
           
           successCallback(results);
