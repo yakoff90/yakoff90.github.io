@@ -1,3 +1,4 @@
+
 (function () {
   'use strict';
 
@@ -763,6 +764,21 @@
               settings.tor_seeds = getBool(key, true);
               if (window.runTorrentStyleRefresh) window.runTorrentStyleRefresh();
               break;
+              
+              /*case 'interface_mod_new_tor_frame':
+              settings.tor_frame = getBool(key, true);
+              if (window.runTorrentStyleRefresh) window.runTorrentStyleRefresh();
+              break;
+              
+            case 'interface_mod_new_tor_bitrate':
+              settings.tor_bitrate = getBool(key, true);
+              if (window.runTorrentStyleRefresh) window.runTorrentStyleRefresh();
+              break;
+              
+            case 'interface_mod_new_tor_seeds':
+              settings.tor_seeds = getBool(key, true);
+              if (window.runTorrentStyleRefresh) window.runTorrentStyleRefresh();
+              break;*/
           }
         }
         return res;
@@ -1368,6 +1384,24 @@
     return '';
    }
   
+  /*function ageCategoryFor(text) {
+    for (var k in __ageGroups) {
+      if (__ageGroups[k].some(function (mark) {
+          return text.indexOf(mark) !== -1;
+        })) return k;
+    }
+    var m = text.match(/(^|\D)(\d{1,2})\s*\+(?=\D|$)/);
+    if (m) {
+      var n = parseInt(m[2], 10);
+      if (n <= 3) return 'kids';
+      if (n <= 7) return 'children';
+      if (n <= 14) return 'teens';
+      if (n <= 17) return 'almostAdult';
+      return 'adult';
+    }
+    return '';
+  }*/
+
   /**
    * Застосовує кольори до вікових рейтингів (PG)
    */
@@ -1926,7 +1960,7 @@
 
         // ===================== СИСТЕМА ТЕКСТОВИХ ЗАМІН =====================
         const REPLACEMENTS = [
-          ['Uaflix', 'UaFlix'],
+          ['Uaflix', 'UAFlix'],
           ['Zetvideo', 'UaFlix'],
           ['Нет истории просмотра', 'Історія перегляду відсутня'],
           ['Дублированный', 'Дубльований'],
@@ -2017,58 +2051,74 @@
       `;
 
         // ===================== СИСТЕМА КОЛЬОРОВИХ ІНДИКАТОРІВ =====================
-        const STYLES = {
-          '.torrent-item__seeds span.low-seeds': {
-            color: '#e74c3c',
-            'font-weight': 'bold'
+const STYLES = {
+          /* СІДИ: Текст яскравий, фон ледь помітний (0.15) */
+          '.torrent-item__seeds span.low-seeds': { 
+            'color': '#ff9696', 
+            'background': 'rgba(255, 150, 150, 0.10)', 
+            'border': '1.4px solid rgba(255, 150, 150, 0.5)',
+            'text-shadow': '0 0 5px rgba(255, 150, 150, 0.4)',
+            'box-shadow': '0 0 8px rgba(255, 150, 150, 0.2)'
           },
-          '.torrent-item__seeds span.medium-seeds': {
-            color: '#ffff00',
-            'font-weight': 'bold'
+          '.torrent-item__seeds span.medium-seeds': { 
+            'color': '#fbcb79', 
+            'background': 'rgba(251, 203, 121, 0.10)', 
+            'border': '1.4px solid rgba(251, 203, 121, 0.5)',
+            'text-shadow': '0 0 5px rgba(251, 203, 121, 0.4)',
+            'box-shadow': '0 0 8px rgba(251, 203, 121, 0.2)'
           },
-          '.torrent-item__seeds span.high-seeds': {
-            color: '#2ecc71',
-            'font-weight': 'bold'
+          '.torrent-item__seeds span.high-seeds': { 
+            'color': '#77cdb2', 
+            'background': 'rgba(119, 205, 178, 0.10)', 
+            'border': '1.4px solid rgba(119, 205, 178, 0.5)',
+            'text-shadow': '0 0 5px rgba(119, 205, 178, 0.4)',
+            'box-shadow': '0 0 8px rgba(119, 205, 178, 0.2)'
           },
-          '.torrent-item.low-seeds': {
-            'border': '2px solid rgba(231, 76, 60, 0.6)',
+
+          /* БІТРЕЙТ: Кольорова диференціація */
+          '.torrent-item__bitrate span.low-bitrate': { 
+            'color': '#fbcb79', 
+            'background': 'rgba(251, 203, 121, 0.10)', 
+            'border': '1.4px solid rgba(251, 203, 121, 0.5)',
+            'text-shadow': '0 0 5px rgba(251, 203, 121, 0.4)',
+            'box-shadow': '0 0 8px rgba(251, 203, 121, 0.2)'
+          },
+          '.torrent-item__bitrate span.medium-bitrate': { 
+            'color': '#77cdb2', 
+            'background': 'rgba(119, 205, 178, 0.10)', 
+            'border': '1.4px solid rgba(119, 205, 178, 0.5)',
+            'text-shadow': '0 0 5px rgba(119, 205, 178, 0.4)',
+            'box-shadow': '0 0 8px rgba(119, 205, 178, 0.2)'
+          },
+          '.torrent-item__bitrate span.high-bitrate': { 
+            'color': '#ff9696', 
+            'background': 'rgba(255, 150, 150, 0.10)', 
+            'border': '1.4px solid rgba(255, 150, 150, 0.5)',
+            'text-shadow': '0 0 5px rgba(255, 150, 150, 0.4)',
+            'box-shadow': '0 0 8px rgba(255, 150, 150, 0.2)'
+          },
+
+          /* РАМКИ КАРТОК (interface_mod_new_tor_frame) */
+          '.torrent-item.low-seeds': { 
+            'border': '2px solid rgba(255, 150, 150, 0.45)', 
             'border-radius': '6px',
             'box-sizing': 'border-box'
           },
-          '.torrent-item.medium-seeds': {
-            'border': '2px solid rgba(255, 255, 0, 0.6)',
+          '.torrent-item.medium-seeds': { 
+            'border': '2px solid rgba(251, 203, 121, 0.45)', 
             'border-radius': '6px',
             'box-sizing': 'border-box'
           },
-          '.torrent-item.high-seeds': {
-            'border': '2px solid rgba(46, 204, 113, 0.6)',
+          '.torrent-item.high-seeds': { 
+            'border': '2px solid rgba(119, 205, 178, 0.45)', 
             'border-radius': '6px',
             'box-sizing': 'border-box'
           },
-          '.torrent-item__bitrate span.low-bitrate': {
-            color: '#ffff00',
-            'font-weight': 'bold'
-          },
-          '.torrent-item__bitrate span.medium-bitrate': {
-            color: '#2ecc71',
-            'font-weight': 'bold'
-          },
-          '.torrent-item__bitrate span.high-bitrate': {
-            color: '#e74c3c',
-            'font-weight': 'bold'
-          },
-          '.torrent-item__tracker.utopia': {
-            color: '#9b59b6',
-            'font-weight': 'bold'
-          },
-          '.torrent-item__tracker.toloka': {
-            color: '#3498db',
-            'font-weight': 'bold'
-          },
-          '.torrent-item__tracker.mazepa': {
-            color: '#C9A0DC',
-            'font-weight': 'bold'
-          }
+
+          /* ТРЕКЕРИ */
+          '.torrent-item__tracker.utopia': { 'color': '#9b59b6', 'font-weight': 'bold' },
+          '.torrent-item__tracker.toloka': { 'color': '#3498db', 'font-weight': 'bold' },
+          '.torrent-item__tracker.mazepa': { 'color': '#C9A0DC', 'font-weight': 'bold' }
         };
 
         // ===================== ІНІЦІАЛІЗАЦІЯ СТИЛІВ =====================
@@ -2333,7 +2383,7 @@
       return !!v;
     }
 
-    function apply() {
+function apply() {
       var s = document.getElementById('torr_mod_overrides');
       if (!s) {
         s = document.createElement('style');
@@ -2348,10 +2398,20 @@
           
       var css = '';
       
-      // Якщо налаштування вимкнені, додаємо CSS, який "скидає" стилі
-      if (!eb) css += '.torrent-item__bitrate span.low-bitrate, .torrent-item__bitrate span.medium-bitrate, .torrent-item__bitrate span.high-bitrate{ color: inherit !important; font-weight: inherit !important; }\n';
-      if (!es) css += '.torrent-item__seeds span.low-seeds, .torrent-item__seeds span.medium-seeds, .torrent-item__seeds span.high-seeds{ color: inherit !important; font-weight: inherit !important; }\n';
-      if (!ef) css += '.torrent-item.low-seeds, .torrent-item.medium-seeds, .torrent-item.high-seeds{ border: none !important; }\n';
+      // Якщо вимкнено БІТРЕЙТ: скидаємо колір, фон та внутрішню рамку цифр
+      if (!eb) {
+        css += '.torrent-item__bitrate span.low-bitrate, .torrent-item__bitrate span.medium-bitrate, .torrent-item__bitrate span.high-bitrate { color: inherit !important; background: none !important; border: none !important; font-weight: inherit !important; }\n';
+      }
+      
+      // Якщо вимкнено СІДИ: скидаємо колір, фон та внутрішню рамку цифр
+      if (!es) {
+        css += '.torrent-item__seeds span.low-seeds, .torrent-item__seeds span.medium-seeds, .torrent-item__seeds span.high-seeds { color: inherit !important; background: none !important; border: none !important; font-weight: inherit !important; }\n';
+      }
+      
+      // Якщо вимкнено ЗАГАЛЬНІ РАМКИ: прибираємо бордер з усього рядка торрента
+      if (!ef) {
+        css += '.torrent-item.low-seeds, .torrent-item.medium-seeds, .torrent-item.high-seeds { border: none !important; box-shadow: none !important; }\n';
+      }
       
       s.textContent = css;
     }
@@ -2446,12 +2506,14 @@
   })();
 
   // ---------- CSS ----------
-  function ensureCss(){
+function ensureCss(){
     var id = 'ifx_css_stable_final_v2';
     if (document.getElementById(id)) return;
     var st = document.createElement('style');
     st.id = id;
     st.textContent = `
+      /* --- 1. БАЗОВІ СТИЛІ КАРТОК (Оригінальна логіка) --- */
+      
       /* Пігулка (як .card_vote) — наш власний бейдж року */
       .ifx-pill{
         background: rgba(0,0,0,.5);
@@ -2492,9 +2554,7 @@
       /* NUM-ONLY: ховаємо велику цифру завжди (і для ALT, і для стандарту) */
       body.ifx-num-only .card-episode .full-episode__num{ display:none !important; }
 
-      /* ЛОКАЛЬНЕ ховання текстових років тільки для оброблених карток.
-         Додаємо клас .ifx-hide-age саме на картки списків та епізодів.
-         Повні картки НЕ мають цього класу — там нічого не ховаємо. */
+      /* ЛОКАЛЬНЕ ховання текстових років тільки для оброблених карток */
       .ifx-hide-age .card__age{ display:none !important; }
 
       /* Ховаємо штатний рейтинг повністю, коли вимкнено */
@@ -2502,16 +2562,37 @@
       body.ifx-no-rate .card__view > .card_vote,
       body.ifx-no-rate .ifx-corner-stack > .card__vote,
       body.ifx-no-rate .ifx-corner-stack > .card_vote {
-      display: none !important;}
+        display: none !important;
+      }
 
+      /* --- 2. ГЕОМЕТРІЯ ТОРРЕНТІВ ТА ФОКУС --- */
+      
+      /* Уніфікація розміру під стандартний блок ваги (.torrent-item__size) */
+      .torrent-item__bitrate span, .torrent-item__seeds span {
+        border-radius: 0.3em !important;
+        padding: 0.3em 0.5em !important;
+        font-weight: bold !important;
+        display: inline-block !important;
+        line-height: 1.2 !important;
+        transition: all 0.2s ease !important;
+      }
+
+      /* Фокусна рамка торрента (біла) */
+      .torrent-item.focus {
+        outline: none !important;
+        border: 2px solid #ffffff !important;
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.4) !important;
+        transform: scale(1.01) !important;
+        z-index: 10 !important;
+        background: rgba(255, 255, 255, 0.1) !important;
+      }
     `;
     document.head.appendChild(st);
-  }
-
+}
 
 
 // Синхронізуємо ТІЛЬКИ кольори з якості (фон/текст).
-// Якщо нічого не знайдено — дефолт.
+// Якщо нічого не знайдено — дефолт як у твоєму прикладі.
 function ifxSyncAltBadgeThemeFromQuality(){
   try{
     // Спершу сезонні мітки Quality, потім card__quality
@@ -2674,7 +2755,7 @@ function ensureAltBadgesCss(){
     var d = $root.data() || {};
     
     // 1) Дані Lampa: Пріоритет - рік виходу СЕРІАЛУ або ФІЛЬМУ
-    
+    // (Ми свідомо ігноруємо d.air_date та d.next_episode_date, бо це дати епізодів)
     var y = (d.first_air_date || '').slice(0,4) // << Пріоритет #1: Рік виходу серіалу
          || (d.release_date || '').slice(0,4) // << Пріоритет #2: Рік виходу фільму
          || d.release_year // << Резерв
@@ -2695,7 +2776,7 @@ function ensureAltBadgesCss(){
       title.match(/(?:[–—·\/-]\s*)((?:19|20)\d{2})\s*$/);
     if (mTitle) return mTitle[1];
     
-    
+    // МИ ПРИБРАЛИ ПОШУК .full-episode__date, оскільки він дає рік ЕПІЗОДУ.
 
     return '';
   }
@@ -2850,11 +2931,33 @@ function injectAll($scope){
   applyTitleYearHide($scope);
 }   
   
+  /*function injectAll($scope){
+    $scope = $scope || $(document.body);
+
+    if (S.year_on){
+      // Списки тайтлів (не повні картки)
+      $scope.find('.card').each(function(){
+        var $c = $(this);
+        if ($c.closest('.full-start, .full-start-new, .full, .details').length) return;
+        applyListCard($c);
+      });
+      // Епізоди (alt і стандарт)
+      $scope.find('.card-episode').each(function(){ applyEpisodeCard($(this)); });
+    } else {
+      // якщо вимкнено — прибираємо локальні класи
+      $scope.find('.card.ifx-hide-age').removeClass('ifx-hide-age');
+      $scope.find('.card-episode .full-episode.ifx-hide-age').removeClass('ifx-hide-age');
+    }
+
+    applyNumberOnly($scope);
+    applyTitleYearHide($scope);
+  }*/
+
   // ---------- «лише номер серії» (та ALT) ----------
   function applyNumberOnly($scope){
     $scope = $scope || $(document.body);
     
-    // [!!!] ВИПРАВЛЕНО:
+    // [!!!] ВИПРАВЛЕНО (з минулого разу):
     // Тепер 'force' залежить ТІЛЬКИ від S.num_only
     var force = S.num_only;
 
@@ -2915,16 +3018,22 @@ function injectAll($scope){
           
           // [!!!] ВИПРАВЛЕНО:
           // Умовне ввімкнення/вимкнення обсервера видалено.
+          // if (S.year_on) enableObserver(); else disableObserver(); // <--- ВИДАЛЕНО
         }
         if (k===KEY_ALT){
           S.alt_ep = (v===true || v==='true' || Lampa.Storage.get(KEY_ALT,'false')==='true');
           setEpisodeAlt(S.alt_ep);
+          
+          // [!!!] ВИПРАВЛЕНО (з минулого разу):
+          // Рядок document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
+          // ВИДАЛЕНО, оскільки setEpisodeAlt() тепер робить це коректно.
+          
           setTimeout(function(){ injectAll($(document.body)); }, 50);
         }
         if (k===KEY_NUM){
           S.num_only = (v===true || v==='true' || Lampa.Storage.get(KEY_NUM,'false')==='true');
 
-          // [!!!] ВИПРАВЛЕНО:
+          // [!!!] ВИПРАВЛЕНО (з минулого разу):
           // Тепер логіка незалежна:
           document.body.classList.toggle('ifx-num-only', S.num_only);
           
@@ -2982,4 +3091,7 @@ function injectAll($scope){
 })(); 
   
 
+  
+
 })();
+
