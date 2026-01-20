@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    const APPLECATION_VERSION = '1.1.4';
+    const APPLECATION_VERSION = '1.1.5';
 
     // Иконка плагина
     const PLUGIN_ICON = '<svg viewBox="110 90 180 210"xmlns=http://www.w3.org/2000/svg><g id=sphere><circle cx=200 cy=140 fill="hsl(200, 80%, 40%)"opacity=0.3 r=1.2 /><circle cx=230 cy=150 fill="hsl(200, 80%, 45%)"opacity=0.35 r=1.3 /><circle cx=170 cy=155 fill="hsl(200, 80%, 42%)"opacity=0.32 r=1.2 /><circle cx=245 cy=175 fill="hsl(200, 80%, 48%)"opacity=0.38 r=1.4 /><circle cx=155 cy=180 fill="hsl(200, 80%, 44%)"opacity=0.34 r=1.3 /><circle cx=215 cy=165 fill="hsl(200, 80%, 46%)"opacity=0.36 r=1.2 /><circle cx=185 cy=170 fill="hsl(200, 80%, 43%)"opacity=0.33 r=1.3 /><circle cx=260 cy=200 fill="hsl(200, 80%, 50%)"opacity=0.4 r=1.5 /><circle cx=140 cy=200 fill="hsl(200, 80%, 50%)"opacity=0.4 r=1.5 /><circle cx=250 cy=220 fill="hsl(200, 80%, 48%)"opacity=0.38 r=1.4 /><circle cx=150 cy=225 fill="hsl(200, 80%, 47%)"opacity=0.37 r=1.4 /><circle cx=235 cy=240 fill="hsl(200, 80%, 45%)"opacity=0.35 r=1.3 /><circle cx=165 cy=245 fill="hsl(200, 80%, 44%)"opacity=0.34 r=1.3 /><circle cx=220 cy=255 fill="hsl(200, 80%, 42%)"opacity=0.32 r=1.2 /><circle cx=180 cy=258 fill="hsl(200, 80%, 41%)"opacity=0.31 r=1.2 /><circle cx=200 cy=120 fill="hsl(200, 80%, 60%)"opacity=0.5 r=1.8 /><circle cx=240 cy=135 fill="hsl(200, 80%, 65%)"opacity=0.55 r=2 /><circle cx=160 cy=140 fill="hsl(200, 80%, 62%)"opacity=0.52 r=1.9 /><circle cx=270 cy=165 fill="hsl(200, 80%, 70%)"opacity=0.6 r=2.2 /><circle cx=130 cy=170 fill="hsl(200, 80%, 67%)"opacity=0.57 r=2.1 /><circle cx=255 cy=190 fill="hsl(200, 80%, 72%)"opacity=0.62 r=2.3 /><circle cx=145 cy=195 fill="hsl(200, 80%, 69%)"opacity=0.59 r=2.2 /><circle cx=280 cy=200 fill="hsl(200, 80%, 75%)"opacity=0.65 r=2.5 /><circle cx=120 cy=200 fill="hsl(200, 80%, 75%)"opacity=0.65 r=2.5 /><circle cx=275 cy=215 fill="hsl(200, 80%, 73%)"opacity=0.63 r=2.4 /><circle cx=125 cy=220 fill="hsl(200, 80%, 71%)"opacity=0.61 r=2.3 /><circle cx=260 cy=235 fill="hsl(200, 80%, 68%)"opacity=0.58 r=2.2 /><circle cx=140 cy=240 fill="hsl(200, 80%, 66%)"opacity=0.56 r=2.1 /><circle cx=245 cy=255 fill="hsl(200, 80%, 63%)"opacity=0.53 r=2 /><circle cx=155 cy=260 fill="hsl(200, 80%, 61%)"opacity=0.51 r=1.9 /><circle cx=225 cy=270 fill="hsl(200, 80%, 58%)"opacity=0.48 r=1.8 /><circle cx=175 cy=272 fill="hsl(200, 80%, 56%)"opacity=0.46 r=1.7 /><circle cx=200 cy=100 fill="hsl(200, 80%, 85%)"opacity=0.8 r=2.8 /><circle cx=230 cy=115 fill="hsl(200, 80%, 90%)"opacity=0.85 r=3 /><circle cx=170 cy=120 fill="hsl(200, 80%, 87%)"opacity=0.82 r=2.9 /><circle cx=250 cy=140 fill="hsl(200, 80%, 92%)"opacity=0.88 r=3.2 /><circle cx=150 cy=145 fill="hsl(200, 80%, 89%)"opacity=0.84 r=3.1 /><circle cx=265 cy=170 fill="hsl(200, 80%, 95%)"opacity=0.9 r=3.4 /><circle cx=135 cy=175 fill="hsl(200, 80%, 93%)"opacity=0.87 r=3.3 /><circle cx=275 cy=200 fill="hsl(200, 80%, 98%)"opacity=0.95 r=3.5 /><circle cx=125 cy=200 fill="hsl(200, 80%, 98%)"opacity=0.95 r=3.5 /><circle cx=200 cy=200 fill="hsl(200, 80%, 100%)"opacity=1 r=4 /><circle cx=220 cy=195 fill="hsl(200, 80%, 98%)"opacity=0.95 r=3.8 /><circle cx=180 cy=205 fill="hsl(200, 80%, 97%)"opacity=0.93 r=3.7 /><circle cx=240 cy=210 fill="hsl(200, 80%, 96%)"opacity=0.92 r=3.6 /><circle cx=160 cy=215 fill="hsl(200, 80%, 95%)"opacity=0.9 r=3.5 /><circle cx=270 cy=230 fill="hsl(200, 80%, 94%)"opacity=0.88 r=3.4 /><circle cx=130 cy=235 fill="hsl(200, 80%, 92%)"opacity=0.86 r=3.3 /><circle cx=255 cy=250 fill="hsl(200, 80%, 90%)"opacity=0.84 r=3.2 /><circle cx=145 cy=255 fill="hsl(200, 80%, 88%)"opacity=0.82 r=3.1 /><circle cx=235 cy=265 fill="hsl(200, 80%, 86%)"opacity=0.8 r=3 /><circle cx=165 cy=268 fill="hsl(200, 80%, 84%)"opacity=0.78 r=2.9 /><circle cx=215 cy=280 fill="hsl(200, 80%, 82%)"opacity=0.76 r=2.8 /><circle cx=185 cy=282 fill="hsl(200, 80%, 80%)"opacity=0.74 r=2.7 /><circle cx=200 cy=290 fill="hsl(200, 80%, 78%)"opacity=0.72 r=2.6 /><circle cx=210 cy=130 fill="hsl(200, 80%, 88%)"opacity=0.83 r=2.5 /><circle cx=190 cy=135 fill="hsl(200, 80%, 86%)"opacity=0.81 r=2.4 /><circle cx=225 cy=155 fill="hsl(200, 80%, 91%)"opacity=0.86 r=2.8 /><circle cx=175 cy=160 fill="hsl(200, 80%, 89%)"opacity=0.84 r=2.7 /><circle cx=245 cy=185 fill="hsl(200, 80%, 94%)"opacity=0.89 r=3.3 /><circle cx=155 cy=190 fill="hsl(200, 80%, 92%)"opacity=0.87 r=3.2 /><circle cx=260 cy=210 fill="hsl(200, 80%, 95%)"opacity=0.91 r=3.4 /><circle cx=140 cy=215 fill="hsl(200, 80%, 93%)"opacity=0.88 r=3.3 /><circle cx=250 cy=230 fill="hsl(200, 80%, 91%)"opacity=0.85 r=3.2 /><circle cx=150 cy=235 fill="hsl(200, 80%, 89%)"opacity=0.83 r=3.1 /><circle cx=230 cy=245 fill="hsl(200, 80%, 87%)"opacity=0.81 r=3 /><circle cx=170 cy=250 fill="hsl(200, 80%, 85%)"opacity=0.79 r=2.9 /><circle cx=210 cy=260 fill="hsl(200, 80%, 83%)"opacity=0.77 r=2.8 /><circle cx=190 cy=265 fill="hsl(200, 80%, 81%)"opacity=0.75 r=2.7 /></g></svg>';
@@ -274,11 +274,6 @@
     function initializePlugin() {
         console.log('Applecation', 'v' + APPLECATION_VERSION);
         
-        if (!Lampa.Platform.screen('tv')) {
-            console.log('Applecation', 'TV mode only');
-            return;
-        }
-
         patchApiImg();
         addCustomTemplate();
         addOverlayTemplate();
@@ -287,6 +282,45 @@
         applyLiquidGlassClass();
         attachLogoLoader();
         attachEpisodesCorePatch();
+        
+        // Инициализация для Samsung TV
+        if (Lampa.Platform.screen('tv')) {
+            initSamsungTVOptimizations();
+        }
+    }
+
+    // Оптимизации для Samsung TV
+    function initSamsungTVOptimizations() {
+        console.log('Applecation: Samsung TV optimizations enabled');
+        
+        // Уменьшаем анимации для лучшей производительности
+        $('body').addClass('applecation-samsung-tv');
+        
+        // Добавляем обработчик клавиши "Back" для оверлея
+        $(document).on('keydown', function(e) {
+            // Код 27 = Escape, 10009 = Back на Samsung TV
+            if (e.keyCode === 27 || e.keyCode === 10009) {
+                const overlay = $('.applecation-description-overlay.show');
+                if (overlay.length) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeDescriptionOverlay();
+                    return false;
+                }
+            }
+        });
+        
+        // Делаем оверлей доступным для навигации с пульта
+        Lampa.Listener.follow('full', function(event) {
+            if (event.type === 'complite') {
+                setTimeout(function() {
+                    const overlay = $('.applecation-description-overlay');
+                    if (overlay.length && Lampa.Controller) {
+                        Lampa.Controller.collectionAppend(overlay.find('.applecation-description-overlay__close'));
+                    }
+                }, 500);
+            }
+        });
     }
 
     /**
@@ -733,8 +767,8 @@
             uk: 'Ефект «скляних» карток при наведенні в епізодах та акторах',
             be: 'Эфект «шкляных» картак пры навядзенні ў эпизодах і акцёрах',
             bg: 'Ефект „стъклени“ карти при фокус в епизодите и актьорите',
-            cs: 'Efekt „skleněných“ karet při zaměření v epizodách a obsazení',
-            he: 'אפקט כрטיסי "זכוכית" במיקוד בפרקים ובשחקנים',
+            cs: 'Efekt "skleněných" karet při zaměření v epizodách a obsazení',
+            he: 'אפקט כרטיסי "זכוכית" במיקוד בפרקים ובשחקנים',
             pt: 'Efeito de cartões "vítreos" em foco nos episódios e elenco',
             zh: '剧集和演员表中聚焦时的"玻璃"卡片效果'
         },
@@ -756,7 +790,7 @@
             be: 'Робіць інтэрфейс у картцы фільма падобным на Apple TV і аптымізуе пад 4K',
             bg: 'Прави интерфейса в картата на филма подобен на Apple TV и оптимизира за 4K',
             cs: 'Vytváří rozhraní karty filmu podobné Apple TV a optimalizuje pro 4K',
-            he: 'הופך את ממשק כрטיס הסרט לדומה ל-Apple TV ומבצע אופטימיזציה ל-4K',
+            he: 'הופך את ממשק כרטיס הסרט לדומה ל-Apple TV ומבצע אופטימיזציה ל-4K',
             pt: 'Torna a interface do cartão do filme semelhante à Apple TV e otimiza para 4K',
             zh: '使电影卡片界面看起来像 Apple TV 并针对 4K 进行优化'
         }
@@ -849,7 +883,7 @@
             }
         });
 
-        // Показывать рейтинги
+        // Показывать рейтинги (ОТКЛЮЧЕНО по умолчанию)
         Lampa.SettingsApi.addParam({
             component: 'applecation_settings',
             param: {
@@ -870,7 +904,7 @@
             }
         });
 
-        // Расположение рейтингов
+        // Расположение рейтингов (оставлено для совместимости)
         Lampa.SettingsApi.addParam({
             component: 'applecation_settings',
             param: {
@@ -1001,7 +1035,7 @@
             }
         });
 
-        // Размер логотипа - ФИКСИРОВАНО
+        // Размер логотипа - ИСПРАВЛЕНО
         Lampa.SettingsApi.addParam({
             component: 'applecation_settings',
             param: {
@@ -1107,14 +1141,12 @@
         });
 
         // Применяем текущие настройки
-        if (!Lampa.Storage.get('applecation_show_ratings', false)) {
-            $('body').addClass('applecation--hide-ratings');
-        }
+        $('body').addClass('applecation--hide-ratings'); // Всегда скрываем рейтинги
         $('body').addClass('applecation--ratings-' + Lampa.Storage.get('applecation_ratings_position', 'card'));
         applyScales();
     }
 
-    // Применяем масштабирование контента - ФИКСИРОВАНО
+    // Применяем масштабирование контента - ИСПРАВЛЕНО
     function applyScales() {
         const logoScale = parseInt(Lampa.Storage.get('applecation_logo_scale', '100'));
         const textScale = parseInt(Lampa.Storage.get('applecation_text_scale', '100'));
@@ -1123,39 +1155,34 @@
         // Удаляем старые стили если есть
         $('style[data-id="applecation_scales"]').remove();
 
-        // Рассчитываем значения с базовыми размерами
-        const baseLogoWidth = 35; // базовый max-width в vw
-        const baseLogoHeight = 180; // базовый max-height в px
-        const baseTextWidth = 35; // базовый max-width в vw для описания
+        // Базовые значения
+        const baseLogoWidth = 35; // vw
+        const baseLogoHeight = 180; // px
+        const baseTextWidth = 35; // vw
 
-        const logoWidth = baseLogoWidth * logoScale / 100;
-        const logoHeight = baseLogoHeight * logoScale / 100;
-        const textWidth = baseTextWidth * textScale / 100;
+        // Рассчитываем новые значения
+        const logoWidth = (baseLogoWidth * logoScale / 100);
+        const logoHeight = (baseLogoHeight * logoScale / 100);
+        const textWidth = (baseTextWidth * textScale / 100);
 
         // Создаем новые стили
         const scaleStyles = `
             <style data-id="applecation_scales">
-                /* Масштаб логотипа */
+                /* Масштаб логотипа - ИСПРАВЛЕНО */
                 .applecation .applecation__logo img {
                     max-width: ${logoWidth}vw !important;
                     max-height: ${logoHeight}px !important;
+                    width: auto !important;
+                    height: auto !important;
                 }
 
-                /* Масштаб текста и мета-информации */
+                /* Масштаб текста */
                 .applecation .applecation__content-wrapper {
                     font-size: ${textScale}% !important;
                 }
 
                 /* Отступы между элементами */
-                .applecation .full-start-new__title {
-                    margin-bottom: ${0.5 * spacingScale / 100}em !important;
-                }
-                
                 .applecation .applecation__meta {
-                    margin-bottom: ${0.5 * spacingScale / 100}em !important;
-                }
-                
-                .applecation .applecation__ratings {
                     margin-bottom: ${0.5 * spacingScale / 100}em !important;
                 }
                 
@@ -1168,7 +1195,7 @@
                     margin-bottom: ${0.5 * spacingScale / 100}em !important;
                 }
 
-                /* Масштаб для оверлея с описанием */
+                /* Масштаб для оверлея */
                 .applecation-description-overlay__logo img {
                     max-width: ${40 * logoScale / 100}vw !important;
                     max-height: ${150 * logoScale / 100}px !important;
@@ -1177,19 +1204,30 @@
                 .applecation-description-overlay__text {
                     font-size: ${1.2 * textScale / 100}em !important;
                 }
+
+                /* Оптимизация для Samsung TV */
+                body.applecation-samsung-tv .applecation .full-episode.focus {
+                    transform: scale(1.02) translateY(-4px) !important;
+                    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+                }
+
+                body.applecation-samsung-tv .applecation .full-person.focus {
+                    transform: scale(1.05) translateY(-4px) !important;
+                    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+                }
             </style>
         `;
 
         $('body').append(scaleStyles);
     }
 
-    // Регистрируем шаблон для оверлея описания - УЛУЧШЕНО
+    // Регистрируем шаблон для оверлея описания - ИСПРАВЛЕНО
     function addOverlayTemplate() {
         const overlayTemplate = `
             <div class="applecation-description-overlay" style="display: none;">
                 <div class="applecation-description-overlay__bg"></div>
                 <div class="applecation-description-overlay__content selector">
-                    <div class="applecation-description-overlay__close selector" tabindex="0">
+                    <div class="applecation-description-overlay__close selector" tabindex="0" data-action="close">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                             <path d="M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -1219,24 +1257,14 @@
         Lampa.Template.add('applecation_overlay', overlayTemplate);
     }
 
-    // Регистрируем кастомный шаблон страницы full
+    // Регистрируем кастомный шаблон страницы full (без рейтингов)
     function addCustomTemplate() {
         const ratingsPosition = Lampa.Storage.get('applecation_ratings_position', 'card');
         
-        const ratingsBlock = `<!-- Рейтинги -->
-                    <div class="applecation__ratings">
-                        <div class="rate--imdb hide">
-                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none">
-                                <path fill="currentColor" d="M4 7c-1.103 0-2 .897-2 2v6.4c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V9c0-1.103-.897-2-2-2H4Zm1.4 2.363h1.275v5.312H5.4V9.362Zm1.962 0H9l.438 2.512.287-2.512h1.75v5.312H10.4v-3l-.563 3h-.8l-.512-3v3H7.362V9.362Zm8.313 0H17v1.2c.16-.16.516-.363.875-.363.36.04.84.283.8.763v3.075c0 .24-.075.404-.275.524-.16.04-.28.075-.6.075-.32 0-.795-.196-.875-.237-.08-.04-.163.275-.163.275h-1.087V9.362Zm-3.513.037H13.6c.88 0 1.084.078 1.325.237.24.16.35.397.35.838v3.2c0 .32-.15.563-.35.762-.2.2-.484.288-1.325.288h-1.438V9.4Zm1.275.8v3.563c.2 0 .488.04.488-.2v-3.126c0-.28-.247-.237-.488-.237Zm3.763.675c-.12 0-.2.08-.2.2v2.688c0 .159.08.237.2.237.12 0 .2-.117.2-.238l-.037-2.687c0-.12-.043-.2-.163-.2Z"/>
-                            </svg>
-                            <div>0.0</div>
-                        </div>
-                        <div class="rate--kp hide">
-                            <svg viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg" fill="none">
-                                <path d="M96.5 20 66.1 75.733V20H40.767v152H66.1v-55.733L96.5 172h35.467C116.767 153.422 95.2 133.578 80 115c28.711 16.889 63.789 35.044 92.5 51.933v-30.4C148.856 126.4 108.644 115.133 85 105c23.644 3.378 63.856 7.889 87.5 11.267v-30.4L85 90c27.022-11.822 60.478-22.711 87.5-34.533v-30.4C143.789 41.956 108.711 63.11 80 80l51.967-60z" style="fill:none;stroke:currentColor;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10"/>
-                            </svg>
-                            <div>0.0</div>
-                        </div>
+        // Пустой блок рейтингов (скрыт по умолчанию)
+        const ratingsBlock = `<!-- Рейтинги (скрыты) -->
+                    <div class="applecation__ratings" style="display: none;">
+                        <!-- Рейтинги отключены -->
                     </div>`;
         
         const template = `<div class="full-start-new applecation">
@@ -1262,9 +1290,9 @@
                             </div>
                         </div>
                         
-                        ${ratingsPosition === 'card' ? ratingsBlock : ''}
+                        ${ratingsBlock}
                         
-                        <div class="applecation__description-wrapper selector">
+                        <div class="applecation__description-wrapper selector" tabindex="0" data-action="description">
                             <div class="applecation__description"></div>
                         </div>
                         <div class="applecation__info"></div>
@@ -1321,7 +1349,7 @@
                         <div>#{reactions_none}</div>
                     </div>
                     
-                    ${ratingsPosition === 'corner' ? ratingsBlock : ''}
+                    ${ratingsBlock}
 
                     <!-- Скрытый элемент для совместимости (предотвращает выход реакций за экран) -->
                     <div class="full-start-new__rate-line">
@@ -1489,60 +1517,9 @@
     vertical-align: middle;
 }
 
-/* Рейтинги */
+/* Рейтинги (скрыты) */
 .applecation__ratings {
-    display: flex;
-    align-items: center;
-    gap: 0.8em;
-    margin-bottom: 0.5em;
-    opacity: 0;
-    transform: translateY(15px);
-    transition: opacity 0.4s ease-out, transform 0.4s ease-out;
-    transition-delay: 0.08s;
-}
-
-.applecation__ratings.show {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.applecation__ratings .rate--imdb,
-.applecation__ratings .rate--kp {
-    display: flex;
-    align-items: center;
-    gap: 0.35em;
-}
-
-.applecation__ratings svg {
-    width: 1.8em;
-    height: auto;
-    flex-shrink: 0;
-    color: rgba(255, 255, 255, 0.85);
-}
-
-.applecation__ratings .rate--kp svg {
-    width: 1.5em;
-}
-
-.applecation__ratings > div > div {
-    font-size: 0.95em;
-    font-weight: 600;
-    line-height: 1;
-    color: #fff;
-}
-
-/* Управление видимостью рейтингов через настройки */
-body.applecation--hide-ratings .applecation__ratings {
     display: none !important;
-}
-
-/* Расположение рейтингов - в правом нижнем углу */
-body.applecation--ratings-corner .applecation__right {
-    gap: 1em;
-}
-
-body.applecation--ratings-corner .applecation__ratings {
-    margin-bottom: 0;
 }
 
 /* Обертка для описания */
@@ -1624,11 +1601,6 @@ body.applecation--ratings-corner .applecation__ratings {
     align-items: center;
     flex-shrink: 0;
     position: relative;
-}
-
-/* Выравнивание по baseline если рейтинги в углу */
-body.applecation--ratings-corner .applecation__right {
-    align-items: last baseline;
 }
 
 /* Реакции */
@@ -2133,6 +2105,18 @@ body.advanced--animation:not(.no--animation) .full-start__background.loaded {
     background: rgba(255, 255, 255, 0.5);
 }
 
+/* Samsung TV оптимизации */
+body.applecation-samsung-tv .applecation-description-overlay__content {
+    max-width: 70vw;
+    max-height: 85vh;
+    padding: 1.5em;
+}
+
+body.applecation-samsung-tv .applecation-description-overlay__text {
+    font-size: 1.1em;
+    line-height: 1.5;
+}
+
 /* =========================================================
    ПЕРСОНЫ (АКТЕРЫ И СЪЕМОЧНАЯ ГРУППА) - APPLE TV СТИЛЬ
    ========================================================= */
@@ -2485,7 +2469,7 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         loadNetworkIcon(activity, data);
     }
 
-    // Заполняем описание - ФИКСИРОВАНО
+    // Заполняем описание
     function fillDescription(activity, data) {
         const descContainer = activity.render().find('.applecation__description');
         const descWrapper = activity.render().find('.applecation__description-wrapper');
@@ -2498,15 +2482,15 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
             // Создаем оверлей заранее
             createDescriptionOverlay(activity, data);
             
-            // Добавляем обработчик
-            descWrapper.off('hover:enter').on('hover:enter', function() {
+            // Добавляем обработчик клика и нажатия Enter
+            descWrapper.off('hover:enter click').on('hover:enter click', function() {
                 showFullDescription();
             });
             
             // Делаем описание кликабельным
             descWrapper.addClass('selector').attr('tabindex', '0');
         } else {
-            descWrapper.off('hover:enter').removeClass('selector').removeAttr('tabindex');
+            descWrapper.off('hover:enter click').removeClass('selector').removeAttr('tabindex');
         }
     }
     
@@ -2536,7 +2520,7 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         });
     }
     
-    // Создаем оверлей заранее - УЛУЧШЕНО
+    // Создаем оверлей заранее
     function createDescriptionOverlay(activity, data) {
         const text = data.overview || '';
         const title = data.title || data.name;
@@ -2573,14 +2557,14 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         }
         
         // Добавляем обработчик закрытия
-        overlay.find('.applecation-description-overlay__close').on('hover:enter', function() {
+        overlay.find('.applecation-description-overlay__close').on('hover:enter click', function() {
             closeDescriptionOverlay();
         });
         
         $('body').append(overlay);
     }
     
-    // Показываем полное описание в оверлее - УЛУЧШЕНО
+    // Показываем полное описание в оверлее - ИСПРАВЛЕНО
     function showFullDescription() {
         const overlay = $('.applecation-description-overlay');
         
@@ -2588,15 +2572,19 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         
         // Анимация появления
         overlay.css('display', 'flex');
-        setTimeout(() => overlay.addClass('show'), 10);
-        
-        // Фокус на кнопку закрытия
         setTimeout(() => {
-            overlay.find('.applecation-description-overlay__close').focus();
-        }, 100);
+            overlay.addClass('show');
+            // Фокус на кнопку закрытия
+            setTimeout(() => {
+                const closeBtn = overlay.find('.applecation-description-overlay__close');
+                if (closeBtn.length && Lampa.Controller) {
+                    Lampa.Controller.collectionFocus(closeBtn);
+                }
+            }, 100);
+        }, 10);
     }
     
-    // Закрываем оверлей с описанием - УЛУЧШЕНО
+    // Закрываем оверлей с описанием - ИСПРАВЛЕНО
     function closeDescriptionOverlay() {
         const overlay = $('.applecation-description-overlay');
         
@@ -2607,7 +2595,10 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         setTimeout(() => {
             overlay.css('display', 'none');
             // Возвращаем фокус на описание в карточке
-            $('.applecation__description-wrapper').focus();
+            const descWrapper = $('.applecation__description-wrapper');
+            if (descWrapper.length && Lampa.Controller) {
+                Lampa.Controller.collectionFocus(descWrapper);
+            }
         }, 300);
     }
 
@@ -2764,9 +2755,9 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
             } else if (qualityInfo.quality === '2K') {
                 qualitySvg = '<svg viewBox="0 0 311 134" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M291 0C302.046 3.57563e-06 311 8.95431 311 20V114C311 125.046 302.046 134 291 134H20C8.95431 134 0 125.046 0 114V20C0 8.95431 8.95431 0 20 0H291ZM110.608 19.6367C104.124 19.6367 98.3955 20.8638 93.4258 23.3184C88.4563 25.7729 84.5925 29.2428 81.835 33.7275C79.0775 38.2123 77.6992 43.5001 77.6992 49.5908H96.3809C96.3809 46.6212 96.9569 44.0607 98.1084 41.9092C99.2599 39.7578 100.896 38.1056 103.017 36.9541C105.138 35.8026 107.623 35.2275 110.472 35.2275C113.199 35.2276 115.639 35.7724 117.79 36.8633C119.941 37.9238 121.638 39.4542 122.881 41.4541C124.123 43.4238 124.744 45.7727 124.744 48.5C124.744 50.9545 124.244 53.2421 123.244 55.3633C122.244 57.4542 120.774 59.5906 118.835 61.7725C116.926 63.9543 114.562 66.4094 111.744 69.1367L78.6084 99.8184V114H144.972V97.9092H105.881V97.2725L119.472 83.9541C125.865 78.1361 130.82 73.1514 134.335 69C137.85 64.8182 140.29 61.0151 141.653 57.5908C143.047 54.1666 143.744 50.6968 143.744 47.1816C143.744 41.8182 142.366 37.0606 139.608 32.9092C136.851 28.7577 132.986 25.515 128.017 23.1816C123.077 20.8182 117.275 19.6368 110.608 19.6367ZM159.778 20.9092V114H179.46V87.5459L189.142 75.7275L214.642 114H238.188L203.233 62.5908L237.778 20.9092H214.188L180.688 61.9541H179.46V20.9092H159.778Z" fill="white"/></svg>';
             } else if (qualityInfo.quality === 'FULL HD') {
-                qualitySvg = '<svg viewBox="331 0 311 134" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M622 0C633.046 3.57563e-06 642 8.95431 642 20V114C642 125.046 633.046 134 622 134H351C339.954 134 331 125.046 331 114V20C331 8.95431 339.954 0 351 0H622ZM362.341 20.9092V114H382.022V75.5459H419.887V59.3184H382.022V37.1367H423.978V20.9092H362.341ZM437.216 20.9092V114H456.897V75.5459H496.853V114H516.488V20.9092H496.853V59.3184H456.897V20.9092H437.216ZM532.716 20.9092V114H565.716C575.17 114 583.291 112.136 590.079 108.409C596.897 104.682 602.125 99.333 605.762 92.3633C609.428 85.3937 611.262 77.0601 611.262 67.3633C611.262 57.6968 609.428 49.3934 605.762 42.4541C602.125 35.5149 596.928 30.1969 590.171 26.5C583.413 22.7727 575.352 20.9092 565.988 20.9092H532.716ZM564.943 37.7725C570.761 37.7725 575.655 38.8027 579.625 40.8633C583.595 42.9239 586.579 46.1364 588.579 50.5C590.609 54.8636 591.625 60.4847 591.625 67.3633C591.625 74.3026 590.609 79.9694 588.579 84.3633C586.579 88.7269 583.579 91.955 579.579 94.0459C575.609 96.1063 570.715 97.1367 564.897 97.1367H552.397V37.7725H564.943Z" fill="white"/></svg>';
+                qualitySvg = '<svg viewBox="0 0 311 134" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M291 0C302.046 0 311 8.95431 311 20V114C311 125.046 302.046 134 291 134H20C8.95431 134 0 125.046 0 114V20C0 8.95431 8.95431 0 20 0H291ZM42.341 20.9092V114H62.022V75.5459H99.887V59.3184H62.022V37.1367H103.978V20.9092H42.341ZM117.216 20.9092V114H136.897V75.5459H176.853V114H196.488V20.9092H176.853V59.3184H136.897V20.9092H117.216ZM212.716 20.9092V114H245.716C255.17 114 263.291 112.136 270.079 108.409C276.897 104.682 282.125 99.333 285.762 92.3633C289.428 85.3937 291.262 77.0601 291.262 67.3633C291.262 57.6968 289.428 49.3934 285.762 42.4541C282.125 35.5149 276.928 30.1969 270.171 26.5C263.413 22.7727 255.352 20.9092 245.988 20.9092H212.716ZM244.943 37.7725C250.761 37.7725 255.655 38.8027 259.625 40.8633C263.595 42.9239 266.579 46.1364 268.579 50.5C270.609 54.8636 271.625 60.4847 271.625 67.3633C271.625 74.3026 270.609 79.9694 268.579 84.3633C266.579 88.7269 263.579 91.955 259.579 94.0459C255.609 96.1063 250.715 97.1367 244.897 97.1367H232.397V37.7725H244.943Z" fill="white"/></svg>';
             } else if (qualityInfo.quality === 'HD') {
-                qualitySvg = '<svg viewBox="662 0 311 134" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M953 0C964.046 3.57563e-06 973 8.95431 973 20V114C973 125.046 964.046 134 953 134H682C670.954 134 662 125.046 662 114V20C662 8.95431 670.954 0 682 0H953ZM731.278 20.9092V114H750.96V75.5459H790.915V114H810.551V20.9092H790.915V59.3184H750.96V20.9092H731.278ZM826.778 20.9092V114H859.778C869.233 114 877.354 112.136 884.142 108.409C890.96 104.682 896.188 99.333 899.824 92.3633C903.491 85.3937 905.324 77.0601 905.324 67.3633C905.324 57.6968 903.491 49.3934 899.824 42.4541C896.188 35.5149 890.991 30.1969 884.233 26.5C877.476 22.7727 869.414 20.9092 860.051 20.9092H826.778ZM859.006 37.7725C864.824 37.7725 869.718 38.8027 873.688 40.8633C877.657 42.9239 880.642 46.1364 882.642 50.5C884.672 54.8636 885.687 60.4847 885.688 67.3633C885.688 74.3026 884.672 79.9694 882.642 84.3633C880.642 88.7269 877.642 91.955 873.642 94.0459C869.672 96.1063 864.778 97.1367 858.96 97.1367H846.46V37.7725H859.006Z" fill="white"/></svg>';
+                qualitySvg = '<svg viewBox="0 0 311 134" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M291 0C302.046 0 311 8.95431 311 20V114C311 125.046 302.046 134 291 134H20C8.95431 134 0 125.046 0 114V20C0 8.95431 8.95431 0 20 0H291ZM21.278 20.9092V114H40.96V75.5459H80.915V114H100.551V20.9092H80.915V59.3184H40.96V20.9092H21.278ZM116.778 20.9092V114H149.778C159.233 114 167.354 112.136 174.142 108.409C180.96 104.682 186.188 99.333 189.824 92.3633C193.491 85.3937 195.324 77.0601 195.324 67.3633C195.324 57.6968 193.491 49.3934 189.824 42.4541C186.188 35.5149 180.991 30.1969 174.233 26.5C167.476 22.7727 159.414 20.9092 150.051 20.9092H116.778ZM149.006 37.7725C154.824 37.7725 159.718 38.8027 163.688 40.8633C167.657 42.9239 170.642 46.1364 172.642 50.5C174.672 54.8636 175.687 60.4847 175.688 67.3633C175.688 74.3026 174.672 79.9694 172.642 84.3633C170.642 88.7269 167.642 91.955 163.642 94.0459C159.672 96.1063 154.778 97.1367 148.96 97.1367H136.46V37.7725H149.006Z" fill="white"/></svg>';
             }
             if (qualitySvg) {
                 badges.push(`<div class="quality-badge quality-badge--res">${qualitySvg}</div>`);
@@ -2778,17 +2769,17 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         }
         
         if (qualityInfo.hdr && qualityInfo.hdr_type) {
-            badges.push('<div class="quality-badge quality-badge--hdr"><svg viewBox="-1 178 313 136" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2.5" y="181.5" width="306" height="129" rx="17.5" stroke="currentColor" stroke-width="5" fill="none"/><path d="M27.2784 293V199.909H46.9602V238.318H86.9148V199.909H106.551V293H86.9148V254.545H46.9602V293H27.2784ZM155.778 293H122.778V199.909H156.051C165.415 199.909 173.475 201.773 180.233 205.5C186.991 209.197 192.188 214.515 195.824 221.455C199.491 228.394 201.324 236.697 201.324 246.364C201.324 256.061 199.491 264.394 195.824 271.364C192.188 278.333 186.96 283.682 180.142 287.409C173.354 291.136 165.233 293 155.778 293ZM142.46 276.136H154.96C160.778 276.136 165.672 275.106 169.642 273.045C173.642 270.955 176.642 267.727 178.642 263.364C180.672 258.97 181.688 253.303 181.688 246.364C181.688 239.485 180.672 233.864 178.642 229.5C176.642 225.136 173.657 221.924 169.688 219.864C165.718 217.803 160.824 216.773 155.006 216.773H142.46V276.136ZM215.903 293V199.909H252.631C259.661 199.909 265.661 201.167 270.631 203.682C275.631 206.167 279.434 209.697 282.04 214.273C284.676 218.818 285.994 224.167 285.994 230.318C285.994 236.5 284.661 241.818 281.994 246.273C279.328 250.697 275.464 254.091 270.403 256.455C265.373 258.818 259.282 260 252.131 260H227.54V244.182H248.949C252.706 244.182 255.828 243.667 258.312 242.636C260.797 241.606 262.646 240.061 263.858 238C265.1 235.939 265.722 233.379 265.722 230.318C265.722 227.227 265.1 224.621 263.858 222.5C262.646 220.379 260.782 218.773 258.267 217.682C255.782 216.561 252.646 216 248.858 216H235.585V293H215.903ZM266.176 250.636L289.312 293H267.585L244.949 250.636H266.176Z" fill="currentColor"/></svg></div>');
+            badges.push('<div class="quality-badge quality-badge--hdr"><svg viewBox="0 0 311 134" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2.5" y="2.5" width="306" height="129" rx="17.5" stroke="currentColor" stroke-width="5" fill="none"/><path d="M27.2784 114V20.909H46.9602V59.318H86.9148V20.909H106.551V114H86.9148V75.545H46.9602V114H27.2784ZM155.778 114H122.778V20.909H156.051C165.415 20.909 173.475 22.773 180.233 26.5C186.991 30.197 192.188 35.515 195.824 42.455C199.491 49.394 201.324 57.697 201.324 67.364C201.324 77.061 199.491 85.394 195.824 92.364C192.188 99.333 186.96 104.682 180.142 108.409C173.354 112.136 165.233 114 155.778 114ZM142.46 97.136H154.96C160.778 97.136 165.672 96.106 169.642 94.045C173.642 91.955 176.642 88.727 178.642 84.364C180.672 79.97 181.688 74.303 181.688 67.364C181.688 60.485 180.672 54.864 178.642 50.5C176.642 46.136 173.657 42.924 169.688 40.864C165.718 38.803 160.824 37.773 155.006 37.773H142.46V97.136ZM215.903 114V20.909H252.631C259.661 20.909 265.661 22.167 270.631 24.682C275.631 27.167 279.434 30.697 282.04 35.273C284.676 39.818 285.994 45.167 285.994 51.318C285.994 57.5 284.661 62.818 281.994 67.273C279.328 71.697 275.464 75.091 270.403 77.455C265.373 79.818 259.282 81 252.131 81H227.54V65.182H248.949C252.706 65.182 255.828 64.667 258.312 63.636C260.797 62.606 262.646 61.061 263.858 59C265.1 56.939 265.722 54.379 265.722 51.318C265.722 48.227 265.1 45.621 263.858 43.5C262.646 41.379 260.782 39.773 258.267 38.682C255.782 37.561 252.646 37 248.858 37H235.585V114H215.903ZM266.176 71.636L289.312 114H267.585L244.949 71.636H266.176Z" fill="currentColor"/></svg></div>');
         }
         
         if (qualityInfo.sound) {
             let soundSvg = '';
             if (qualityInfo.sound === '7.1') {
-                soundSvg = '<svg viewBox="-1 368 313 136" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2.5" y="371.5" width="306" height="129" rx="17.5" stroke="currentColor" stroke-width="5" fill="none"/><path d="M91.6023 483L130.193 406.636V406H85.2386V389.909H150.557V406.227L111.92 483H91.6023ZM159.545 484.182C156.545 484.182 153.97 483.121 151.818 481C149.697 478.848 148.636 476.273 148.636 473.273C148.636 470.303 149.697 467.758 151.818 465.636C153.97 463.515 156.545 462.455 159.545 462.455C162.455 462.455 165 463.515 167.182 465.636C169.364 467.758 170.455 470.303 170.455 473.273C170.455 475.273 169.939 477.106 168.909 478.773C167.909 480.409 166.591 481.727 164.955 482.727C163.318 483.697 161.515 484.182 159.545 484.182ZM215.045 389.909V483H195.364V408.591H194.818L173.5 421.955V404.5L196.545 389.909H215.045Z" fill="currentColor"/></svg>';
+                soundSvg = '<svg viewBox="0 0 311 134" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2.5" y="2.5" width="306" height="129" rx="17.5" stroke="currentColor" stroke-width="5" fill="none"/><path d="M91.6023 114L130.193 37.636V37H85.2386V20.909H150.557V37.227L111.92 114H91.6023ZM159.545 115.182C156.545 115.182 153.97 114.121 151.818 112C149.697 109.848 148.636 107.273 148.636 104.273C148.636 101.303 149.697 98.758 151.818 96.636C153.97 94.515 156.545 93.455 159.545 93.455C162.455 93.455 165 94.515 167.182 96.636C169.364 98.758 170.455 101.303 170.455 104.273C170.455 106.273 169.939 108.106 168.909 109.773C167.909 111.409 166.591 112.727 164.955 113.727C163.318 114.697 161.515 115.182 159.545 115.182ZM215.045 20.909V114H195.364V39.591H194.818L173.5 52.955V35.5L196.545 20.909H215.045Z" fill="currentColor"/></svg>';
             } else if (qualityInfo.sound === '5.1') {
-                soundSvg = '<svg viewBox="330 368 313 136" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="333.5" y="371.5" width="306" height="129" rx="17.5" stroke="currentColor" stroke-width="5" fill="none"/><path d="M443.733 484.273C437.309 484.273 431.581 483.091 426.551 480.727C421.551 478.364 417.581 475.106 414.642 470.955C411.703 466.803 410.172 462.045 410.051 456.682H429.142C429.354 460.288 430.869 463.212 433.688 465.455C436.506 467.697 439.854 468.818 443.733 468.818C446.824 468.818 449.551 468.136 451.915 466.773C454.309 465.379 456.172 463.455 457.506 461C458.869 458.515 459.551 455.667 459.551 452.455C459.551 449.182 458.854 446.303 457.46 443.818C456.097 441.333 454.203 439.394 451.778 438C449.354 436.606 446.581 435.894 443.46 435.864C440.733 435.864 438.081 436.424 435.506 437.545C432.96 438.667 430.975 440.197 429.551 442.136L412.051 439L416.46 389.909H473.369V406H432.688L430.278 429.318H430.824C432.46 427.015 434.93 425.106 438.233 423.591C441.536 422.076 445.233 421.318 449.324 421.318C454.93 421.318 459.93 422.636 464.324 425.273C468.718 427.909 472.188 431.53 474.733 436.136C477.278 440.712 478.536 445.985 478.506 451.955C478.536 458.227 477.081 463.803 474.142 468.682C471.233 473.53 467.157 477.348 461.915 480.136C456.703 482.894 450.642 484.273 443.733 484.273ZM500.733 484.182C497.733 484.182 495.157 483.121 493.006 481C490.884 478.848 489.824 476.273 489.824 473.273C489.824 470.303 490.884 467.758 493.006 465.636C495.157 463.515 497.733 462.455 500.733 462.455C503.642 462.455 506.188 463.515 508.369 465.636C510.551 467.758 511.642 470.303 511.642 473.273C511.642 475.273 511.127 477.106 510.097 478.773C509.097 480.409 507.778 481.727 506.142 482.727C504.506 483.697 502.703 484.182 500.733 484.182ZM556.233 389.909V483H536.551V408.591H536.006L514.688 421.955V404.5L537.733 389.909H556.233Z" fill="currentColor"/></svg>';
+                soundSvg = '<svg viewBox="0 0 311 134" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2.5" y="2.5" width="306" height="129" rx="17.5" stroke="currentColor" stroke-width="5" fill="none"/><path d="M143.733 115.273C137.309 115.273 131.581 114.091 126.551 111.727C121.551 109.364 117.581 106.106 114.642 101.955C111.703 97.803 110.172 93.045 110.051 87.682H129.142C129.354 91.288 130.869 94.212 133.688 96.455C136.506 98.697 139.854 99.818 143.733 99.818C146.824 99.818 149.551 99.136 151.915 97.773C154.309 96.379 156.172 94.455 157.506 92C158.869 89.515 159.551 86.667 159.551 83.455C159.551 80.182 158.854 77.303 157.46 74.818C156.097 72.333 154.203 70.394 151.778 69C149.354 67.606 146.581 66.894 143.46 66.864C140.733 66.864 138.081 67.424 135.506 68.545C132.96 69.667 130.975 71.197 129.551 73.136L112.051 70L116.46 20.909H173.369V37H132.688L130.278 60.318H130.824C132.46 58.015 134.93 56.106 138.233 54.591C141.536 53.076 145.233 52.318 149.324 52.318C154.93 52.318 159.93 53.636 164.324 56.273C168.718 58.909 172.188 62.53 174.733 67.136C177.278 71.712 178.536 76.985 178.506 82.955C178.536 89.227 177.081 94.803 174.142 99.682C171.233 104.53 167.157 108.348 161.915 111.136C156.703 113.894 150.642 115.273 143.733 115.273ZM200.733 115.182C197.733 115.182 195.157 114.121 193.006 112C190.884 109.848 189.824 107.273 189.824 104.273C189.824 101.303 190.884 98.758 193.006 96.636C195.157 94.515 197.733 93.455 200.733 93.455C203.642 93.455 206.188 94.515 208.369 96.636C210.551 98.758 211.642 101.303 211.642 104.273C211.642 106.273 211.127 108.106 210.097 109.773C209.097 111.409 207.778 112.727 206.142 113.727C204.506 114.697 202.703 115.182 200.733 115.182ZM256.233 20.909V114H236.551V39.591H236.006L214.688 52.955V35.5L237.733 20.909H256.233Z" fill="currentColor"/></svg>';
             } else if (qualityInfo.sound === '2.0') {
-                soundSvg = '<svg viewBox="661 368 313 136" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="664.5" y="371.5" width="306" height="129" rx="17.5" stroke="currentColor" stroke-width="5" fill="none"/><path d="M722.983 483V468.818L756.119 438.136C758.938 435.409 761.301 432.955 763.21 430.773C765.15 428.591 766.619 426.455 767.619 424.364C768.619 422.242 769.119 419.955 769.119 417.5C769.119 414.773 768.498 412.424 767.256 410.455C766.013 408.455 764.316 406.924 762.165 405.864C760.013 404.773 757.574 404.227 754.847 404.227C751.998 404.227 749.513 404.803 747.392 405.955C745.271 407.106 743.634 408.758 742.483 410.909C741.331 413.061 740.756 415.621 740.756 418.591H722.074C722.074 412.5 723.453 407.212 726.21 402.727C728.968 398.242 732.831 394.773 737.801 392.318C742.771 389.864 748.498 388.636 754.983 388.636C761.65 388.636 767.453 389.818 772.392 392.182C777.362 394.515 781.225 397.758 783.983 401.909C786.741 406.061 788.119 410.818 788.119 416.182C788.119 419.697 787.422 423.167 786.028 426.591C784.665 430.015 782.225 433.818 778.71 438C775.195 442.152 770.241 447.136 763.847 452.955L750.256 466.273V466.909H789.347V483H722.983ZM815.108 484.182C812.108 484.182 809.532 483.121 807.381 481C805.259 478.848 804.199 476.273 804.199 473.273C804.199 470.303 805.259 467.758 807.381 465.636C809.532 463.515 812.108 462.455 815.108 462.455C818.017 462.455 820.563 463.515 822.744 465.636C824.926 467.758 826.017 470.303 826.017 473.273C826.017 475.273 825.502 477.106 824.472 478.773C823.472 480.409 822.153 481.727 820.517 482.727C818.881 483.697 817.078 484.182 815.108 484.182ZM874.483 485.045C866.665 485.015 859.938 483.091 854.301 479.273C848.695 475.455 844.377 469.924 841.347 462.682C838.347 455.439 836.862 446.727 836.892 436.545C836.892 426.394 838.392 417.742 841.392 410.591C844.422 403.439 848.741 398 854.347 394.273C859.983 390.515 866.695 388.636 874.483 388.636C882.271 388.636 888.968 390.515 894.574 394.273C900.21 398.03 904.544 403.485 907.574 410.636C910.604 417.758 912.104 426.394 912.074 436.545C912.074 446.758 910.559 455.485 907.528 462.727C904.528 469.97 900.225 475.5 894.619 479.318C889.013 483.136 882.301 485.045 874.483 485.045ZM874.483 468.727C879.816 468.727 884.074 466.045 887.256 460.682C890.438 455.318 892.013 447.273 891.983 436.545C891.983 429.485 891.256 423.606 889.801 418.909C888.377 414.212 886.347 410.682 883.71 408.318C881.104 405.955 878.028 404.773 874.483 404.773C869.18 404.773 864.938 407.424 861.756 412.727C858.574 418.03 856.968 425.97 856.938 436.545C856.938 443.697 857.65 449.667 859.074 454.455C860.528 459.212 862.574 462.788 865.21 465.182C867.847 467.545 870.938 468.727 874.483 468.727Z" fill="currentColor"/></svg>';
+                soundSvg = '<svg viewBox="0 0 311 134" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2.5" y="2.5" width="306" height="129" rx="17.5" stroke="currentColor" stroke-width="5" fill="none"/><path d="M62.983 114V99.818L96.119 69.136C98.938 66.409 101.301 63.955 103.21 61.773C105.15 59.591 106.619 57.455 107.619 55.364C108.619 53.242 109.119 50.955 109.119 48.5C109.119 45.773 108.498 43.424 107.256 41.455C106.013 39.455 104.316 37.924 102.165 36.864C100.013 35.773 97.574 35.227 94.847 35.227C91.998 35.227 89.513 35.803 87.392 36.955C85.271 38.106 83.634 39.758 82.483 41.909C81.331 44.061 80.756 46.621 80.756 49.591H62.074C62.074 43.5 63.453 38.212 66.21 33.727C68.968 29.242 72.831 25.773 77.801 23.318C82.771 20.864 88.498 19.636 94.983 19.636C101.65 19.636 107.453 20.818 112.392 23.182C117.362 25.515 121.225 28.758 123.983 32.909C126.741 37.061 128.119 41.818 128.119 47.182C128.119 50.697 127.422 54.167 126.028 57.591C124.665 61.015 122.225 64.818 118.71 69C115.195 73.152 110.241 78.136 103.847 83.955L90.256 97.273V97.909H129.347V114H62.983ZM155.108 115.182C152.108 115.182 149.532 114.121 147.381 112C145.259 109.848 144.199 107.273 144.199 104.273C144.199 101.303 145.259 98.758 147.381 96.636C149.532 94.515 152.108 93.455 155.108 93.455C158.017 93.455 160.563 94.515 162.744 96.636C164.926 98.758 166.017 101.303 166.017 104.273C166.017 106.273 165.502 108.106 164.472 109.773C163.472 111.409 162.153 112.727 160.517 113.727C158.881 114.697 157.078 115.182 155.108 115.182ZM214.483 116.045C206.665 116.015 199.938 114.091 194.301 110.273C188.695 106.455 184.377 100.924 181.347 93.682C178.347 86.439 176.862 77.727 176.892 67.545C176.892 57.394 178.392 48.742 181.392 41.591C184.422 34.439 188.741 29 194.347 25.273C199.983 21.515 206.695 19.636 214.483 19.636C222.271 19.636 228.968 21.515 234.574 25.273C240.21 29.03 244.544 34.485 247.574 41.636C250.604 48.758 252.104 57.394 252.074 67.545C252.074 77.758 250.559 86.485 247.528 93.727C244.528 100.97 240.225 106.5 234.619 110.318C229.013 114.136 222.301 116.045 214.483 116.045ZM214.483 99.727C219.816 99.727 224.074 97.045 227.256 91.682C230.438 86.318 232.013 78.273 231.983 67.545C231.983 60.485 231.256 54.606 229.801 49.909C228.377 45.212 226.347 41.682 223.71 39.318C221.104 36.955 218.028 35.773 214.483 35.773C209.18 35.773 204.938 38.424 201.756 43.727C198.574 49.03 196.968 56.97 196.938 67.545C196.938 74.697 197.65 80.667 199.074 85.455C200.528 90.212 202.574 93.788 205.21 96.182C207.847 98.545 210.938 99.727 214.483 99.727Z" fill="currentColor"/></svg>';
             }
             if (soundSvg) {
                 badges.push(`<div class="quality-badge quality-badge--sound">${soundSvg}</div>`);
@@ -2796,7 +2787,7 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         }
         
         if (qualityInfo.dub) {
-            badges.push('<div class="quality-badge quality-badge--dub"><svg viewBox="-1 558 313 136" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2.5" y="561.5" width="306" height="129" rx="17.5" stroke="currentColor" stroke-width="5" fill="none"/><path d="M60.5284 673H27.5284V579.909H60.8011C70.1648 579.909 78.2254 581.773 84.983 585.5C91.7405 589.197 96.9375 594.515 100.574 601.455C104.241 608.394 106.074 616.697 106.074 626.364C106.074 636.061 104.241 644.394 100.574 651.364C96.9375 658.333 91.7102 663.682 84.892 667.409C78.1042 671.136 69.983 673 60.5284 673ZM47.2102 656.136H59.7102C65.5284 656.136 70.4223 655.106 74.392 653.045C78.392 650.955 81.392 647.727 83.392 643.364C85.4223 638.97 86.4375 633.303 86.4375 626.364C86.4375 619.485 85.4223 613.864 83.392 609.5C81.392 605.136 78.4072 601.924 74.4375 599.864C70.4678 597.803 65.5739 596.773 59.7557 596.773H47.2102V656.136ZM178.153 579.909H197.835V640.364C197.835 647.152 196.214 653.091 192.972 658.182C189.759 663.273 185.259 667.242 179.472 670.091C173.684 672.909 166.941 674.318 159.244 674.318C151.517 674.318 144.759 672.909 138.972 670.091C133.184 667.242 128.684 663.273 125.472 658.182C122.259 653.091 120.653 647.152 120.653 640.364V579.909H140.335V638.682C140.335 642.227 141.108 645.379 142.653 648.136C144.229 650.894 146.441 653.061 149.29 654.636C152.138 656.212 155.456 657 159.244 657C163.063 657 166.381 656.212 169.199 654.636C172.047 653.061 174.244 650.894 175.79 648.136C177.366 645.379 178.153 642.227 178.153 638.682V579.909ZM214.028 673V579.909H251.301C258.15 579.909 263.862 580.924 268.438 582.955C273.013 584.985 276.453 587.803 278.756 591.409C281.059 594.985 282.21 599.106 282.21 603.773C282.21 607.409 281.483 610.606 280.028 613.364C278.574 616.091 276.574 618.333 274.028 620.091C271.513 621.818 268.634 623.045 265.392 623.773V624.682C268.938 624.833 272.256 625.833 275.347 627.682C278.468 629.53 280.998 632.121 282.938 635.455C284.877 638.758 285.847 642.697 285.847 647.273C285.847 652.212 284.619 656.621 282.165 660.5C279.741 664.348 276.15 667.394 271.392 669.636C266.634 671.879 260.771 673 253.801 673H214.028ZM233.71 656.909H249.756C255.241 656.909 259.241 655.864 261.756 653.773C264.271 651.652 265.528 648.833 265.528 645.318C265.528 642.742 264.907 640.47 263.665 638.5C262.422 636.53 260.65 634.985 258.347 633.864C256.074 632.742 253.362 632.182 250.21 632.182H233.71V656.909ZM233.71 618.864H248.301C250.998 618.864 253.392 618.394 255.483 617.455C257.604 616.485 259.271 615.121 260.483 613.364C261.725 611.606 262.347 609.5 262.347 607.045C262.347 603.682 261.15 600.97 258.756 598.909C256.392 596.848 253.028 595.818 248.665 595.818H233.71V618.864Z" fill="currentColor"/></svg></div>');
+            badges.push('<div class="quality-badge quality-badge--dub"><svg viewBox="0 0 311 134" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2.5" y="2.5" width="306" height="129" rx="17.5" stroke="currentColor" stroke-width="5" fill="none"/><path d="M60.5284 114H27.5284V20.909H60.8011C70.1648 20.909 78.2254 22.773 84.983 26.5C91.7405 30.197 96.9375 35.515 100.574 42.455C104.241 49.394 106.074 57.697 106.074 67.364C106.074 77.061 104.241 85.394 100.574 92.364C96.9375 99.333 91.7102 104.682 84.892 108.409C78.1042 112.136 69.983 114 60.5284 114ZM47.2102 97.136H59.7102C65.5284 97.136 70.4223 96.106 74.392 94.045C78.392 91.955 81.392 88.727 83.392 84.364C85.4223 79.97 86.4375 74.303 86.4375 67.364C86.4375 60.485 85.4223 54.864 83.392 50.5C81.392 46.136 78.4072 42.924 74.4375 40.864C70.4678 38.803 65.5739 37.773 59.7557 37.773H47.2102V97.136ZM178.153 20.909H197.835V81.364C197.835 88.152 196.214 94.091 192.972 99.182C189.759 104.273 185.259 108.242 179.472 111.091C173.684 113.909 166.941 115.318 159.244 115.318C151.517 115.318 144.759 113.909 138.972 111.091C133.184 108.242 128.684 104.273 125.472 99.182C122.259 94.091 120.653 88.152 120.653 81.364V20.909H140.335V79.682C140.335 83.227 141.108 86.379 142.653 89.136C144.229 91.894 146.441 94.061 149.29 95.636C152.138 97.212 155.456 98 159.244 98C163.063 98 166.381 97.212 169.199 95.636C172.047 94.061 174.244 91.894 175.79 89.136C177.366 86.379 178.153 83.227 178.153 79.682V20.909ZM214.028 114V20.909H251.301C258.15 20.909 263.862 21.924 268.438 23.955C273.013 25.985 276.453 28.803 278.756 32.409C281.059 35.985 282.21 40.106 282.21 44.773C282.21 48.409 281.483 51.606 280.028 54.364C278.574 57.091 276.574 59.333 274.028 61.091C271.513 62.818 268.634 64.045 265.392 64.773V65.682C268.938 65.833 272.256 66.833 275.347 68.682C278.468 70.53 280.998 73.121 282.938 76.455C284.877 79.758 285.847 83.697 285.847 88.273C285.847 93.212 284.619 97.621 282.165 101.5C279.741 105.348 276.15 108.394 271.392 110.636C266.634 112.879 260.771 114 253.801 114H214.028ZM233.71 97.909H249.756C255.241 97.909 259.241 96.864 261.756 94.773C264.271 92.652 265.528 89.833 265.528 86.318C265.528 83.742 264.907 81.47 263.665 79.5C262.422 77.53 260.65 75.985 258.347 74.864C256.074 73.742 253.362 73.182 250.21 73.182H233.71V97.909ZM233.71 59.864H248.301C250.998 59.864 253.392 59.394 255.483 58.455C257.604 57.485 259.271 56.121 260.483 54.364C261.725 52.606 262.347 50.5 262.347 48.045C262.347 44.682 261.15 41.97 258.756 39.909C256.392 37.848 253.028 36.818 248.665 36.818H233.71V59.864Z" fill="currentColor"/></svg></div>');
         }
         
         if (badges.length > 0) {
@@ -2832,7 +2823,6 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
             }
             
             activity.render().find('.applecation__info').addClass('show');
-            activity.render().find('.applecation__ratings').addClass('show');
         });
 
         const logoContainer = activity.render().find('.applecation__logo');
