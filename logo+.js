@@ -168,7 +168,10 @@
                     '150': '150%',
                     '160': '160%',
                     '170': '170%',
-                    '180': '180%'
+                    '180': '180%',
+                    '200': '200%',
+                    '250': '250%',
+                    '300': '300%'
                 },
                 default: '100'
             },
@@ -267,48 +270,67 @@
                 <style data-id="logo_scales">
                     /* Масштаб логотипу для старих карток */
                     .full-start__title img {
-                        max-height: ${180 * logoScale / 100}px !important;
-                        max-width: ${500 * logoScale / 100}px !important;
+                        max-height: ${200 * logoScale / 100}px !important;
+                        max-width: ${800 * logoScale / 100}px !important;
+                        height: auto !important;
+                        width: auto !important;
                     }
                     
                     /* Масштаб логотипу для нових карток */
                     .full-start-new__title img {
-                        max-height: ${72 * logoScale / 100}px !important;
-                        max-width: ${500 * logoScale / 100}px !important;
+                        max-height: ${100 * logoScale / 100}px !important;
+                        max-width: ${800 * logoScale / 100}px !important;
+                        height: auto !important;
+                        width: auto !important;
                     }
                     
                     /* Масштаб тексту біля логотипу */
                     .full-start__title span,
                     .full-start-new__title span {
                         font-size: ${textScale}% !important;
+                        display: block !important;
+                        margin-top: ${5 * spacingScale / 100}px !important;
                     }
                     
                     /* Відступи для старих карток */
                     .full-start__title > div {
-                        margin-bottom: ${0.2 * spacingScale / 100}em !important;
+                        margin-bottom: ${10 * spacingScale / 100}px !important;
                     }
                     
                     /* Відступи для нових карток */
                     .full-start-new__title > div {
-                        margin-bottom: ${0.2 * spacingScale / 100}em !important;
+                        margin-bottom: ${10 * spacingScale / 100}px !important;
+                    }
+                    
+                    /* Спеціальні стилі для cover інтерфейсу */
+                    .card_interfice_cover .full-start-new__title img {
+                        max-height: ${150 * logoScale / 100}px !important;
+                        max-width: ${900 * logoScale / 100}px !important;
                     }
                     
                     /* Адаптація для маленьких екранів (<585px) */
                     @media (max-width: 585px) {
                         .full-start__title img {
-                            max-height: ${76 * logoScale / 100}px !important;
-                            max-width: ${300 * logoScale / 100}px !important;
+                            max-height: ${100 * logoScale / 100}px !important;
+                            max-width: ${500 * logoScale / 100}px !important;
                         }
                         
                         .full-start-new__title img {
-                            max-height: ${72 * logoScale / 100}px !important;
-                            max-width: ${500 * logoScale / 100}px !important;
+                            max-height: ${80 * logoScale / 100}px !important;
+                            max-width: ${600 * logoScale / 100}px !important;
+                        }
+                        
+                        .card_interfice_cover .full-start-new__title img {
+                            max-height: ${120 * logoScale / 100}px !important;
+                            max-width: ${700 * logoScale / 100}px !important;
                         }
                     }
                     
-                    /* Специфічні налаштування для різних типів інтерфейсів */
-                    .card_interfice_cover .full-start-new__title img {
-                        max-height: ${112 * logoScale / 100}px !important;
+                    /* Для дуже великих логотипів (понад 150%) */
+                    .full-start__title img[style*="max-height"],
+                    .full-start-new__title img[style*="max-height"] {
+                        max-height: none !important;
+                        height: ${logoScale}% !important;
                     }
                 </style>
             `;
@@ -379,23 +401,33 @@
                         var spacingScale = parseInt(Lampa.Storage.get('logo_spacing_scale', '100'));
                         
                         // Розраховуємо розміри на основі масштабу
-                        var maxHeightLarge = Math.round(180 * logoScale / 100);
-                        var maxHeightSmall = Math.round(72 * logoScale / 100);
-                        var maxHeightCover = Math.round(112 * logoScale / 100);
+                        var maxHeightLarge = Math.round(200 * logoScale / 100);
+                        var maxHeightSmall = Math.round(100 * logoScale / 100);
+                        var maxHeightCover = Math.round(150 * logoScale / 100);
                         var fontSize = textScale + '%';
-                        var marginBottom = (0.2 * spacingScale / 100) + 'em';
+                        var marginBottom = (10 * spacingScale / 100) + 'px';
+                        var marginTopText = (5 * spacingScale / 100) + 'px';
                         
                         // Логіка залежно від налаштувань та ширини екрану
                         if (window.innerWidth > 585) {
                             if (Lampa.Storage.get('card_interfice_type') === 'new' && !card.find('div[data-name="card_interfice_cover"]').length) {
-                                logoHtml = '<div style="margin-bottom: ' + marginBottom + ';"><img style="display: block; max-height: ' + maxHeightSmall + 'px;" src="' + Lampa.TMDB.image('/t/p/w500' + logoPath.replace('.svg', '.png')) + '" />' + (titleText ? '<span style="font-size: ' + fontSize + ';">' + titleText + '</span>' : '') + '</div>';
+                                logoHtml = '<div style="margin-bottom: ' + marginBottom + ';">' +
+                                          '<img style="display: block; height: ' + logoScale + '%; max-height: ' + maxHeightSmall + 'px; max-width: ' + (800 * logoScale / 100) + 'px; width: auto;" src="' + Lampa.TMDB.image('/t/p/w500' + logoPath.replace('.svg', '.png')) + '" />' + 
+                                          (titleText ? '<span style="font-size: ' + fontSize + '; margin-top: ' + marginTopText + '; display: block;">' + titleText + '</span>' : '') + 
+                                          '</div>';
                                 card.find('.full-start-new__tagline').remove();
                                 card.find('.full-start-new__title').html(logoHtml);
                             } else if (Lampa.Storage.get('card_interfice_type') === 'new' && card.find('div[data-name="card_interfice_cover"]').length) {
-                                logoHtml = '<div style="margin-bottom: ' + marginBottom + ';"><img style="display: block; max-height: ' + maxHeightCover + 'px;" src="' + Lampa.TMDB.image('/t/p/w500' + logoPath.replace('.svg', '.png')) + '" />' + (titleText ? '<span style="font-size: ' + fontSize + ';">' + titleText + '</span>' : '') + '</div>';
+                                logoHtml = '<div style="margin-bottom: ' + marginBottom + ';">' +
+                                          '<img style="display: block; height: ' + logoScale + '%; max-height: ' + maxHeightCover + 'px; max-width: ' + (900 * logoScale / 100) + 'px; width: auto;" src="' + Lampa.TMDB.image('/t/p/w500' + logoPath.replace('.svg', '.png')) + '" />' + 
+                                          (titleText ? '<span style="font-size: ' + fontSize + '; margin-top: ' + marginTopText + '; display: block;">' + titleText + '</span>' : '') + 
+                                          '</div>';
                                 card.find('.full-start-new__title').html(logoHtml);
                             } else if (Lampa.Storage.get('card_interfice_type') === 'old' && !card.find('div[data-name="card_interfice_cover"]').length) {
-                                logoHtml = '<div style="height: auto !important; overflow: visible !important; margin-bottom: ' + marginBottom + ';"><img style="display: block; max-height: ' + maxHeightLarge + 'px;" src="' + Lampa.TMDB.image('/t/p/w300' + logoPath.replace('.svg', '.png')) + '" onload="if(this.naturalHeight > 80) { let ratio = this.naturalWidth / this.naturalHeight; this.height = 80; this.width = 80 * ratio; }" />' + (titleText ? '<span style="display: block; line-height: normal; font-size: ' + fontSize + ';">' + titleText + '</span>' : '') + '</div>';
+                                logoHtml = '<div style="height: auto !important; overflow: visible !important; margin-bottom: ' + marginBottom + ';">' +
+                                          '<img style="display: block; height: ' + logoScale + '%; max-height: ' + maxHeightLarge + 'px; max-width: ' + (800 * logoScale / 100) + 'px; width: auto;" src="' + Lampa.TMDB.image('/t/p/w300' + logoPath.replace('.svg', '.png')) + '" />' + 
+                                          (titleText ? '<span style="display: block; line-height: normal; font-size: ' + fontSize + '; margin-top: ' + marginTopText + ';">' + titleText + '</span>' : '') + 
+                                          '</div>';
                                 card.find('.full-start__title-original').remove();
                                 card.find('.full-start__title').css({
                                     'height': 'auto !important',
@@ -404,14 +436,23 @@
                                 }).html(logoHtml);
                             }
                         } else {
+                            // Для мобільних пристроїв
                             if (Lampa.Storage.get('card_interfice_type') === 'new') {
-                                var mobileMaxHeight = Math.round(72 * logoScale / 100);
-                                logoHtml = '<div style="margin-bottom: ' + marginBottom + ';"><img style="display: block; max-height: ' + mobileMaxHeight + 'px;" src="' + Lampa.TMDB.image('/t/p/w500' + logoPath.replace('.svg', '.png')) + '" />' + (titleText ? '<span style="font-size: ' + fontSize + ';">' + titleText + '</span>' : '') + '</div>';
+                                var mobileMaxHeight = Math.round(80 * logoScale / 100);
+                                var mobileMaxWidth = Math.round(600 * logoScale / 100);
+                                logoHtml = '<div style="margin-bottom: ' + marginBottom + ';">' +
+                                          '<img style="display: block; height: ' + logoScale + '%; max-height: ' + mobileMaxHeight + 'px; max-width: ' + mobileMaxWidth + 'px; width: auto;" src="' + Lampa.TMDB.image('/t/p/w500' + logoPath.replace('.svg', '.png')) + '" />' + 
+                                          (titleText ? '<span style="font-size: ' + fontSize + '; margin-top: ' + marginTopText + '; display: block;">' + titleText + '</span>' : '') + 
+                                          '</div>';
                                 card.find('.full-start-new__tagline').remove();
                                 card.find('.full-start-new__title').html(logoHtml);
                             } else {
-                                var mobileMaxHeightOld = Math.round(76 * logoScale / 100);
-                                logoHtml = '<div style="height: auto !important; overflow: visible !important; margin-bottom: ' + marginBottom + ';"><img style="display: block; max-height: ' + mobileMaxHeightOld + 'px;" src="' + Lampa.TMDB.image('/t/p/w300' + logoPath.replace('.svg', '.png')) + '" onload="if(this.naturalHeight > 38) { let ratio = this.naturalWidth / this.naturalHeight; this.height = 38; this.width = 38 * ratio; }" />' + (titleText ? '<span style="display: block; line-height: normal; font-size: ' + fontSize + ';">' + titleText + '</span>' : '') + '</div>';
+                                var mobileMaxHeightOld = Math.round(100 * logoScale / 100);
+                                var mobileMaxWidthOld = Math.round(500 * logoScale / 100);
+                                logoHtml = '<div style="height: auto !important; overflow: visible !important; margin-bottom: ' + marginBottom + ';">' +
+                                          '<img style="display: block; height: ' + logoScale + '%; max-height: ' + mobileMaxHeightOld + 'px; max-width: ' + mobileMaxWidthOld + 'px; width: auto;" src="' + Lampa.TMDB.image('/t/p/w300' + logoPath.replace('.svg', '.png')) + '" />' + 
+                                          (titleText ? '<span style="display: block; line-height: normal; font-size: ' + fontSize + '; margin-top: ' + marginTopText + ';">' + titleText + '</span>' : '') + 
+                                          '</div>';
                                 card.find('.full-start__title-original').remove();
                                 card.find('.full-start__title').css({
                                     'height': 'auto !important',
