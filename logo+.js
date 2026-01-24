@@ -168,10 +168,7 @@
                     '150': '150%',
                     '160': '160%',
                     '170': '170%',
-                    '180': '180%',
-                    '200': '200%',
-                    '250': '250%',
-                    '300': '300%'
+                    '180': '180%'
                 },
                 default: '100'
             },
@@ -182,7 +179,6 @@
             onChange: function(value) {
                 Lampa.Storage.set('logo_logo_scale', value);
                 applyLogoScales();
-                updateAllExistingLogos();
             }
         });
 
@@ -217,7 +213,6 @@
             onChange: function(value) {
                 Lampa.Storage.set('logo_text_scale', value);
                 applyLogoScales();
-                updateAllExistingLogos();
             }
         });
 
@@ -255,32 +250,8 @@
             onChange: function(value) {
                 Lampa.Storage.set('logo_spacing_scale', value);
                 applyLogoScales();
-                updateAllExistingLogos();
             }
         });
-
-        // Функція для оновлення всіх існуючих логотипів
-        function updateAllExistingLogos() {
-            // Оновлюємо всі існуючі логотипи на поточній сторінці
-            $('.full-start__title, .full-start-new__title').each(function() {
-                var container = $(this);
-                var logoImg = container.find('img');
-                var textSpan = container.find('span');
-                
-                if (logoImg.length) {
-                    // Застосовуємо CSS клас для логотипу
-                    logoImg.removeClass().addClass('logo-scaled-image');
-                    
-                    // Застосовуємо CSS клас для тексту
-                    if (textSpan.length) {
-                        textSpan.removeClass().addClass('logo-scaled-text');
-                    }
-                    
-                    // Застосовуємо CSS клас для контейнера
-                    container.find('div').first().removeClass().addClass('logo-scaled-container');
-                }
-            });
-        }
 
         // Функція застосування масштабування для логотипів
         function applyLogoScales() {
@@ -294,75 +265,50 @@
             // Створюємо нові стилі для масштабування логотипів
             const scaleStyles = `
                 <style data-id="logo_scales">
-                    /* Глобальні стилі масштабування для логотипів */
-                    .logo-scaled-image {
-                        display: block !important;
-                        height: auto !important;
-                        width: auto !important;
-                        object-fit: contain !important;
-                    }
-                    
-                    .logo-scaled-text {
-                        display: block !important;
-                        line-height: normal !important;
-                    }
-                    
-                    .logo-scaled-container {
-                        height: auto !important;
-                        overflow: visible !important;
-                    }
-                    
                     /* Масштаб логотипу для старих карток */
-                    .full-start__title .logo-scaled-image {
-                        max-height: ${200 * logoScale / 100}px !important;
-                        max-width: ${800 * logoScale / 100}px !important;
+                    .full-start__title img {
+                        max-height: ${180 * logoScale / 100}px !important;
+                        max-width: ${500 * logoScale / 100}px !important;
                     }
                     
                     /* Масштаб логотипу для нових карток */
-                    .full-start-new__title .logo-scaled-image {
-                        max-height: ${100 * logoScale / 100}px !important;
-                        max-width: ${800 * logoScale / 100}px !important;
+                    .full-start-new__title img {
+                        max-height: ${72 * logoScale / 100}px !important;
+                        max-width: ${500 * logoScale / 100}px !important;
                     }
                     
                     /* Масштаб тексту біля логотипу */
-                    .full-start__title .logo-scaled-text,
-                    .full-start-new__title .logo-scaled-text {
+                    .full-start__title span,
+                    .full-start-new__title span {
                         font-size: ${textScale}% !important;
-                        margin-top: ${5 * spacingScale / 100}px !important;
                     }
                     
                     /* Відступи для старих карток */
-                    .full-start__title .logo-scaled-container {
-                        margin-bottom: ${10 * spacingScale / 100}px !important;
+                    .full-start__title > div {
+                        margin-bottom: ${0.2 * spacingScale / 100}em !important;
                     }
                     
                     /* Відступи для нових карток */
-                    .full-start-new__title .logo-scaled-container {
-                        margin-bottom: ${10 * spacingScale / 100}px !important;
-                    }
-                    
-                    /* Спеціальні стилі для cover інтерфейсу */
-                    .card_interfice_cover .full-start-new__title .logo-scaled-image {
-                        max-height: ${150 * logoScale / 100}px !important;
-                        max-width: ${900 * logoScale / 100}px !important;
+                    .full-start-new__title > div {
+                        margin-bottom: ${0.2 * spacingScale / 100}em !important;
                     }
                     
                     /* Адаптація для маленьких екранів (<585px) */
                     @media (max-width: 585px) {
-                        .full-start__title .logo-scaled-image {
-                            max-height: ${100 * logoScale / 100}px !important;
+                        .full-start__title img {
+                            max-height: ${76 * logoScale / 100}px !important;
+                            max-width: ${300 * logoScale / 100}px !important;
+                        }
+                        
+                        .full-start-new__title img {
+                            max-height: ${72 * logoScale / 100}px !important;
                             max-width: ${500 * logoScale / 100}px !important;
                         }
-                        
-                        .full-start-new__title .logo-scaled-image {
-                            max-height: ${80 * logoScale / 100}px !important;
-                            max-width: ${600 * logoScale / 100}px !important;
-                        }
-                        
-                        .card_interfice_cover .full-start-new__title .logo-scaled-image {
-                            max-height: ${120 * logoScale / 100}px !important;
-                            max-width: ${700 * logoScale / 100}px !important;
-                        }
+                    }
+                    
+                    /* Специфічні налаштування для різних типів інтерфейсів */
+                    .card_interfice_cover .full-start-new__title img {
+                        max-height: ${112 * logoScale / 100}px !important;
                     }
                 </style>
             `;
@@ -427,26 +373,29 @@
                         var showTitle = Lampa.Storage.get('logo_display_mode') === 'logo_and_text' || (isEnglishLogo && Lampa.Storage.get('logo_display_mode') === 'logo_only');
                         var titleText = showTitle ? (card.find('.full-start-new__title').text() || card.find('.full-start__title').text() || item.title || item.name) : '';
                         
+                        // Отримуємо налаштування масштабування
+                        var logoScale = parseInt(Lampa.Storage.get('logo_logo_scale', '100'));
+                        var textScale = parseInt(Lampa.Storage.get('logo_text_scale', '100'));
+                        var spacingScale = parseInt(Lampa.Storage.get('logo_spacing_scale', '100'));
+                        
+                        // Розраховуємо розміри на основі масштабу
+                        var maxHeightLarge = Math.round(180 * logoScale / 100);
+                        var maxHeightSmall = Math.round(72 * logoScale / 100);
+                        var maxHeightCover = Math.round(112 * logoScale / 100);
+                        var fontSize = textScale + '%';
+                        var marginBottom = (0.2 * spacingScale / 100) + 'em';
+                        
                         // Логіка залежно від налаштувань та ширини екрану
                         if (window.innerWidth > 585) {
                             if (Lampa.Storage.get('card_interfice_type') === 'new' && !card.find('div[data-name="card_interfice_cover"]').length) {
-                                logoHtml = '<div class="logo-scaled-container">' +
-                                          '<img class="logo-scaled-image" src="' + Lampa.TMDB.image('/t/p/w500' + logoPath.replace('.svg', '.png')) + '" />' + 
-                                          (titleText ? '<span class="logo-scaled-text">' + titleText + '</span>' : '') + 
-                                          '</div>';
+                                logoHtml = '<div style="margin-bottom: ' + marginBottom + ';"><img style="display: block; max-height: ' + maxHeightSmall + 'px;" src="' + Lampa.TMDB.image('/t/p/w500' + logoPath.replace('.svg', '.png')) + '" />' + (titleText ? '<span style="font-size: ' + fontSize + ';">' + titleText + '</span>' : '') + '</div>';
                                 card.find('.full-start-new__tagline').remove();
                                 card.find('.full-start-new__title').html(logoHtml);
                             } else if (Lampa.Storage.get('card_interfice_type') === 'new' && card.find('div[data-name="card_interfice_cover"]').length) {
-                                logoHtml = '<div class="logo-scaled-container">' +
-                                          '<img class="logo-scaled-image" src="' + Lampa.TMDB.image('/t/p/w500' + logoPath.replace('.svg', '.png')) + '" />' + 
-                                          (titleText ? '<span class="logo-scaled-text">' + titleText + '</span>' : '') + 
-                                          '</div>';
+                                logoHtml = '<div style="margin-bottom: ' + marginBottom + ';"><img style="display: block; max-height: ' + maxHeightCover + 'px;" src="' + Lampa.TMDB.image('/t/p/w500' + logoPath.replace('.svg', '.png')) + '" />' + (titleText ? '<span style="font-size: ' + fontSize + ';">' + titleText + '</span>' : '') + '</div>';
                                 card.find('.full-start-new__title').html(logoHtml);
                             } else if (Lampa.Storage.get('card_interfice_type') === 'old' && !card.find('div[data-name="card_interfice_cover"]').length) {
-                                logoHtml = '<div class="logo-scaled-container">' +
-                                          '<img class="logo-scaled-image" src="' + Lampa.TMDB.image('/t/p/w300' + logoPath.replace('.svg', '.png')) + '" />' + 
-                                          (titleText ? '<span class="logo-scaled-text">' + titleText + '</span>' : '') + 
-                                          '</div>';
+                                logoHtml = '<div style="height: auto !important; overflow: visible !important; margin-bottom: ' + marginBottom + ';"><img style="display: block; max-height: ' + maxHeightLarge + 'px;" src="' + Lampa.TMDB.image('/t/p/w300' + logoPath.replace('.svg', '.png')) + '" onload="if(this.naturalHeight > 80) { let ratio = this.naturalWidth / this.naturalHeight; this.height = 80; this.width = 80 * ratio; }" />' + (titleText ? '<span style="display: block; line-height: normal; font-size: ' + fontSize + ';">' + titleText + '</span>' : '') + '</div>';
                                 card.find('.full-start__title-original').remove();
                                 card.find('.full-start__title').css({
                                     'height': 'auto !important',
@@ -455,19 +404,14 @@
                                 }).html(logoHtml);
                             }
                         } else {
-                            // Для мобільних пристроїв
                             if (Lampa.Storage.get('card_interfice_type') === 'new') {
-                                logoHtml = '<div class="logo-scaled-container">' +
-                                          '<img class="logo-scaled-image" src="' + Lampa.TMDB.image('/t/p/w500' + logoPath.replace('.svg', '.png')) + '" />' + 
-                                          (titleText ? '<span class="logo-scaled-text">' + titleText + '</span>' : '') + 
-                                          '</div>';
+                                var mobileMaxHeight = Math.round(72 * logoScale / 100);
+                                logoHtml = '<div style="margin-bottom: ' + marginBottom + ';"><img style="display: block; max-height: ' + mobileMaxHeight + 'px;" src="' + Lampa.TMDB.image('/t/p/w500' + logoPath.replace('.svg', '.png')) + '" />' + (titleText ? '<span style="font-size: ' + fontSize + ';">' + titleText + '</span>' : '') + '</div>';
                                 card.find('.full-start-new__tagline').remove();
                                 card.find('.full-start-new__title').html(logoHtml);
                             } else {
-                                logoHtml = '<div class="logo-scaled-container">' +
-                                          '<img class="logo-scaled-image" src="' + Lampa.TMDB.image('/t/p/w300' + logoPath.replace('.svg', '.png')) + '" />' + 
-                                          (titleText ? '<span class="logo-scaled-text">' + titleText + '</span>' : '') + 
-                                          '</div>';
+                                var mobileMaxHeightOld = Math.round(76 * logoScale / 100);
+                                logoHtml = '<div style="height: auto !important; overflow: visible !important; margin-bottom: ' + marginBottom + ';"><img style="display: block; max-height: ' + mobileMaxHeightOld + 'px;" src="' + Lampa.TMDB.image('/t/p/w300' + logoPath.replace('.svg', '.png')) + '" onload="if(this.naturalHeight > 38) { let ratio = this.naturalWidth / this.naturalHeight; this.height = 38; this.width = 38 * ratio; }" />' + (titleText ? '<span style="display: block; line-height: normal; font-size: ' + fontSize + ';">' + titleText + '</span>' : '') + '</div>';
                                 card.find('.full-start__title-original').remove();
                                 card.find('.full-start__title').css({
                                     'height': 'auto !important',
