@@ -1,223 +1,157 @@
 (function () {
     //BDVBuriлk.github.io
     //2025
-    ("use strict");
+    "use strict";
 
     let year;
     let namemovie;
     let currentMovieData = null;
+    let isModalOpen = false;
 
+    // Проксі для обходу CORS
     let kp_prox = "https://worker-patient-dream-26d7.bdvburik.workers.dev:8443/";
     let url = "https://rezka.ag/ajax/get_comments/?t=1714093694732&news_id=";
 
-    // Функція для пошуку на сайті hdrezka
-    async function searchRezka(name, ye) {
+    // Допоміжна функція для логування
+    function log(message, data) {
+        console.log("[RezkaComments] " + message, data || '');
+    }
+
+    // Асинхронний запит з обробкою помилок
+    async function makeRequest(url, options = {}) {
         try {
-            console.log("Пошук на Rezka:", name, ye);
-            let searchUrl = kp_prox +
-                "https://hdrezka.ag/search/?do=search&subaction=search&q=" +
-                encodeURIComponent(name) +
-                (ye ? "+" + ye : "");
-            
-            console.log("URL пошуку:", searchUrl);
-            
-            let fc = await fetch(searchUrl, {
-                method: "GET",
-                headers: { 
-                    "Content-Type": "text/html",
-                    "Accept": "text/html"
-                }
-            }).then((response) => {
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                return response.text();
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'text/html',
+                    'Accept': 'text/html'
+                },
+                ...options
             });
-
-            let dom = new DOMParser().parseFromString(fc, "text/html");
-
-            const item = dom.querySelector(".b-content__inline_item");
-            if (!item) {
-                console.log("Контент не знайдено на Rezka");
-                Lampa.Loading.stop();
-                Lampa.Noty.show("Коментарі не знайдено");
-                return;
-            }
-
-            namemovie = item.querySelector(".b-content__inline_item-link")?.innerText || "";
-            const rezkaId = item.dataset.id;
             
-            console.log("Знайдено на Rezka:", namemovie, "ID:", rezkaId);
-            
-            if (rezkaId) {
-                comment_rezka(rezkaId);
-            } else {
-                Lampa.Loading.stop();
-                Lampa.Noty.show("Не вдалося отримати ID для коментарів");
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-        } catch (e) {
-            console.error("Помилка пошуку:", e);
-            Lampa.Loading.stop();
-            Lampa.Noty.show("Помилка пошуку коментарів");
+            
+            return await response.text();
+        } catch (error) {
+            log("Помилка запиту", error);
+            throw error;
         }
     }
 
-    // Функція для отримання англійської назви фільму чи серіалу
-    async function getEnTitle(id, type) {
+    // Пошук на HDRezka
+    async function searchRezka(name, ye) {
         try {
-            console.log("Отримання англійської назви для:", id, type);
+            log("Пошук на Rezka:", { name: name, year: ye });
             
-            const data = await new Promise((res, rej) =>
-                Lampa.Api.sources.tmdb.get(
-                    `${type === "movie" ? "movie" : "tv"}/${id}?append_to_response=translations`,
-                    {},
-                    res,
-                    rej
-                )
-            );
-
-            const tr = data.translations?.translations;
-            let enTitle = null;
+            const searchUrl = kp_prox + 
+                "https://hdrezka.ag/search/?do=search&subaction=search&q=" + 
+                encodeURIComponent(name) + 
+                (ye ? "+" + ye : "");
             
-            if (tr && tr.length > 0) {
-                enTitle = tr.find((t) => t.iso_3166_1 === "US")?.data?.title ||
-                         tr.find((t) => t.iso_3166_1 === "US")?.data?.name ||
-                         tr.find((t) => t.iso_639_1 === "en")?.data?.title ||
-                         tr.find((t) => t.iso_639_1 === "en")?.data?.name;
+            log("URL пошуку:", searchUrl);
+            
+            const html = await makeRequest(searchUrl);
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Знаходимо перший результат
+            const result = doc.querySelector('.b-content__inline_item');
+            
+            if (!result) {
+                throw new Error("Фільм не знайдено на Rezka");
             }
             
+            namemovie = result.querySelector('.b-content__inline_item-link')?.textContent || "Невідома назва";
+            const rezkaId = result.getAttribute('data-id');
+            
+            log("Знайдено:", { назва: namemovie, ID: rezkaId });
+            
+            if (!rezkaId) {
+                throw new Error("Не вдалося отримати ID");
+            }
+            
+            await loadComments(rezkaId);
+            
+        } catch (error) {
+            log("Помилка пошуку", error);
+            Lampa.Loading.stop();
+            showNotification("Помилка пошуку: " + error.message);
+        }
+    }
+
+    // Отримання англійської назви з TMDB
+    async function getEnTitle(id, type) {
+        try {
+            log("Отримання назви з TMDB", { id: id, type: type });
+            
+            const data = await new Promise((resolve, reject) => {
+                Lampa.Api.sources.tmdb.get(
+                    `${type === 'movie' ? 'movie' : 'tv'}/${id}?append_to_response=translations`,
+                    {},
+                    resolve,
+                    reject
+                );
+            });
+            
+            let enTitle = null;
+            
+            // Шукаємо англійську назву
+            if (data.translations && data.translations.translations) {
+                const translations = data.translations.translations;
+                
+                // Спочатку шукаємо US переклад
+                enTitle = translations.find(t => t.iso_3166_1 === 'US')?.data?.title ||
+                          translations.find(t => t.iso_3166_1 === 'US')?.data?.name ||
+                          translations.find(t => t.iso_639_1 === 'en')?.data?.title ||
+                          translations.find(t => t.iso_639_1 === 'en')?.data?.name;
+            }
+            
+            // Якщо не знайшли, беремо оригінальну назву
             if (!enTitle) {
                 enTitle = data.original_title || data.original_name;
             }
             
-            console.log("Англійська назва:", enTitle);
+            log("Англійська назва:", enTitle);
             
             if (enTitle) {
-                searchRezka(normalizeTitle(enTitle), year);
+                const normalizedTitle = normalizeTitle(enTitle);
+                await searchRezka(normalizedTitle, year);
             } else {
-                Lampa.Loading.stop();
-                Lampa.Noty.show("Не вдалося отримати назву для пошуку");
+                throw new Error("Не вдалося отримати назву");
             }
-        } catch (e) {
-            console.error("TMDB помилка", e);
-            Lampa.Loading.stop();
-            Lampa.Noty.show("Помилка отримання інформації з TMDB");
-        }
-    }
-
-    // Функція для очищення заголовка від зайвих символів
-    function cleanTitle(str) {
-        if (!str) return "";
-        return str.replace(/[\s.,:;’'`!?]+/g, " ").trim();
-    }
-
-    // Функція для нормалізації заголовка
-    function normalizeTitle(str) {
-        if (!str) return "";
-        return cleanTitle(
-            str
-                .toLowerCase()
-                .replace(/[\-\u2010-\u2015\u2E3A\u2E3B\uFE58\uFE63\uFF0D]+/g, "-")
-                .replace(/ё/g, "е")
-        );
-    }
-
-    // Створює один коментар
-    function buildCommentNode(item) {
-        const q = (s) => item.querySelector(s);
-
-        const avatar = q(".ava img")?.dataset?.src || q(".ava img")?.src || "";
-        const user = q(".name, .b-comment__user")?.innerText || "Без імені";
-        const date = q(".date, .b-comment__time")?.innerText || "";
-        const text = q(".message .text, .text")?.innerHTML || "";
-
-        const wrapper = document.createElement("div");
-        wrapper.className = "message";
-
-        wrapper.innerHTML = `
-            <div class="comment-wrap">
-                <div class="avatar-column">
-                    <img src="${avatar}" class="avatar-img" alt="${user}" onerror="this.style.display='none'">
-                </div>
-                <div class="comment-card">
-                    <div class="comment-header">
-                        <span class="name">${user}</span>
-                        <span class="date">${date}</span>
-                    </div>
-                    <div class="comment-text">
-                        <div class="text">${text}</div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        return wrapper;
-    }
-
-    // Рекурсивно будує дерево
-    function buildTree(root) {
-        const fragment = document.createDocumentFragment();
-
-        if (!root || !root.children) return fragment;
-
-        for (let li of root.children) {
-            const indent = parseInt(li.dataset?.indent || 0, 10);
-
-            const wrapper = document.createElement("li");
-            wrapper.className = "comments-tree-item";
-            wrapper.style.marginLeft = indent > 0 ? "20px" : "0";
-            wrapper.appendChild(buildCommentNode(li));
-
-            const childrenList = li.querySelector("ol.comments-tree-list");
-            if (childrenList) {
-                const childTree = buildTree(childrenList);
-                if (childTree.children.length > 0) {
-                    wrapper.appendChild(childTree);
-                }
-            }
-
-            fragment.appendChild(wrapper);
-        }
-
-        return fragment;
-    }
-
-    // Основна обробка коментарів Rezka з кешуванням на добу
-    async function comment_rezka(id) {
-        console.log("Завантаження коментарів для ID:", id);
-        
-        if (!id) {
-            Lampa.Loading.stop();
-            Lampa.Noty.show("Немає ID для завантаження коментарів");
-            return;
-        }
-
-        const storageKey = "rezkaComments_" + id;
-        const storageTimeKey = storageKey + "_time";
-        const oneDay = 24 * 60 * 60 * 1000;
-        const now = Date.now();
-
-        // 1. Показуємо з кешу одразу
-        let savedHTML = localStorage.getItem(storageKey);
-        let savedTime = parseInt(localStorage.getItem(storageTimeKey) || "0", 10);
-        
-        if (savedHTML && now - savedTime < oneDay) {
-            console.log("Використовуються кешовані коментарі");
-            const container = document.createElement("div");
-            container.innerHTML = savedHTML;
-            openModal(container);
-        }
-
-        // 2. Оновлюємо у фоновому режимі
-        try {
-            let apiUrl = kp_prox + url + id + "&cstart=1&type=0&comment_id=0&skin=hdrezka";
-            console.log("Запит коментарів:", apiUrl);
             
-            let response = await fetch(apiUrl, {
-                method: "GET",
-                headers: { 
-                    "Content-Type": "text/plain",
-                    "Accept": "application/json"
+        } catch (error) {
+            log("Помилка TMDB", error);
+            Lampa.Loading.stop();
+            showNotification("Помилка отримання інформації");
+        }
+    }
+
+    // Нормалізація назви
+    function normalizeTitle(str) {
+        if (!str) return '';
+        return str
+            .toLowerCase()
+            .replace(/ё/g, 'е')
+            .replace(/[^\w\s]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    // Завантаження коментарів
+    async function loadComments(id) {
+        try {
+            log("Завантаження коментарів для ID:", id);
+            
+            const commentsUrl = kp_prox + url + id + "&cstart=1&type=0&comment_id=0&skin=hdrezka";
+            log("URL коментарів:", commentsUrl);
+            
+            const response = await fetch(commentsUrl, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
                 }
             });
             
@@ -225,299 +159,485 @@
                 throw new Error(`HTTP ${response.status}`);
             }
             
-            let fc = await response.json();
+            const data = await response.json();
             
-            if (!fc || !fc.comments) {
+            if (!data || !data.comments) {
                 throw new Error("Немає коментарів у відповіді");
             }
             
-            console.log("Отримано коментарі, довжина:", fc.comments.length);
+            log("Отримано коментарі, довжина HTML:", data.comments.length);
             
-            let dom = new DOMParser().parseFromString(fc.comments, "text/html");
+            // Парсимо HTML коментарів
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(data.comments, 'text/html');
             
             // Видаляємо непотрібні елементи
-            dom.querySelectorAll(".actions, i, .share-link").forEach((elem) => elem.remove());
+            doc.querySelectorAll('.actions, .share-link, i').forEach(el => el.remove());
             
-            let rootList = dom.querySelector(".comments-tree-list");
-            if (!rootList) {
-                throw new Error("Немає коментарів для відображення");
-            }
+            // Створюємо дерево коментарів
+            const commentsTree = createCommentsTree(doc.querySelector('.comments-tree-list'));
             
-            let newTree = buildTree(rootList);
-
-            // Зберігаємо у кеш
-            const container = document.createElement("div");
-            container.appendChild(newTree.cloneNode(true));
-            localStorage.setItem(storageKey, container.innerHTML);
-            localStorage.setItem(storageTimeKey, Date.now().toString());
-
-            // Якщо вже показали старі, оновлюємо вміст
-            if (savedHTML && now - savedTime < oneDay) {
-                const commentWrapper = document.querySelector(".broadcast__text .comment");
-                if (commentWrapper) {
-                    commentWrapper.innerHTML = "";
-                    commentWrapper.appendChild(newTree);
-                }
+            // Відображаємо коментарі
+            showCommentsModal(commentsTree);
+            
+            // Кешуємо на 24 години
+            cacheComments(id, commentsTree);
+            
+        } catch (error) {
+            log("Помилка завантаження коментарів", error);
+            Lampa.Loading.stop();
+            
+            // Спробуємо показати кешовані коментарі
+            const cached = getCachedComments(id);
+            if (cached) {
+                showCommentsModal(cached);
             } else {
-                openModal(newTree);
-            }
-        } catch (e) {
-            console.error("Помилка завантаження коментарів:", e);
-            
-            // Якщо немає кешованих даних, показуємо помилку
-            if (!savedHTML) {
-                Lampa.Loading.stop();
-                Lampa.Noty.show("Не вдалося завантажити коментарі: " + e.message);
+                showNotification("Не вдалося завантажити коментарі");
             }
         }
     }
 
-    // Функція для відкриття модального вікна з коментарями
-    function openModal(treeContent) {
-        console.log("Відкриття модального вікна з коментарями");
+    // Створення дерева коментарів
+    function createCommentsTree(rootElement) {
+        if (!rootElement) {
+            return document.createDocumentFragment();
+        }
+        
+        const fragment = document.createDocumentFragment();
+        
+        Array.from(rootElement.children).forEach(commentElement => {
+            const indent = parseInt(commentElement.getAttribute('data-indent') || '0', 10);
+            
+            // Створюємо контейнер для коментаря
+            const commentContainer = document.createElement('div');
+            commentContainer.className = 'comment-item';
+            commentContainer.style.marginLeft = indent > 0 ? (indent * 20) + 'px' : '0';
+            
+            // Додаємо коментар
+            commentContainer.appendChild(createCommentElement(commentElement));
+            
+            // Додаємо дочірні коментарі
+            const childList = commentElement.querySelector('.comments-tree-list');
+            if (childList) {
+                const childTree = createCommentsTree(childList);
+                if (childTree.children.length > 0) {
+                    const childrenContainer = document.createElement('div');
+                    childrenContainer.className = 'comment-children';
+                    childrenContainer.appendChild(childTree);
+                    commentContainer.appendChild(childrenContainer);
+                }
+            }
+            
+            fragment.appendChild(commentContainer);
+        });
+        
+        return fragment;
+    }
+
+    // Створення елемента коментаря
+    function createCommentElement(commentElement) {
+        const getText = (selector) => {
+            const el = commentElement.querySelector(selector);
+            return el ? el.textContent.trim() : '';
+        };
+        
+        const getImage = () => {
+            const img = commentElement.querySelector('.ava img');
+            return img ? (img.getAttribute('data-src') || img.getAttribute('src') || '') : '';
+        };
+        
+        const avatar = getImage();
+        const userName = getText('.name, .b-comment__user');
+        const date = getText('.date, .b-comment__time');
+        const messageElement = commentElement.querySelector('.message .text, .text');
+        const message = messageElement ? messageElement.innerHTML : '';
+        
+        const commentDiv = document.createElement('div');
+        commentDiv.className = 'comment';
+        commentDiv.innerHTML = `
+            <div class="comment-header">
+                ${avatar ? `<img src="${avatar}" class="comment-avatar" alt="${userName}">` : ''}
+                <div class="comment-info">
+                    <div class="comment-author">${userName || 'Анонім'}</div>
+                    <div class="comment-date">${date}</div>
+                </div>
+            </div>
+            <div class="comment-body">
+                ${message}
+            </div>
+        `;
+        
+        return commentDiv;
+    }
+
+    // Кешування коментарів
+    function cacheComments(id, content) {
+        try {
+            const storageKey = `rezka_comments_${id}`;
+            const timestampKey = `rezka_comments_time_${id}`;
+            
+            const container = document.createElement('div');
+            container.appendChild(content.cloneNode(true));
+            
+            localStorage.setItem(storageKey, container.innerHTML);
+            localStorage.setItem(timestampKey, Date.now().toString());
+            
+            log("Коментарі закешовано", id);
+        } catch (error) {
+            log("Помилка кешування", error);
+        }
+    }
+
+    // Отримання кешованих коментарів
+    function getCachedComments(id) {
+        try {
+            const storageKey = `rezka_comments_${id}`;
+            const timestampKey = `rezka_comments_time_${id}`;
+            
+            const cachedHTML = localStorage.getItem(storageKey);
+            const cachedTime = parseInt(localStorage.getItem(timestampKey) || '0', 10);
+            
+            // Перевіряємо, чи не старіше 24 годин
+            if (cachedHTML && (Date.now() - cachedTime) < (24 * 60 * 60 * 1000)) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(`<div>${cachedHTML}</div>`, 'text/html');
+                
+                const fragment = document.createDocumentFragment();
+                Array.from(doc.body.firstChild.children).forEach(child => {
+                    fragment.appendChild(child);
+                });
+                
+                log("Використано кешовані коментарі", id);
+                return fragment;
+            }
+        } catch (error) {
+            log("Помилка отримання кешу", error);
+        }
+        
+        return null;
+    }
+
+    // Показ модального вікна з коментарями
+    function showCommentsModal(commentsContent) {
+        log("Відкриття модального вікна з коментарями");
         Lampa.Loading.stop();
         
-        // Додаємо стилі, якщо ще не додані
-        if (!document.getElementById("rezka-comment-style")) {
-            const styleEl = document.createElement("style");
-            styleEl.id = "rezka-comment-style";
-            styleEl.textContent = `
-                .rezka-comments-modal {
+        // Створюємо стилі
+        if (!document.getElementById('rezka-comments-styles')) {
+            const styles = document.createElement('style');
+            styles.id = 'rezka-comments-styles';
+            styles.textContent = `
+                .rezka-comments-container {
                     padding: 20px;
-                    max-height: 70vh;
+                    background: #1a1a1a;
+                    color: #fff;
+                    max-height: 80vh;
                     overflow-y: auto;
+                    font-family: Arial, sans-serif;
                 }
-                .comments-tree-list { 
-                    list-style: none; 
-                    margin: 0; 
-                    padding: 0; 
+                
+                .rezka-comments-title {
+                    font-size: 22px;
+                    font-weight: bold;
+                    margin-bottom: 20px;
+                    padding-bottom: 10px;
+                    border-bottom: 2px solid #333;
+                    text-align: center;
                 }
-                .comments-tree-item { 
-                    list-style: none; 
-                    margin: 0; 
-                    padding: 0; 
-                    margin-bottom: 15px;
+                
+                .comment-item {
+                    margin-bottom: 20px;
+                    padding: 15px;
+                    background: #2a2a2a;
+                    border-radius: 8px;
+                    border: 1px solid #3a3a3a;
                 }
-                .comment-wrap { 
-                    display: flex; 
+                
+                .comment-header {
+                    display: flex;
+                    align-items: center;
                     margin-bottom: 10px;
                 }
-                .avatar-column { 
-                    margin-right: 12px;
-                    flex-shrink: 0;
-                }
-                .avatar-img { 
-                    width: 50px; 
-                    height: 50px; 
+                
+                .comment-avatar {
+                    width: 40px;
+                    height: 40px;
                     border-radius: 50%;
+                    margin-right: 12px;
                     object-fit: cover;
                 }
-                .comment-card { 
-                    background: rgba(30, 30, 30, 0.9); 
-                    padding: 12px 16px; 
-                    border-radius: 10px; 
-                    border: 1px solid #3a3a3a; 
+                
+                .comment-info {
                     flex-grow: 1;
-                    min-width: 0;
                 }
-                .comment-header { 
-                    display: flex; 
-                    justify-content: space-between; 
-                    margin-bottom: 8px;
-                    align-items: center;
-                }
-                .comment-header .name { 
-                    font-weight: bold; 
-                    color: #fff; 
-                    font-size: 15px;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
-                }
-                .comment-header .date { 
-                    opacity: 0.7; 
-                    font-size: 12px; 
-                    color: #aaa;
-                    flex-shrink: 0;
-                    margin-left: 10px;
-                }
-                .comment-text .text { 
-                    color: #e0e0e0; 
-                    line-height: 1.5; 
-                    font-size: 14px;
-                    word-wrap: break-word;
-                    overflow-wrap: break-word;
-                }
-                .rezka-modal-title {
-                    font-size: 20px;
+                
+                .comment-author {
                     font-weight: bold;
-                    margin-bottom: 15px;
+                    font-size: 16px;
                     color: #fff;
-                    text-align: center;
-                    padding: 10px;
-                    border-bottom: 1px solid #3a3a3a;
                 }
+                
+                .comment-date {
+                    font-size: 12px;
+                    color: #aaa;
+                    margin-top: 2px;
+                }
+                
+                .comment-body {
+                    font-size: 14px;
+                    line-height: 1.5;
+                    color: #ddd;
+                }
+                
+                .comment-body a {
+                    color: #4dabf7;
+                    text-decoration: none;
+                }
+                
+                .comment-body a:hover {
+                    text-decoration: underline;
+                }
+                
+                .comment-children {
+                    margin-left: 30px;
+                    margin-top: 15px;
+                    padding-left: 15px;
+                    border-left: 2px solid #3a3a3a;
+                }
+                
                 /* Стилі для спойлерів */
                 .title_spoiler {
-                    background: #2a2a2a;
-                    border-radius: 4px;
+                    background: #333;
+                    color: #fff;
                     padding: 2px 6px;
-                    margin: 0 2px;
+                    border-radius: 4px;
                     cursor: pointer;
-                    display: inline-flex;
-                    align-items: center;
+                    display: inline-block;
+                    margin: 0 2px;
+                    font-size: 12px;
                 }
-                .title_spoiler a {
-                    color: #e0e0e0 !important;
-                    text-decoration: none !important;
+                
+                /* Кнопка закриття */
+                .modal-close-button {
+                    position: absolute;
+                    top: 15px;
+                    right: 15px;
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 50%;
+                    background: rgba(0, 0, 0, 0.5);
+                    color: white;
+                    border: none;
+                    font-size: 24px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    z-index: 1000;
+                }
+                
+                .modal-close-button:hover {
+                    background: rgba(0, 0, 0, 0.7);
                 }
             `;
-            document.head.appendChild(styleEl);
+            document.head.appendChild(styles);
         }
-
-        // Створюємо контейнер для модального вікна
-        const modalContainer = document.createElement('div');
-        modalContainer.className = 'rezka-comments-modal';
+        
+        // Створюємо контейнер для коментарів
+        const container = document.createElement('div');
+        container.className = 'rezka-comments-container';
         
         // Додаємо заголовок
         const title = document.createElement('div');
-        title.className = 'rezka-modal-title';
-        title.textContent = namemovie ? `Коментарі: ${namemovie}` : 'Коментарі';
-        modalContainer.appendChild(title);
+        title.className = 'rezka-comments-title';
+        title.textContent = namemovie ? `Коментарі: ${namemovie}` : 'Коментарі з HDRezka';
+        container.appendChild(title);
         
         // Додаємо коментарі
-        const commentsContainer = document.createElement('div');
-        commentsContainer.className = 'comments-container';
-        commentsContainer.appendChild(treeContent);
-        modalContainer.appendChild(commentsContainer);
+        const commentsDiv = document.createElement('div');
+        commentsDiv.className = 'rezka-comments-list';
+        commentsDiv.appendChild(commentsContent);
+        container.appendChild(commentsDiv);
         
-        // Відкриваємо модальне вікно
+        // Використовуємо вбудований метод Lampa для відкриття модального вікна
         setTimeout(() => {
-            Lampa.Modal.open({
-                title: '',
-                html: modalContainer,
-                size: 'large',
-                width: 900,
-                onBack: function () {
-                    Lampa.Modal.close();
-                },
-                onSelect: function () {
-                    // Обробка вибору елементів у модальному вікні
-                    return true;
-                }
-            });
-            
-            console.log("Модальне вікно відкрито");
+            try {
+                Lampa.Modal.open({
+                    title: namemovie ? `Коментарі: ${namemovie.substring(0, 50)}${namemovie.length > 50 ? '...' : ''}` : 'Коментарі',
+                    html: container,
+                    size: 'large',
+                    width: 800,
+                    height: 600,
+                    onBack: function() {
+                        isModalOpen = false;
+                        Lampa.Modal.close();
+                    },
+                    onSelect: function() {
+                        return true;
+                    }
+                });
+                
+                isModalOpen = true;
+                log("Модальне вікна відкрито успішно");
+                
+                // Додаємо кнопку закриття
+                setTimeout(() => {
+                    const modalHead = document.querySelector('.modal__head');
+                    if (modalHead) {
+                        const closeButton = document.createElement('button');
+                        closeButton.className = 'modal-close-button';
+                        closeButton.innerHTML = '×';
+                        closeButton.onclick = function() {
+                            Lampa.Modal.close();
+                            isModalOpen = false;
+                        };
+                        modalHead.appendChild(closeButton);
+                    }
+                }, 100);
+                
+            } catch (error) {
+                log("Помилка відкриття модального вікна", error);
+                showNotification("Не вдалося відкрити коментарі");
+            }
         }, 100);
     }
 
-    // Функція для обробки натискання кнопки коментарів
-    function handleCommentButtonClick() {
-        if (!currentMovieData) {
-            console.log("Немає даних про фільм");
+    // Показ сповіщення
+    function showNotification(message) {
+        try {
+            if (Lampa.Noty && Lampa.Noty.show) {
+                Lampa.Noty.show(message);
+            } else {
+                alert(message);
+            }
+        } catch (error) {
+            console.error("Помилка показу сповіщення", error);
+        }
+    }
+
+    // Обробник кліку по кнопці коментарів
+    function handleCommentsClick() {
+        if (!currentMovieData || !currentMovieData.movie) {
+            showNotification("Немає інформації про фільм");
             return;
         }
         
-        console.log("Клік по кнопці коментарів", currentMovieData);
+        log("Запуск пошуку коментарів для:", currentMovieData.movie.title || currentMovieData.movie.name);
         
+        // Визначаємо рік
         year = 0;
         if (currentMovieData.movie.release_date) {
-            year = currentMovieData.movie.release_date.slice(0, 4);
+            year = currentMovieData.movie.release_date.substring(0, 4);
         } else if (currentMovieData.movie.first_air_date) {
-            year = currentMovieData.movie.first_air_date.slice(0, 4);
+            year = currentMovieData.movie.first_air_date.substring(0, 4);
         }
         
+        log("Рік:", year);
+        
+        // Запускаємо завантаження
         Lampa.Loading.start();
         getEnTitle(currentMovieData.movie.id, currentMovieData.object.method);
     }
 
-    // Функція для початку роботи плагіна
-    function startPlugin() {
-        console.log("Запуск плагіна коментарів Rezka");
-        window.comment_plugin = true;
+    // Додавання кнопки коментарів
+    function addCommentsButton() {
+        // Видаляємо старі кнопки
+        document.querySelectorAll('.button--comment').forEach(btn => btn.remove());
         
-        Lampa.Listener.follow("full", function (e) {
-            console.log("Full event:", e.type, e.data);
-            
-            if (e.type === "complite") {
-                // Зберігаємо дані про поточний фільм
-                currentMovieData = e;
-                
-                // Видаляємо старі кнопки коментарів
-                let oldButtons = document.querySelectorAll(".button--comment");
-                oldButtons.forEach(btn => {
-                    if (btn.parentNode) {
-                        btn.parentNode.removeChild(btn);
-                    }
-                });
-                
-                // Знаходимо контейнер для кнопок
-                let buttonsContainer = document.querySelector(".full-start-new__buttons");
-                if (!buttonsContainer) {
-                    buttonsContainer = document.querySelector(".full-start__buttons");
-                }
-                
-                if (buttonsContainer) {
-                    // Створюємо кнопку коментарів
-                    let commentButton = document.createElement("div");
-                    commentButton.className = "full-start__button selector button--comment";
-                    commentButton.style.cssText = `
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        padding: 10px 20px;
-                        margin: 5px;
-                        background: rgba(255, 255, 255, 0.1);
-                        border-radius: 6px;
-                        cursor: pointer;
-                        transition: background 0.2s;
-                    `;
-                    
-                    commentButton.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 8px;">
-                            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
-                        </svg>
-                        <span style="font-size: 14px;">Коментарі</span>
-                    `;
-                    
-                    // Додаємо обробники подій
-                    commentButton.addEventListener('click', handleCommentButtonClick);
-                    
-                    // Також додаємо обробник для натискання Enter (для ТВ-пульта)
-                    commentButton.addEventListener('keydown', function(event) {
-                        if (event.key === 'Enter' || event.keyCode === 13) {
-                            handleCommentButtonClick();
-                        }
-                    });
-                    
-                    // Робимо кнопку фокусованою для ТВ
-                    commentButton.setAttribute('tabindex', '0');
-                    
-                    buttonsContainer.appendChild(commentButton);
-                    
-                    console.log("Кнопка коментарів додана");
-                } else {
-                    console.log("Не знайдено контейнер для кнопок");
-                }
+        // Знаходимо контейнер для кнопок
+        const buttonsContainer = document.querySelector('.full-start-new__buttons') || 
+                                document.querySelector('.full-start__buttons') ||
+                                document.querySelector('.broadcast__buttons');
+        
+        if (!buttonsContainer) {
+            log("Не знайдено контейнер для кнопок");
+            return;
+        }
+        
+        // Створюємо кнопку
+        const commentButton = document.createElement('div');
+        commentButton.className = 'full-start__button selector button--comment';
+        commentButton.setAttribute('tabindex', '0');
+        commentButton.style.cssText = `
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 20px;
+            margin: 0 10px 0 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+            font-weight: bold;
+            color: white;
+            min-width: 120px;
+        `;
+        
+        commentButton.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 8px;">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+            </svg>
+            <span>Коментарі</span>
+        `;
+        
+        // Додаємо обробники подій
+        commentButton.addEventListener('click', handleCommentsClick);
+        commentButton.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.keyCode === 13) {
+                handleCommentsClick();
             }
         });
         
-        console.log("Плагін коментарів успішно ініціалізовано");
+        // Ефекти при фокусі
+        commentButton.addEventListener('mouseover', function() {
+            this.style.opacity = '0.9';
+            this.style.transform = 'scale(1.05)';
+        });
+        
+        commentButton.addEventListener('mouseout', function() {
+            this.style.opacity = '1';
+            this.style.transform = 'scale(1)';
+        });
+        
+        // Додаємо кнопку
+        buttonsContainer.appendChild(commentButton);
+        log("Кнопка коментарів додана");
+    }
+
+    // Ініціалізація плагіна
+    function initPlugin() {
+        log("Ініціалізація плагіна коментарів Rezka");
+        
+        // Слухаємо події завантаження контенту
+        Lampa.Listener.follow('full', function(e) {
+            log("Подія full:", e.type);
+            
+            if (e.type === 'complite' || e.type === 'complete') {
+                currentMovieData = e;
+                setTimeout(addCommentsButton, 500);
+            }
+        });
+        
+        log("Плагін ініціалізовано");
     }
 
     // Чекаємо завантаження Lampa
     function waitForLampa() {
-        if (typeof Lampa !== 'undefined' && typeof Lampa.Listener !== 'undefined') {
-            console.log("Lampa завантажена, запускаємо плагін");
-            if (!window.comment_plugin) {
-                startPlugin();
-            }
+        if (window.Lampa && window.Lampa.Listener) {
+            setTimeout(() => {
+                if (!window.comment_plugin) {
+                    window.comment_plugin = true;
+                    initPlugin();
+                }
+            }, 2000);
         } else {
-            console.log("Очікування завантаження Lampa...");
             setTimeout(waitForLampa, 1000);
         }
     }
 
-    // Запускаємо очікування Lampa
-    waitForLampa();
+    // Запускаємо
+    if (!window.comment_plugin) {
+        waitForLampa();
+    }
+
 })();
