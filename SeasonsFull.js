@@ -12,7 +12,8 @@
         tmdbApiKey: '27489d4d8c9dbd0f2b3e89f68821de34',
         cacheTime: 12 * 60 * 60 * 1000,
         enabled: true,
-        language: 'uk'
+        language: 'uk',
+        translateTVtoSeries: true  // Новая опция для перевода TV в Серіал
     };
 
     // === МУЛЬТИЯЗЫЧНЫЕ ТЕКСТЫ СТАТУСОВ ===
@@ -367,11 +368,6 @@
         opacity: 1;
     }
     
-    /* Стили для замены существующей TV метки */
-    .card .card__tv {
-        display: none !important;
-    }
-    
     /* Адаптация для мобильных устройств */
     @media (max-width: 768px) {
         .card--content-type {
@@ -450,18 +446,40 @@
         var contentTypeBadge = document.createElement('div');
         contentTypeBadge.className = 'card--content-type ' + mediaType;
         
-        // Замість "TV" використовуємо перекладений текст з перекладу
         var text = mediaType === 'movie' ? translateStatus('movie') : translateStatus('tv');
         contentTypeBadge.textContent = text;
         
         return contentTypeBadge;
     }
 
-    // Функція для приховування існуючих TV міток Lampa
-    function hideExistingTVBadges() {
-        var existingTVBadges = document.querySelectorAll('.card .card__tv');
-        for (var i = 0; i < existingTVBadges.length; i++) {
-            existingTVBadges[i].style.display = 'none';
+    // Функция для перевода существующих TV меток Lampa
+    function translateExistingTVBadges() {
+        if (!CONFIG.translateTVtoSeries) return;
+        
+        var tvBadges = document.querySelectorAll('.card .card__tv');
+        for (var i = 0; i < tvBadges.length; i++) {
+            var badge = tvBadges[i];
+            // Переводим "TV" в "Серіал" или другой перевод
+            badge.textContent = translateStatus('tv');
+            
+            // Если есть дочерние элементы, обновляем и их
+            if (badge.children.length > 0) {
+                for (var j = 0; j < badge.children.length; j++) {
+                    var child = badge.children[j];
+                    if (child.textContent === 'TV' || child.textContent === 'ТВ') {
+                        child.textContent = translateStatus('tv');
+                    }
+                }
+            }
+        }
+        
+        // Также проверяем элементы с текстом "TV" в других местах
+        var allElements = document.querySelectorAll('.card [class*="tv"], .card [class*="TV"]');
+        for (var k = 0; k < allElements.length; k++) {
+            var element = allElements[k];
+            if (element.textContent === 'TV' || element.textContent === 'ТВ' || element.textContent === 'СЕРІАЛ') {
+                element.textContent = translateStatus('tv');
+            }
         }
     }
 
@@ -626,6 +644,23 @@
         var view = cardEl.querySelector('.card__view');
         if (!view) return;
 
+        // Переводим существующую TV метку Lampa (если есть)
+        if (CONFIG.translateTVtoSeries && mediaType === 'tv') {
+            var tvBadge = cardEl.querySelector('.card__tv');
+            if (tvBadge) {
+                tvBadge.textContent = translateStatus('tv');
+                // Если есть дочерние элементы, обновляем и их
+                if (tvBadge.children.length > 0) {
+                    for (var i = 0; i < tvBadge.children.length; i++) {
+                        var child = tvBadge.children[i];
+                        if (child.textContent === 'TV' || child.textContent === 'ТВ') {
+                            child.textContent = translateStatus('tv');
+                        }
+                    }
+                }
+            }
+        }
+
         // Удаление предыдущих меток нашего плагина
         var oldBadges = view.querySelectorAll('.card--content-type, .card--season-complete, .card--season-progress, .card--series-status');
         for (var i = 0; i < oldBadges.length; i++) {
@@ -634,13 +669,9 @@
             }
         }
 
-        // Приховуємо існуючу TV мітку Lampa (якщо є)
-        var existingTVBadge = cardEl.querySelector('.card__tv');
-        if (existingTVBadge) {
-            existingTVBadge.style.display = 'none';
-        }
-
-        // Создание метки типа контента
+        // Создание метки типа контента (если нужно)
+        // Комментируем это, так как используем переведенную метку Lampa
+        /*
         if (mediaType === 'movie' || mediaType === 'tv') {
             var contentTypeBadge = createContentTypeBadge(mediaType);
             view.appendChild(contentTypeBadge);
@@ -649,6 +680,7 @@
                 contentTypeBadge.classList.add('show');
             }, 50);
         }
+        */
 
         // Для сериалов добавляем дополнительные метки
         if (mediaType === 'tv') {
@@ -729,10 +761,12 @@
                         if (node.nodeType !== 1) continue;
 
                         if (node.classList && node.classList.contains('card')) {
-                            // Приховуємо існуючу TV мітку для нової картки
-                            var existingTVBadge = node.querySelector('.card__tv');
-                            if (existingTVBadge) {
-                                existingTVBadge.style.display = 'none';
+                            // Переводим TV метку для новой карточки
+                            if (CONFIG.translateTVtoSeries) {
+                                var tvBadge = node.querySelector('.card__tv');
+                                if (tvBadge) {
+                                    tvBadge.textContent = translateStatus('tv');
+                                }
                             }
                             addSeasonBadge(node);
                         }
@@ -740,10 +774,12 @@
                         if (node.querySelectorAll) {
                             var cards = node.querySelectorAll('.card');
                             for (var k = 0; k < cards.length; k++) {
-                                // Приховуємо існуючу TV мітку для кожної картки
-                                var cardTVBadge = cards[k].querySelector('.card__tv');
-                                if (cardTVBadge) {
-                                    cardTVBadge.style.display = 'none';
+                                // Переводим TV метку для каждой карточки
+                                if (CONFIG.translateTVtoSeries) {
+                                    var cardTVBadge = cards[k].querySelector('.card__tv');
+                                    if (cardTVBadge) {
+                                        cardTVBadge.textContent = translateStatus('tv');
+                                    }
                                 }
                                 addSeasonBadge(cards[k]);
                             }
@@ -760,8 +796,10 @@
         // ИНИЦИАЛИЗАЦИЯ ЯЗЫКА ОДИН РАЗ ПРИ ЗАПУСКЕ ПЛАГИНА
         initAppLanguage();
 
-        // Сховати всі існуючі TV мітки Lampa
-        hideExistingTVBadges();
+        // Переводим все существующие TV метки Lampa
+        if (CONFIG.translateTVtoSeries) {
+            translateExistingTVBadges();
+        }
 
         // Если MutationObserver не поддерживается, используем fallback
         if (!observer) {
@@ -770,12 +808,19 @@
             setInterval(function() {
                 var newCards = document.querySelectorAll('.card:not([data-season-processed])');
                 for (var i = 0; i < newCards.length; i++) {
-                    // Приховуємо існуючу TV мітку перед додаванням нової
-                    var existingTVBadge = newCards[i].querySelector('.card__tv');
-                    if (existingTVBadge) {
-                        existingTVBadge.style.display = 'none';
+                    // Переводим TV метку перед добавлением
+                    if (CONFIG.translateTVtoSeries) {
+                        var existingTVBadge = newCards[i].querySelector('.card__tv');
+                        if (existingTVBadge) {
+                            existingTVBadge.textContent = translateStatus('tv');
+                        }
                     }
                     addSeasonBadge(newCards[i]);
+                }
+                
+                // Также периодически переводим все TV метки
+                if (CONFIG.translateTVtoSeries) {
+                    translateExistingTVBadges();
                 }
             }, 1000);
         } else {
@@ -805,14 +850,21 @@
         for (var j = 0; j < existingCards.length; j++) {
             (function(index) {
                 setTimeout(function() { 
-                    // Приховуємо існуючу TV мітку перед додаванням нової
-                    var existingTVBadge = existingCards[index].querySelector('.card__tv');
-                    if (existingTVBadge) {
-                        existingTVBadge.style.display = 'none';
+                    // Переводим TV метку перед добавлением
+                    if (CONFIG.translateTVtoSeries) {
+                        var existingTVBadge = existingCards[index].querySelector('.card__tv');
+                        if (existingTVBadge) {
+                            existingTVBadge.textContent = translateStatus('tv');
+                        }
                     }
                     addSeasonBadge(existingCards[index]); 
                 }, index * 300);
             })(j);
+        }
+        
+        // Периодически проверяем и переводим TV метки
+        if (CONFIG.translateTVtoSeries) {
+            setInterval(translateExistingTVBadges, 3000);
         }
     }
 
