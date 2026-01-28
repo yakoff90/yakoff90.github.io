@@ -27,7 +27,8 @@
             inWeek: 'Через неделю',
             inDays: 'Через %d дн.',
             movie: 'Фильм',
-            tv: 'Сериал'
+            tv: 'Сериал',
+            film: 'Фильм'
         },
         en: {
             sequel: 'Sequel',
@@ -38,7 +39,8 @@
             inWeek: 'In a week',
             inDays: 'In %d days',
             movie: 'Movie',
-            tv: 'TV Series'
+            tv: 'TV Series',
+            film: 'Film'
         },
         uk: {
             sequel: 'Сіквел',
@@ -49,7 +51,8 @@
             inWeek: 'Через тиждень',
             inDays: 'Через %d дн.',
             movie: 'Фільм',
-            tv: 'Серіал'
+            tv: 'Серіал',
+            film: 'Фільм'
         },
         be: {
             sequel: 'Сіквел',
@@ -60,7 +63,8 @@
             inWeek: 'Праз тыдзень',
             inDays: 'Праз %d дн.',
             movie: 'Фільм',
-            tv: 'Серыял'
+            tv: 'Серыял',
+            film: 'Фільм'
         },
         zh: {
             sequel: '续集',
@@ -71,7 +75,8 @@
             inWeek: '一周后',
             inDays: '%d天后',
             movie: '电影',
-            tv: '电视剧'
+            tv: '电视剧',
+            film: '电影'
         },
         pt: {
             sequel: 'Sequência',
@@ -82,7 +87,8 @@
             inWeek: 'Em uma semana',
             inDays: 'Em %d dias',
             movie: 'Filme',
-            tv: 'Série'
+            tv: 'Série',
+            film: 'Filme'
         },
         bg: {
             sequel: 'Сиквел',
@@ -93,7 +99,8 @@
             inWeek: 'След седмица',
             inDays: 'След %d дни',
             movie: 'Филм',
-            tv: 'Сериал'
+            tv: 'Сериал',
+            film: 'Филм'
         }
     };
 
@@ -215,29 +222,53 @@
         return text;
     }
 
-    // === ФУНКЦИЯ ПЕРЕВОДА TV НА КАРТОЧКАХ (как в themes плагине) ===
+    // === ФУНКЦИЯ ПЕРЕВОДА TV НА КАРТОЧКАХ (адаптированная версия) ===
     function translateTVCaption() {
         if (!CONFIG.translateTV) return;
         
-        var tv_caption = translateStatus('tv'); // Используем нашу функцию перевода
+        var tv_caption = translateStatus('tv');
         
-        // Добавляем стили для скрытия оригинальной надписи TV и добавления переведенной
+        // Добавляем стили для перевода TV
         var styleId = 'seasonbadge-translate-tv';
         var existingStyle = document.getElementById(styleId);
         if (existingStyle) existingStyle.remove();
         
         var translateTVStyle = `
         <style id="${styleId}">
-            .card--tv .card__type,
-            .card__type {
+            /* Скрываем ТОЛЬКО TV метку для сериалов */
+            .card--tv .card__type {
                 display: none !important;
             }
             
-            .card__type::after {
+            .card--tv .card__type::after {
                 display: none !important;
             }
             
-            /* Добавляем переведенную метку вместо оригинальной TV */
+            /* Фильмы оставляем без изменений */
+            .card--movie .card__type {
+                display: block !important;
+            }
+            
+            .card--movie .card__type::after {
+                display: block !important;
+            }
+            
+            /* Если у карточки нет классов --tv или --movie, скрываем TV */
+            .card__type:contains("TV"),
+            .card__type:contains("СЕРИАЛ"),
+            .card__type:contains("Серіал"),
+            .card__type:contains("Сериал") {
+                display: none !important;
+            }
+            
+            .card__type:contains("TV")::after,
+            .card__type:contains("СЕРИАЛ")::after,
+            .card__type:contains("Серіал")::after,
+            .card__type:contains("Сериал")::after {
+                display: none !important;
+            }
+            
+            /* Добавляем переведенную метку для сериалов */
             .card--tv .card__view::before {
                 content: "${tv_caption}";
                 position: absolute;
@@ -259,8 +290,33 @@
                 transition: opacity 0.22s ease-in-out;
             }
             
+            /* Дополнительно: заменяем текст в оригинальных элементах */
+            .card--tv .card__type {
+                visibility: hidden;
+                position: relative;
+            }
+            
+            .card--tv .card__type::before {
+                content: "${tv_caption}";
+                visibility: visible;
+                position: absolute;
+                top: 0;
+                left: 0;
+                background-color: rgba(156, 39, 176, 0.9);
+                color: #ffffff;
+                font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif;
+                font-weight: 700;
+                font-size: 0.85em;
+                padding: 0.3em 0.3em;
+                white-space: nowrap;
+                border-radius: 0.2em;
+                text-align: center;
+                text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3);
+            }
+            
             @media (max-width: 768px) {
-                .card--tv .card__view::before {
+                .card--tv .card__view::before,
+                .card--tv .card__type::before {
                     top: 4px;
                     margin-right: -0.15em;
                     font-size: 0.75em;
@@ -270,7 +326,8 @@
             }
             
             @media (max-width: 480px) {
-                .card--tv .card__view::before {
+                .card--tv .card__view::before,
+                .card--tv .card__type::before {
                     top: 3px;
                     margin-right: -0.1em;
                     font-size: 0.7em;
@@ -281,6 +338,27 @@
         </style>`;
         
         document.head.insertAdjacentHTML('beforeend', translateTVStyle);
+        
+        // Альтернативный способ: находим и заменяем текст в реальных элементах
+        setTimeout(function() {
+            var tvCards = document.querySelectorAll('.card--tv');
+            for (var i = 0; i < tvCards.length; i++) {
+                var card = tvCards[i];
+                var typeElement = card.querySelector('.card__type');
+                if (typeElement && typeElement.textContent) {
+                    // Сохраняем оригинальный текст если он не TV
+                    if (!typeElement.textContent.includes('TV') && 
+                        !typeElement.textContent.includes('СЕРИАЛ') &&
+                        !typeElement.textContent.includes('Сериал') &&
+                        !typeElement.textContent.includes('Серіал')) {
+                        continue;
+                    }
+                    
+                    typeElement.textContent = tv_caption;
+                    typeElement.style.cssText = 'display: block !important; background-color: rgba(156, 39, 176, 0.9) !important; color: #ffffff !important; font-family: "Roboto Condensed", "Arial Narrow", Arial, sans-serif !important; font-weight: 700 !important; font-size: 0.85em !important; padding: 0.3em 0.3em !important; white-space: nowrap !important; border-radius: 0.2em !important; text-align: center !important; text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3) !important;';
+                }
+            }
+        }, 1000);
     }
 
     // === СТИЛИ ДЛЯ МЕТОК ===
@@ -514,7 +592,13 @@
         var contentTypeBadge = document.createElement('div');
         contentTypeBadge.className = 'card--content-type ' + mediaType;
         
-        var text = mediaType === 'movie' ? translateStatus('movie') : translateStatus('tv');
+        // Для фильмов и сериалов используем разные переводы
+        var text = '';
+        if (mediaType === 'movie') {
+            text = translateStatus('film'); // Используем "film" вместо "movie"
+        } else if (mediaType === 'tv') {
+            text = translateStatus('tv');
+        }
         contentTypeBadge.textContent = text;
         
         return contentTypeBadge;
