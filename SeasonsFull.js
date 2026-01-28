@@ -27,7 +27,7 @@
             inWeek: 'Через неделю',
             inDays: 'Через %d дн.',
             movie: 'Фильм',
-            tv: 'СЕРИАЛ'
+            tv: 'Сериал' // Изменено с СЕРИАЛ на Сериал
         },
         en: {
             sequel: 'Sequel',
@@ -38,7 +38,7 @@
             inWeek: 'In a week',
             inDays: 'In %d days',
             movie: 'Movie',
-            tv: 'SERIES'
+            tv: 'Series' // Изменено с SERIES на Series
         },
         uk: {
             sequel: 'Сіквел',
@@ -49,7 +49,7 @@
             inWeek: 'Через тиждень',
             inDays: 'Через %d дн.',
             movie: 'Фільм',
-            tv: 'СЕРІАЛ'
+            tv: 'Серіал' // Изменено с СЕРІАЛ на Серіал
         },
         be: {
             sequel: 'Сіквел',
@@ -60,7 +60,7 @@
             inWeek: 'Праз тыдзень',
             inDays: 'Праз %d дн.',
             movie: 'Фільм',
-            tv: 'СЕРЫЯЛ'
+            tv: 'Серыял' // Изменено с СЕРЫЯЛ на Серыял
         },
         zh: {
             sequel: '续集',
@@ -82,7 +82,7 @@
             inWeek: 'Em uma semana',
             inDays: 'Em %d dias',
             movie: 'Filme',
-            tv: 'SÉRIE'
+            tv: 'Série' // Изменено с SÉRIE на Série
         },
         bg: {
             sequel: 'Сиквел',
@@ -93,7 +93,7 @@
             inWeek: 'След седмица',
             inDays: 'След %d дни',
             movie: 'Филм',
-            tv: 'СЕРИАЛ'
+            tv: 'Сериал' // Изменено с СЕРИАЛ на Сериал
         },
         cs: {
             sequel: 'Pokračování',
@@ -104,7 +104,7 @@
             inWeek: 'Za týden',
             inDays: 'Za %d dn.',
             movie: 'Film',
-            tv: 'SERIÁL'
+            tv: 'Seriál' // Изменено с SERIÁL на Seriál
         },
         he: {
             sequel: 'סִקְוֶל',
@@ -287,6 +287,7 @@
         white-space: nowrap;
         text-align: center;
         text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3);
+        text-transform: capitalize; /* Добавляем capitalize для правильного отображения */
     }
     
     /* Цветовые варианты для типа контента */
@@ -670,7 +671,7 @@
             }
         }
 
-        // Создание метки типа контента
+        // Создание метки типа контенту
         if (mediaType === 'movie' || mediaType === 'tv') {
             var contentTypeBadge = createContentTypeBadge(mediaType);
             view.appendChild(contentTypeBadge);
@@ -680,7 +681,7 @@
             }, 50);
         }
 
-        // Для сериалов добавляем дополнительные метки
+        // Для серіалів додаємо додаткові мітки
         if (mediaType === 'tv') {
             var badge = createBadge('...', false, true);
             view.appendChild(badge);
@@ -702,12 +703,12 @@
                             content = 'S' + progressInfo.seasonNumber + ' ' + progressInfo.airedEpisodes + '/' + progressInfo.totalEpisodes;
                         }
                         
-                        // Удаляем старый badge
+                        // Видаляємо старий badge
                         if (badge.parentNode) {
                             badge.parentNode.removeChild(badge);
                         }
                         
-                        // Создаем новый badge
+                        // Створюємо новий badge
                         badge = createBadge(content, isComplete, false);
                         view.appendChild(badge);
 
