@@ -27,8 +27,7 @@
             inWeek: 'Через неделю',
             inDays: 'Через %d дн.',
             movie: 'Фильм',
-            tv: 'Сериал',
-            film: 'Фильм'
+            tv: 'СЕРИАЛ'
         },
         en: {
             sequel: 'Sequel',
@@ -39,8 +38,7 @@
             inWeek: 'In a week',
             inDays: 'In %d days',
             movie: 'Movie',
-            tv: 'TV Series',
-            film: 'Film'
+            tv: 'SERIES'
         },
         uk: {
             sequel: 'Сіквел',
@@ -51,8 +49,7 @@
             inWeek: 'Через тиждень',
             inDays: 'Через %d дн.',
             movie: 'Фільм',
-            tv: 'Серіал',
-            film: 'Фільм'
+            tv: 'СЕРІАЛ'
         },
         be: {
             sequel: 'Сіквел',
@@ -63,8 +60,7 @@
             inWeek: 'Праз тыдзень',
             inDays: 'Праз %d дн.',
             movie: 'Фільм',
-            tv: 'Серыял',
-            film: 'Фільм'
+            tv: 'СЕРЫЯЛ'
         },
         zh: {
             sequel: '续集',
@@ -75,8 +71,7 @@
             inWeek: '一周后',
             inDays: '%d天后',
             movie: '电影',
-            tv: '电视剧',
-            film: '电影'
+            tv: '剧集'
         },
         pt: {
             sequel: 'Sequência',
@@ -87,8 +82,7 @@
             inWeek: 'Em uma semana',
             inDays: 'Em %d dias',
             movie: 'Filme',
-            tv: 'Série',
-            film: 'Filme'
+            tv: 'SÉRIE'
         },
         bg: {
             sequel: 'Сиквел',
@@ -99,8 +93,29 @@
             inWeek: 'След седмица',
             inDays: 'След %d дни',
             movie: 'Филм',
-            tv: 'Сериал',
-            film: 'Филм'
+            tv: 'СЕРИАЛ'
+        },
+        cs: {
+            sequel: 'Pokračování',
+            series: 'Seriál',
+            ended: 'Ukončeno',
+            canceled: 'Zrušeno',
+            tomorrow: 'Zítra',
+            inWeek: 'Za týden',
+            inDays: 'Za %d dn.',
+            movie: 'Film',
+            tv: 'SERIÁL'
+        },
+        he: {
+            sequel: 'סִקְוֶל',
+            series: 'סִדְרָה',
+            ended: 'הסתיים',
+            canceled: 'בוטל',
+            tomorrow: 'מחר',
+            inWeek: 'בעוד שבוע',
+            inDays: 'בעוד %d ימים',
+            movie: 'סרט',
+            tv: 'סִדְרָה'
         }
     };
 
@@ -222,143 +237,31 @@
         return text;
     }
 
-    // === ФУНКЦИЯ ПЕРЕВОДА TV НА КАРТОЧКАХ (адаптированная версия) ===
+    // === ФУНКЦИЯ ПЕРЕВОДА TV НА КАРТОЧКАХ (точная копия из плагина themes) ===
     function translateTVCaption() {
         if (!CONFIG.translateTV) return;
         
-        var tv_caption = translateStatus('tv');
+        var tv_caption = translateStatus('tv'); // Получаем перевод для TV
         
-        // Добавляем стили для перевода TV
+        // Создаем стиль точно как в плагине themes
         var styleId = 'seasonbadge-translate-tv';
         var existingStyle = document.getElementById(styleId);
         if (existingStyle) existingStyle.remove();
         
         var translateTVStyle = `
         <style id="${styleId}">
-            /* Скрываем ТОЛЬКО TV метку для сериалов */
-            .card--tv .card__type {
+            /* ТОЧНО КАК В ПЛАГИНЕ THEMES: скрываем ВСЕ метки типа */
+            .card--tv .card__type,
+            .card__type {
                 display: none !important;
             }
             
-            .card--tv .card__type::after {
+            .card__type::after {
                 display: none !important;
-            }
-            
-            /* Фильмы оставляем без изменений */
-            .card--movie .card__type {
-                display: block !important;
-            }
-            
-            .card--movie .card__type::after {
-                display: block !important;
-            }
-            
-            /* Если у карточки нет классов --tv или --movie, скрываем TV */
-            .card__type:contains("TV"),
-            .card__type:contains("СЕРИАЛ"),
-            .card__type:contains("Серіал"),
-            .card__type:contains("Сериал") {
-                display: none !important;
-            }
-            
-            .card__type:contains("TV")::after,
-            .card__type:contains("СЕРИАЛ")::after,
-            .card__type:contains("Серіал")::after,
-            .card__type:contains("Сериал")::after {
-                display: none !important;
-            }
-            
-            /* Добавляем переведенную метку для сериалов */
-            .card--tv .card__view::before {
-                content: "${tv_caption}";
-                position: absolute;
-                top: 5px;
-                right: 0;
-                margin-right: -0.25em;
-                z-index: 12;
-                background-color: rgba(156, 39, 176, 0.9);
-                color: #ffffff;
-                font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif;
-                font-weight: 700;
-                font-size: 0.85em;
-                padding: 0.3em 0.3em;
-                white-space: nowrap;
-                border-radius: 0.2em;
-                text-align: center;
-                text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3);
-                opacity: 1;
-                transition: opacity 0.22s ease-in-out;
-            }
-            
-            /* Дополнительно: заменяем текст в оригинальных элементах */
-            .card--tv .card__type {
-                visibility: hidden;
-                position: relative;
-            }
-            
-            .card--tv .card__type::before {
-                content: "${tv_caption}";
-                visibility: visible;
-                position: absolute;
-                top: 0;
-                left: 0;
-                background-color: rgba(156, 39, 176, 0.9);
-                color: #ffffff;
-                font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif;
-                font-weight: 700;
-                font-size: 0.85em;
-                padding: 0.3em 0.3em;
-                white-space: nowrap;
-                border-radius: 0.2em;
-                text-align: center;
-                text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3);
-            }
-            
-            @media (max-width: 768px) {
-                .card--tv .card__view::before,
-                .card--tv .card__type::before {
-                    top: 4px;
-                    margin-right: -0.15em;
-                    font-size: 0.75em;
-                    padding: 0.25em 0.2em;
-                    border-radius: 0.18em;
-                }
-            }
-            
-            @media (max-width: 480px) {
-                .card--tv .card__view::before,
-                .card--tv .card__type::before {
-                    top: 3px;
-                    margin-right: -0.1em;
-                    font-size: 0.7em;
-                    padding: 0.2em 0.15em;
-                    border-radius: 0.15em;
-                }
             }
         </style>`;
         
         document.head.insertAdjacentHTML('beforeend', translateTVStyle);
-        
-        // Альтернативный способ: находим и заменяем текст в реальных элементах
-        setTimeout(function() {
-            var tvCards = document.querySelectorAll('.card--tv');
-            for (var i = 0; i < tvCards.length; i++) {
-                var card = tvCards[i];
-                var typeElement = card.querySelector('.card__type');
-                if (typeElement && typeElement.textContent) {
-                    // Сохраняем оригинальный текст если он не TV
-                    if (!typeElement.textContent.includes('TV') && 
-                        !typeElement.textContent.includes('СЕРИАЛ') &&
-                        !typeElement.textContent.includes('Сериал') &&
-                        !typeElement.textContent.includes('Серіал')) {
-                        continue;
-                    }
-                    
-                    typeElement.textContent = tv_caption;
-                    typeElement.style.cssText = 'display: block !important; background-color: rgba(156, 39, 176, 0.9) !important; color: #ffffff !important; font-family: "Roboto Condensed", "Arial Narrow", Arial, sans-serif !important; font-weight: 700 !important; font-size: 0.85em !important; padding: 0.3em 0.3em !important; white-space: nowrap !important; border-radius: 0.2em !important; text-align: center !important; text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3) !important;';
-                }
-            }
-        }, 1000);
     }
 
     // === СТИЛИ ДЛЯ МЕТОК ===
@@ -592,13 +495,7 @@
         var contentTypeBadge = document.createElement('div');
         contentTypeBadge.className = 'card--content-type ' + mediaType;
         
-        // Для фильмов и сериалов используем разные переводы
-        var text = '';
-        if (mediaType === 'movie') {
-            text = translateStatus('film'); // Используем "film" вместо "movie"
-        } else if (mediaType === 'tv') {
-            text = translateStatus('tv');
-        }
+        var text = mediaType === 'movie' ? translateStatus('movie') : translateStatus('tv');
         contentTypeBadge.textContent = text;
         
         return contentTypeBadge;
@@ -883,7 +780,7 @@
         // ИНИЦИАЛИЗАЦИЯ ЯЗЫКА ОДИН РАЗ ПРИ ЗАПУСКЕ ПЛАГИНА
         initAppLanguage();
         
-        // ПРИМЕНЯЕМ ПЕРЕВОД TV НА КАРТОЧКАХ
+        // ПРИМЕНЯЕМ ПЕРЕВОД TV НА КАРТОЧКАХ (как в плагине themes)
         translateTVCaption();
 
         // Если MutationObserver не поддерживается, используем fallback
