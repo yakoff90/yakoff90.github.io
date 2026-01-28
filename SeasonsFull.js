@@ -12,7 +12,8 @@
         tmdbApiKey: '27489d4d8c9dbd0f2b3e89f68821de34',
         cacheTime: 12 * 60 * 60 * 1000,
         enabled: true,
-        language: 'uk'
+        language: 'uk',
+        translateTV: true // Новая настройка для перевода TV
     };
 
     // === МУЛЬТИЯЗЫЧНЫЕ ТЕКСТЫ СТАТУСОВ ===
@@ -212,6 +213,74 @@
         }
         
         return text;
+    }
+
+    // === ФУНКЦИЯ ПЕРЕВОДА TV НА КАРТОЧКАХ (как в themes плагине) ===
+    function translateTVCaption() {
+        if (!CONFIG.translateTV) return;
+        
+        var tv_caption = translateStatus('tv'); // Используем нашу функцию перевода
+        
+        // Добавляем стили для скрытия оригинальной надписи TV и добавления переведенной
+        var styleId = 'seasonbadge-translate-tv';
+        var existingStyle = document.getElementById(styleId);
+        if (existingStyle) existingStyle.remove();
+        
+        var translateTVStyle = `
+        <style id="${styleId}">
+            .card--tv .card__type,
+            .card__type {
+                display: none !important;
+            }
+            
+            .card__type::after {
+                display: none !important;
+            }
+            
+            /* Добавляем переведенную метку вместо оригинальной TV */
+            .card--tv .card__view::before {
+                content: "${tv_caption}";
+                position: absolute;
+                top: 5px;
+                right: 0;
+                margin-right: -0.25em;
+                z-index: 12;
+                background-color: rgba(156, 39, 176, 0.9);
+                color: #ffffff;
+                font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif;
+                font-weight: 700;
+                font-size: 0.85em;
+                padding: 0.3em 0.3em;
+                white-space: nowrap;
+                border-radius: 0.2em;
+                text-align: center;
+                text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3);
+                opacity: 1;
+                transition: opacity 0.22s ease-in-out;
+            }
+            
+            @media (max-width: 768px) {
+                .card--tv .card__view::before {
+                    top: 4px;
+                    margin-right: -0.15em;
+                    font-size: 0.75em;
+                    padding: 0.25em 0.2em;
+                    border-radius: 0.18em;
+                }
+            }
+            
+            @media (max-width: 480px) {
+                .card--tv .card__view::before {
+                    top: 3px;
+                    margin-right: -0.1em;
+                    font-size: 0.7em;
+                    padding: 0.2em 0.15em;
+                    border-radius: 0.15em;
+                }
+            }
+        </style>`;
+        
+        document.head.insertAdjacentHTML('beforeend', translateTVStyle);
     }
 
     // === СТИЛИ ДЛЯ МЕТОК ===
@@ -729,6 +798,9 @@
 
         // ИНИЦИАЛИЗАЦИЯ ЯЗЫКА ОДИН РАЗ ПРИ ЗАПУСКЕ ПЛАГИНА
         initAppLanguage();
+        
+        // ПРИМЕНЯЕМ ПЕРЕВОД TV НА КАРТОЧКАХ
+        translateTVCaption();
 
         // Если MutationObserver не поддерживается, используем fallback
         if (!observer) {
