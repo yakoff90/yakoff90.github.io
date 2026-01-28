@@ -347,50 +347,50 @@
 							_this.timer_load = setTimeout(function () {
 								state.dispath("load");
 							}, _this.timelauch);
-						}
-					},
-					load: function load(state) {
-						if (
-							_this.player.loaded &&
-							Lampa.Controller.enabled().name == "full_start" &&
-							_this.same()
-						)
-							state.dispath("play");
-					},
-					play: function play() {
-						_this.player.play();
-					},
-					toggle: function toggle(state) {
-						clearTimeout(_this.timer_load);
-
-						if (Lampa.Controller.enabled().name == "cardify_trailer");
-						else if (
-							Lampa.Controller.enabled().name == "full_start" &&
-							_this.same()
-						) {
-							state.start();
-						} else if (_this.player.display) {
-							state.dispath("hide");
-						}
-					},
-					hide: function hide() {
-						_this.player.pause();
-
-						_this.player.hide();
-
-						_this.background.removeClass("nodisplay");
-
-						_this.startblock.removeClass("nodisplay");
-
-						_this.head.removeClass("nodisplay");
-
-						_this.object.activity
-							.render()
-							.find(".cardify-preview__loader")
-							.width(0);
 					}
+				},
+				load: function load(state) {
+					if (
+						_this.player.loaded &&
+						Lampa.Controller.enabled().name == "full_start" &&
+						_this.same()
+					)
+						state.dispath("play");
+				},
+				play: function play() {
+					_this.player.play();
+				},
+				toggle: function toggle(state) {
+					clearTimeout(_this.timer_load);
+
+					if (Lampa.Controller.enabled().name == "cardify_trailer");
+					else if (
+						Lampa.Controller.enabled().name == "full_start" &&
+						_this.same()
+					) {
+						state.start();
+					} else if (_this.player.display) {
+						state.dispath("hide");
+					}
+				},
+				hide: function hide() {
+					_this.player.pause();
+
+					_this.player.hide();
+
+					_this.background.removeClass("nodisplay");
+
+					_this.startblock.removeClass("nodisplay");
+
+					_this.head.removeClass("nodisplay");
+
+					_this.object.activity
+						.render()
+						.find(".cardify-preview__loader")
+						.width(0);
 				}
-			});
+			}
+		});
 			this.start();
 		}
 
@@ -959,24 +959,18 @@
 					var component = e.object.activity.component;
 					bg.addClass("cardify__background");
 
+					// ФІКС: Видаляємо ТІЛЬКИ блок з наступним епізодом, якщо він є
 					var details = render.find(".full-start-new__details");
 					if (details.length) {
-						// ФІКС: Видаляємо тільки блок з наступним епізодом, але зберігаємо роздільники
-						var nextEpisodeSpan = null;
-						details.children("span").each(function () {
+						var spans = details.find("span");
+						spans.each(function () {
 							var $span = $(this);
-							if (
-								!$span.hasClass("full-start-new__split") &&
-								$span.text().indexOf("/") !== -1
-							) {
-								nextEpisodeSpan = $span;
-								return false;
+							// Шукаємо span, який містить "/" (формат "1/10" для наступного епізоду)
+							if ($span.text().indexOf("/") !== -1) {
+								$span.remove();
+								return false; // Виходимо з циклу після видалення першого знайденого
 							}
 						});
-						if (nextEpisodeSpan) {
-							// Видаляємо тільки блок з наступним епізодом
-							nextEpisodeSpan.remove();
-						}
 					}
 
 					if (!Main.cases()[Main.stor()].field("cardify_show_status")) {
