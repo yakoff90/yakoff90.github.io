@@ -835,6 +835,19 @@
 		return FrequencyMap;
 	})();
 
+	// Додаємо клас CacheNode, який використовується в LFUCache
+	var CacheNode = (function () {
+		function CacheNode(key, value, frequency) {
+			_classCallCheck(this, CacheNode);
+
+			this.key = key;
+			this.value = value;
+			this.frequency = frequency || 1;
+		}
+
+		return CacheNode;
+	})();
+
 	var LFUCache = (function () {
 		function LFUCache(capacity) {
 			_classCallCheck(this, LFUCache);
@@ -844,6 +857,7 @@
 			this.free = new FrequencyMap();
 			this.misses = 0;
 			this.hits = 0;
+			this.cache = new Map(); // Додаємо cache Map
 		}
 
 		_createClass(LFUCache, [
@@ -874,6 +888,10 @@
 			{
 				key: "leastFrequency",
 				get: function get() {
+					if (!this.frequencyMap || !(this.frequencyMap instanceof FrequencyMap)) {
+						return null;
+					}
+					
 					var freqCacheIterator = this.frequencyMap.keys();
 					var leastFrequency = freqCacheIterator.next().value || null;
 
@@ -894,18 +912,22 @@
 			{
 				key: "removeCacheNode",
 				value: function removeCacheNode() {
+					if (!this.frequencyMap || !this.leastFrequency) return;
+					
 					var leastFreqSet = this.frequencyMap.get(this.leastFrequency);
+					if (!leastFreqSet) return;
 
 					var LFUNode = leastFreqSet.values().next().value;
-					leastFreqSet["delete"](LFUNode);
-					this.cache["delete"](LFUNode.key);
+					if (LFUNode) {
+						leastFreqSet["delete"](LFUNode);
+						this.cache["delete"](LFUNode.key);
+					}
 				}
 			},
 			{
 				key: "has",
 				value: function has(key) {
 					key = String(key);
-
 					return this.cache.has(key);
 				}
 			},
@@ -913,10 +935,17 @@
 				key: "get",
 				value: function get(key, call) {
 					if (key) {
-						this.capacity[this.frequencyMap].follow(
-							key + (Main.bynam() ? "" : "_"),
-							call
-						);
+						// Спрощений виклик, щоб уникнути помилок
+						try {
+							if (this.capacity && this.capacity[this.frequencyMap]) {
+								this.capacity[this.frequencyMap].follow(
+									key + (Main.bynam() ? "" : "_"),
+									call
+								);
+							}
+						} catch (e) {
+							console.log("Cardify: LFUCache.get error", e);
+						}
 					}
 
 					this.misses++;
@@ -949,7 +978,12 @@
 
 					var newNode = new CacheNode(key, value, frequency);
 					this.cache.set(key, newNode);
-					this.frequencyMap.insert(newNode);
+					
+					// Перевірка на наявність frequencyMap
+					if (this.frequencyMap && typeof this.frequencyMap.insert === 'function') {
+						this.frequencyMap.insert(newNode);
+					}
+					
 					return this;
 				}
 			},
@@ -976,7 +1010,7 @@
 						}
 						
 						var nextEpisodeSpan = null;
-						details.children("span").each(function () {
+												details.children("span").each(function () {
 							var $span = $(this);
 							if (
 								!$span.hasClass("full-start-new__split") &&
@@ -1087,7 +1121,9 @@
 				key: "clear",
 				value: function clear() {
 					this.cache.clear();
-					this.frequencyMap.clear();
+					if (this.frequencyMap && typeof this.frequencyMap.clear === 'function') {
+						this.frequencyMap.clear();
+					}
 					return this;
 				}
 			},
