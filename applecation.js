@@ -4,7 +4,7 @@
     const APPLECATION_VERSION = '1.1.3';
 
     // Иконка плагина
-    const PLUGIN_ICON = '<svg viewBox="110 90 180 210"xmlns=http://www.w3.org/2000/svg><g id=sphere><circle cx=200 cy=140 fill="hsl(200, 80%, 40%)"opacity=0.3 r=1.2 /><circle cx=230 cy=150 fill="hsl(200, 80%, 45%)"opacity=0.35 r=1.3 /><circle cx=170 cy=155 fill="hsl(200, 80%, 42%)"opacity=0.32 r=1.2 /><circle cx=245 cy=175 fill="hsl(200, 80%, 48%)"opacity=0.38 r=1.4 /><circle cx=155 cy=180 fill="hsl(200, 80%, 44%)"opacity=0.34 r=1.3 /><circle cx=215 cy=165 fill="hsl(200, 80%, 46%)"opacity=0.36 r=1.2 /><circle cx=185 cy=170 fill="hsl(200, 80%, 43%)"opacity=0.33 r=1.3 /><circle cx=260 cy=200 fill="hsl(200, 80%, 50%)"opacity=0.4 r=1.5 /><circle cx=140 cy=200 fill="hsl(200, 80%, 50%)"opacity=0.4 r=1.5 /><circle cx=250 cy=220 fill="hsl(200, 80%, 48%)"opacity=0.38 r=1.4 /><circle cx=150 cy=225 fill="hsl(200, 80%, 47%)"opacity=0.37 r=1.4 /><circle cx=235 cy=240 fill="hsl(200, 80%, 45%)"opacity=0.35 r=1.3 /><circle cx=165 cy=245 fill="hsl(200, 80%, 44%)"opacity=0.34 r=1.3 /><circle cx=220 cy=255 fill="hsl(200, 80%, 42%)"opacity=0.32 r=1.2 /><circle cx=180 cy=258 fill="hsl(200, 80%, 41%)"opacity=0.31 r=1.2 /><circle cx=200 cy=120 fill="hsl(200, 80%, 60%)"opacity=0.5 r=1.8 /><circle cx=240 cy=135 fill="hsl(200, 80%, 65%)"opacity=0.55 r=2 /><circle cx=160 cy=140 fill="hsl(200, 80%, 62%)"opacity=0.52 r=1.9 /><circle cx=270 cy=165 fill="hsl(200, 80%, 70%)"opacity=0.6 r=2.2 /><circle cx=130 cy=170 fill="hsl(200, 80%, 67%)"opacity=0.57 r=2.1 /><circle cx=255 cy=190 fill="hsl(200, 80%, 72%)"opacity=0.62 r=2.3 /><circle cx=145 cy=195 fill="hsl(200, 80%, 69%)"opacity=0.59 r=2.2 /><circle cx=280 cy=200 fill="hsl(200, 80%, 75%)"opacity=0.65 r=2.5 /><circle cx=120 cy=200 fill="hsl(200, 80%, 75%)"opacity=0.65 r=2.5 /><circle cx=275 cy=215 fill="hsl(200, 80%, 73%)"opacity=0.63 r=2.4 /><circle cx=125 cy=220 fill="hsl(200, 80%, 71%)"opacity=0.61 r=2.3 /><circle cx=260 cy=235 fill="hsl(200, 80%, 68%)"opacity=0.58 r=2.2 /><circle cx=140 cy=240 fill="hsl(200, 80%, 66%)"opacity=0.56 r=2.1 /><circle cx=245 cy=255 fill="hsl(200, 80%, 63%)"opacity=0.53 r=2 /><circle cx=155 cy=260 fill="hsl(200, 80%, 61%)"opacity=0.51 r=1.9 /><circle cx=225 cy=270 fill="hsl(200, 80%, 58%)"opacity=0.48 r=1.8 /><circle cx=175 cy=272 fill="hsl(200, 80%, 56%)"opacity=0.46 r=1.7 /><circle cx=200 cy=100 fill="hsl(200, 80%, 85%)"opacity=0.8 r=2.8 /><circle cx=230 cy=115 fill="hsl(200, 80%, 90%)"opacity=0.85 r=3 /><circle cx=170 cy=120 fill="hsl(200, 80%, 87%)"opacity=0.82 r=2.9 /><circle cx=250 cy=140 fill="hsl(200, 80%, 92%)"opacity=0.88 r=3.2 /><circle cx=150 cy=145 fill="hsl(200, 80%, 89%)"opacity=0.84 r=3.1 /><circle cx=265 cy=170 fill="hsl(200, 80%, 95%)"opacity=0.9 r=3.4 /><circle cx=135 cy=175 fill="hsl(200, 80%, 93%)"opacity=0.87 r=3.3 /><circle cx=275 cy=200 fill="hsl(200, 80%, 98%)"opacity=0.95 r=3.5 /><circle cx=125 cy=200 fill="hsl(200, 80%, 98%)"opacity=0.95 r=3.5 /><circle cx=200 cy=200 fill="hsl(200, 80%, 100%)"opacity=1 r=4 /><circle cx=220 cy=195 fill="hsl(200, 80%, 98%)"opacity=0.95 r=3.8 /><circle cx=180 cy=205 fill="hsl(200, 80%, 97%)"opacity=0.93 r=3.7 /><circle cx=240 cy=210 fill="hsl(200, 80%, 96%)"opacity=0.92 r=3.6 /><circle cx=160 cy=215 fill="hsl(200, 80%, 95%)"opacity=0.9 r=3.5 /><circle cx=270 cy=230 fill="hsl(200, 80%, 94%)"opacity=0.88 r=3.4 /><circle cx=130 cy=235 fill="hsl(200, 80%, 92%)"opacity=0.86 r=3.3 /><circle cx=255 cy=250 fill="hsl(200, 80%, 90%)"opacity=0.84 r=3.2 /><circle cx=145 cy=255 fill="hsl(200, 80%, 88%)"opacity=0.82 r=3.1 /><circle cx=235 cy=265 fill="hsl(200, 80%, 86%)"opacity=0.8 r=3 /><circle cx=165 cy=268 fill="hsl(200, 80%, 84%)"opacity=0.78 r=2.9 /><circle cx=215 cy=280 fill="hsl(200, 80%, 82%)"opacity=0.76 r=2.8 /><circle cx=185 cy=282 fill="hsl(200, 80%, 80%)"opacity=0.74 r=2.7 /><circle cx=200 cy=290 fill="hsl(200, 80%, 78%)"opacity=0.72 r=2.6 /><circle cx=210 cy=130 fill="hsl(200, 80%, 88%)"opacity=0.83 r=2.5 /><circle cx=190 cy=135 fill="hsl(200, 80%, 86%)"opacity=0.81 r=2.4 /><circle cx=225 cy=155 fill="hsl(200, 80%, 91%)"opacity=0.86 r=2.8 /><circle cx=175 cy=160 fill="hsl(200, 80%, 89%)"opacity=0.84 r=2.7 /><circle cx=245 cy=185 fill="hsl(200, 80%, 94%)"opacity=0.89 r=3.3 /><circle cx=155 cy=190 fill="hsl(200, 80%, 92%)"opacity=0.87 r=3.2 /><circle cx=260 cy=210 fill="hsl(200, 80%, 95%)"opacity=0.91 r=3.4 /><circle cx=140 cy=215 fill="hsl(200, 80%, 93%)"opacity=0.88 r=3.3 /><circle cx=250 cy=230 fill="hsl(200, 80%, 91%)"opacity=0.85 r=3.2 /><circle cx150 cy=235 fill="hsl(200, 80%, 89%)"opacity=0.83 r=3.1 /><circle cx=230 cy=245 fill="hsl(200, 80%, 87%)"opacity=0.81 r=3 /><circle cx=170 cy=250 fill="hsl(200, 80%, 85%)"opacity=0.79 r=2.9 /><circle cx=210 cy=260 fill="hsl(200, 80%, 83%)"opacity=0.77 r=2.8 /><circle cx=190 cy=265 fill="hsl(200, 80%, 81%)"opacity=0.75 r=2.7 /></g></svg>';
+    const PLUGIN_ICON = '<svg viewBox="110 90 180 210"xmlns=http://www.w3.org/2000/svg><g id=sphere><circle cx=200 cy=140 fill="hsl(200, 80%, 40%)"opacity=0.3 r=1.2 /><circle cx=230 cy=150 fill="hsl(200, 80%, 45%)"opacity=0.35 r=1.3 /><circle cx=170 cy=155 fill="hsl(200, 80%, 42%)"opacity=0.32 r=1.2 /><circle cx=245 cy=175 fill="hsl(200, 80%, 48%)"opacity=0.38 r=1.4 /><circle cx=155 cy=180 fill="hsl(200, 80%, 44%)"opacity=0.34 r=1.3 /><circle cx=215 cy=165 fill="hsl(200, 80%, 46%)"opacity=0.36 r=1.2 /><circle cx=185 cy=170 fill="hsl(200, 80%, 43%)"opacity=0.33 r=1.3 /><circle cx=260 cy=200 fill="hsl(200, 80%, 50%)"opacity=0.4 r=1.5 /><circle cx=140 cy=200 fill="hsl(200, 80%, 50%)"opacity=0.4 r=1.5 /><circle cx=250 cy=220 fill="hsl(200, 80%, 48%)"opacity=0.38 r=1.4 /><circle cx=150 cy=225 fill="hsl(200, 80%, 47%)"opacity=0.37 r=1.4 /><circle cx=235 cy=240 fill="hsl(200, 80%, 45%)"opacity=0.35 r=1.3 /><circle cx=165 cy=245 fill="hsl(200, 80%, 44%)"opacity=0.34 r=1.3 /><circle cx=220 cy=255 fill="hsl(200, 80%, 42%)"opacity=0.32 r=1.2 /><circle cx=180 cy=258 fill="hsl(200, 80%, 41%)"opacity=0.31 r=1.2 /><circle cx=200 cy=120 fill="hsl(200, 80%, 60%)"opacity=0.5 r=1.8 /><circle cx=240 cy=135 fill="hsl(200, 80%, 65%)"opacity=0.55 r=2 /><circle cx=160 cy=140 fill="hsl(200, 80%, 62%)"opacity=0.52 r=1.9 /><circle cx=270 cy=165 fill="hsl(200, 80%, 70%)"opacity=0.6 r=2.2 /><circle cx=130 cy=170 fill="hsl(200, 80%, 67%)"opacity=0.57 r=2.1 /><circle cx=255 cy=190 fill="hsl(200, 80%, 72%)"opacity=0.62 r=2.3 /><circle cx=145 cy=195 fill="hsl(200, 80%, 69%)"opacity=0.59 r=2.2 /><circle cx=280 cy=200 fill="hsl(200, 80%, 75%)"opacity=0.65 r=2.5 /><circle cx=120 cy=200 fill="hsl(200, 80%, 75%)"opacity=0.65 r=2.5 /><circle cx=275 cy=215 fill="hsl(200, 80%, 73%)"opacity=0.63 r=2.4 /><circle cx=125 cy=220 fill="hsl(200, 80%, 71%)"opacity=0.61 r=2.3 /><circle cx=260 cy=235 fill="hsl(200, 80%, 68%)"opacity=0.58 r=2.2 /><circle cx=140 cy=240 fill="hsl(200, 80%, 66%)"opacity=0.56 r=2.1 /><circle cx=245 cy=255 fill="hsl(200, 80%, 63%)"opacity=0.53 r=2 /><circle cx=155 cy=260 fill="hsl(200, 80%, 61%)"opacity=0.51 r=1.9 /><circle cx=225 cy=270 fill="hsl(200, 80%, 58%)"opacity=0.48 r=1.8 /><circle cx=175 cy=272 fill="hsl(200, 80%, 56%)"opacity=0.46 r=1.7 /><circle cx=200 cy=100 fill="hsl(200, 80%, 85%)"opacity=0.8 r=2.8 /><circle cx=230 cy=115 fill="hsl(200, 80%, 90%)"opacity=0.85 r=3 /><circle cx=170 cy=120 fill="hsl(200, 80%, 87%)"opacity=0.82 r=2.9 /><circle cx=250 cy=140 fill="hsl(200, 80%, 92%)"opacity=0.88 r=3.2 /><circle cx=150 cy=145 fill="hsl(200, 80%, 89%)"opacity=0.84 r=3.1 /><circle cx=265 cy=170 fill="hsl(200, 80%, 95%)"opacity=0.9 r=3.4 /><circle cx=135 cy=175 fill="hsl(200, 80%, 93%)"opacity=0.87 r=3.3 /><circle cx=275 cy=200 fill="hsl(200, 80%, 98%)"opacity=0.95 r=3.5 /><circle cx=125 cy=200 fill="hsl(200, 80%, 98%)"opacity=0.95 r=3.5 /><circle cx=200 cy=200 fill="hsl(200, 80%, 100%)"opacity=1 r=4 /><circle cx=220 cy=195 fill="hsl(200, 80%, 98%)"opacity=0.95 r=3.8 /><circle cx=180 cy=205 fill="hsl(200, 80%, 97%)"opacity=0.93 r=3.7 /><circle cx=240 cy=210 fill="hsl(200, 80%, 96%)"opacity=0.92 r=3.6 /><circle cx=160 cy=215 fill="hsl(200, 80%, 95%)"opacity=0.9 r=3.5 /><circle cx=270 cy=230 fill="hsl(200, 80%, 94%)"opacity=0.88 r=3.4 /><circle cx=130 cy=235 fill="hsl(200, 80%, 92%)"opacity=0.86 r=3.3 /><circle cx=255 cy=250 fill="hsl(200, 80%, 90%)"opacity=0.84 r=3.2 /><circle cx=145 cy=255 fill="hsl(200, 80%, 88%)"opacity=0.82 r=3.1 /><circle cx=235 cy=265 fill="hsl(200, 80%, 86%)"opacity=0.8 r=3 /><circle cx=165 cy=268 fill="hsl(200, 80%, 84%)"opacity=0.78 r=2.9 /><circle cx=215 cy=280 fill="hsl(200, 80%, 82%)"opacity=0.76 r=2.8 /><circle cx=185 cy=282 fill="hsl(200, 80%, 80%)"opacity=0.74 r=2.7 /><circle cx=200 cy=290 fill="hsl(200, 80%, 78%)"opacity=0.72 r=2.6 /><circle cx=210 cy=130 fill="hsl(200, 80%, 88%)"opacity=0.83 r=2.5 /><circle cx=190 cy=135 fill="hsl(200, 80%, 86%)"opacity=0.81 r=2.4 /><circle cx=225 cy=155 fill="hsl(200, 80%, 91%)"opacity=0.86 r=2.8 /><circle cx=175 cy=160 fill="hsl(200, 80%, 89%)"opacity=0.84 r=2.7 /><circle cx=245 cy=185 fill="hsl(200, 80%, 94%)"opacity=0.89 r=3.3 /><circle cx=155 cy=190 fill="hsl(200, 80%, 92%)"opacity=0.87 r=3.2 /><circle cx=260 cy=210 fill="hsl(200, 80%, 95%)"opacity=0.91 r=3.4 /><circle cx=140 cy=215 fill="hsl(200, 80%, 93%)"opacity=0.88 r=3.3 /><circle cx=250 cy=230 fill="hsl(200, 80%, 91%)"opacity=0.85 r=3.2 /><circle cx=150 cy=235 fill="hsl(200, 80%, 89%)"opacity=0.83 r=3.1 /><circle cx=230 cy=245 fill="hsl(200, 80%, 87%)"opacity=0.81 r=3 /><circle cx=170 cy=250 fill="hsl(200, 80%, 85%)"opacity=0.79 r=2.9 /><circle cx=210 cy=260 fill="hsl(200, 80%, 83%)"opacity=0.77 r=2.8 /><circle cx=190 cy=265 fill="hsl(200, 80%, 81%)"opacity=0.75 r=2.7 /></g></svg>';
 
     /**
      * Проверяет, является ли активность все еще активной
@@ -15,7 +15,6 @@
 
     /**
      * Анализирует качество контента из данных ffprobe
-     * Извлекает информацию о разрешении, HDR, Dolby Vision, аудио каналах
      */
     function analyzeContentQuality(ffprobe) {
         if (!ffprobe || !Array.isArray(ffprobe)) return null;
@@ -35,7 +34,6 @@
                 quality.resolution = `${video.width}x${video.height}`;
                 
                 // Определяем метки качества
-                // Проверяем и ширину для широкоформатного контента (2.35:1, 2.39:1 и т.д.)
                 if (video.height >= 2160 || video.width >= 3840) {
                     quality.resolutionLabel = '4K';
                 } else if (video.height >= 1440 || video.width >= 2560) {
@@ -62,7 +60,7 @@
 
                 if (hasDolbyVision) {
                     quality.dolbyVision = true;
-                    quality.hdr = true; // DV всегда включает HDR
+                    quality.hdr = true;
                 } else if (hasMasteringDisplay || hasContentLight) {
                     quality.hdr = true;
                 }
@@ -116,14 +114,12 @@
     function analyzeContentQualities(movie, activity) {
         if (!movie || !Lampa.Storage.field('parser_use')) return;
 
-        // Получаем данные от парсера самостоятельно
         if (!Lampa.Parser || typeof Lampa.Parser.get !== 'function') {
             return;
         }
 
         const title = movie.title || movie.name || 'Неизвестно';
         
-        // Формируем параметры для парсера
         const year = ((movie.first_air_date || movie.release_date || '0000') + '').slice(0,4);
         const combinations = {
             'df': movie.original_title,
@@ -138,7 +134,6 @@
 
         const searchQuery = combinations[Lampa.Storage.field('parse_lang')] || movie.title;
 
-        // Вызываем парсер
         Lampa.Parser.get({
             search: searchQuery,
             movie: movie,
@@ -146,10 +141,8 @@
         }, (results) => {
             if (!isAlive(activity)) return;
 
-            // Получили результаты парсера
             if (!results || !results.Results || results.Results.length === 0) return;
 
-            // Собираем итоговую информацию о доступных качествах
             const availableQualities = {
                 resolutions: new Set(),
                 hdr: new Set(),
@@ -157,34 +150,27 @@
                 hasDub: false
             };
 
-            // Анализируем каждый торрент
             results.Results.forEach((torrent) => {
-                // Анализируем ffprobe если есть
                 if (torrent.ffprobe && Array.isArray(torrent.ffprobe)) {
                     const quality = analyzeContentQuality(torrent.ffprobe);
                     
                     if (quality) {
-                        // Разрешение
                         if (quality.resolutionLabel) {
                             availableQualities.resolutions.add(quality.resolutionLabel);
                         }
                         
-                        // Аудио
                         if (quality.audio) {
                             availableQualities.audio.add(quality.audio);
                         }
                     }
 
-                    // Проверяем наличие русского дубляжа
                     if (!availableQualities.hasDub) {
                         const audioStreams = torrent.ffprobe.filter(stream => stream.codec_type === 'audio' && stream.tags);
                         audioStreams.forEach(audio => {
                             const lang = (audio.tags.language || '').toLowerCase();
                             const title = (audio.tags.title || audio.tags.handler_name || '').toLowerCase();
                             
-                            // Проверяем русский язык
                             if (lang === 'rus' || lang === 'ru' || lang === 'russian') {
-                                // Проверяем что это дубляж
                                 if (title.includes('dub') || title.includes('дубляж') || 
                                     title.includes('дублир') || title === 'd') {
                                     availableQualities.hasDub = true;
@@ -194,7 +180,6 @@
                     }
                 }
 
-                // Анализируем название торрента для HDR/DV
                 const titleLower = torrent.Title.toLowerCase();
                 
                 if (titleLower.includes('dolby vision') || titleLower.includes('dovi') || titleLower.match(/\bdv\b/)) {
@@ -211,7 +196,6 @@
                 }
             });
 
-            // Формируем структурированный объект с качеством
             const qualityInfo = {
                 title: title,
                 torrents_found: results.Results.length,
@@ -223,7 +207,6 @@
                 dub: availableQualities.hasDub
             };
 
-            // Разрешение - берем только максимальное
             if (availableQualities.resolutions.size > 0) {
                 const resOrder = ['8K', '4K', '2K', 'FULL HD', 'HD'];
                 for (const res of resOrder) {
@@ -234,13 +217,11 @@
                 }
             }
             
-            // Dolby Vision
             if (availableQualities.hdr.has('Dolby Vision')) {
                 qualityInfo.dv = true;
                 qualityInfo.hdr = true;
             }
             
-            // HDR - берем максимальный тип
             if (availableQualities.hdr.size > 0) {
                 qualityInfo.hdr = true;
                 
@@ -253,7 +234,6 @@
                 }
             }
             
-            // Аудио - берем только максимальное
             if (availableQualities.audio.size > 0) {
                 const audioOrder = ['7.1', '5.1', '4.0', '2.0'];
                 for (const audio of audioOrder) {
@@ -264,13 +244,10 @@
                 }
             }
 
-            // Выводим JSON с результатами
             console.log('Applecation', qualityInfo);
             
-            // Сохраняем данные в activity для отображения иконок
             if (activity && activity.applecation_quality === undefined) {
                 activity.applecation_quality = qualityInfo;
-                // Обновляем info блок с иконками
                 updateQualityBadges(activity, qualityInfo);
             }
             
@@ -279,7 +256,6 @@
         });
     }
 
-    // Главная функция плагина
     function initializePlugin() {
         console.log('Applecation', 'v' + APPLECATION_VERSION);
         
@@ -298,19 +274,11 @@
         attachEpisodesCorePatch();
     }
 
-    /**
-     * Патч логики линии эпизодов (как отдельный episodes_core_patch.js, но интегрировано в Applecation)
-     * Цель:
-     * - эпизоды всегда идут 1..N, затем next (comeing)
-     * - кнопка "Еще" (card-more) всегда последняя при ленивой догрузке
-     * Без MutationObserver: патчим scroll.append() у нужной линии.
-     */
     function attachEpisodesCorePatch(){
         try{
             if(window.applecation_episodes_core_patch) return;
             window.applecation_episodes_core_patch = true;
 
-            // если где-то отдельно подключен старый плагин-перестановщик — глушим его флагом
             window.episodes_order_fix = true;
             window.episodes_core_patch = true;
 
@@ -356,12 +324,9 @@
                         else list.push(r);
                     }
 
-                    // Сортируем по номеру эпизода
                     list.sort(function(a,b){
                         return (a.episode_number || 0) - (b.episode_number || 0);
                     });
-
-                    
 
                     element.results = list.concat(next);
                 }catch(e){}
@@ -378,12 +343,10 @@
                     line.scroll.append = function(object){
                         var node = object instanceof jQuery ? object[0] : object;
 
-                        // "Еще" добавляем как обычно
                         if(node && node.classList && node.classList.contains('card-more')){
                             return originalAppend(object);
                         }
 
-                        // Если "Еще" уже есть — вставляем перед ним
                         var body = typeof line.scroll.body === 'function' ? line.scroll.body(true) : null;
                         if(body){
                             var more = body.querySelector('.card-more');
@@ -407,12 +370,10 @@
                     var originalCreate = line.create.bind(line);
 
                     line.create = function(){
-                        // ставим перехват ДО рендера модулей линии
                         patchScrollAppendToKeepMoreLast(line);
 
                         var res = originalCreate();
 
-                        // убираем стили "первого" у "Еще" (если MoreFirst навесил)
                         setTimeout(function(){
                             try{
                                 var body = line && line.scroll && typeof line.scroll.body === 'function' ? line.scroll.body(true) : null;
@@ -448,7 +409,6 @@
         }catch(e){}
     }
 
-    // Переводы для настроек
     const translations = {
         show_ratings: {
             ru: 'Показывать рейтинги',
@@ -509,7 +469,7 @@
             ru: 'Показывать логотип на английском языке, если нет на русском',
             en: 'Show no language logo if localized version is missing',
             uk: 'Показувати логотип на англійській мові, якщо немає на українській',
-            be: 'Паказваць лагатып на англійскай мове, калі няма на беларускай',
+            be: 'Паказваць лагатып на англійскай мові, калі няма на беларускай',
             bg: 'Показване на лого на английски език, ако не е налично на български',
             cs: 'Zobrazit logo v angličtině, pokud není k dispozici v češtině',
             he: 'הצג לוגו באנגלית אם הגרסה המקומית חסרה',
@@ -533,7 +493,7 @@
             uk: 'Виберіть де відображати рейтинги',
             be: 'Выберыце дзе адлюстроўваць рэйтынгі',
             bg: 'Изберете къде да се показват рейтингите',
-            cs: 'Vyberte, kde zobrazit hodnocení',
+            cs: 'Vyberте, kde zobrazit hodnocení',
             he: 'בחר היכן להציג דירוגים',
             pt: 'Escolha onde exibir classificações',
             zh: '选择评分显示位置'
@@ -787,7 +747,6 @@
         return translations[key] && translations[key][lang] || translations[key].ru;
     }
 
-    // Применяем класс для управления эффектом жидкого стекла
     function applyLiquidGlassClass() {
         if (Lampa.Storage.get('applecation_liquid_glass', true)) {
             $('body').removeClass('applecation--no-liquid-glass');
@@ -796,9 +755,7 @@
         }
     }
 
-    // Добавляем настройки плагина
     function addSettings() {
-        // Инициализируем значения по умолчанию
         if (Lampa.Storage.get('applecation_show_ratings') === undefined) {
             Lampa.Storage.set('applecation_show_ratings', false);
         }
@@ -830,14 +787,12 @@
             Lampa.Storage.set('applecation_show_episode_count', false);
         }
 
-        // Создаем раздел настроек
         Lampa.SettingsApi.addComponent({
             component: 'applecation_settings',
             name: 'Applecation',
             icon: PLUGIN_ICON
         });
         
-        // Добавляем информацию о плагине
         Lampa.SettingsApi.addParam({
             component: 'applecation_settings',
             param: {
@@ -857,7 +812,6 @@
             }
         });
 
-        // Заголовок: Отображение
         Lampa.SettingsApi.addParam({
             component: 'applecation_settings',
             param: {
@@ -869,7 +823,6 @@
             }
         });
 
-        // Показывать рейтинги
         Lampa.SettingsApi.addParam({
             component: 'applecation_settings',
             param: {
@@ -890,7 +843,6 @@
             }
         });
 
-        // Расположение рейтингов
         Lampa.SettingsApi.addParam({
             component: 'applecation_settings',
             param: {
@@ -910,14 +862,12 @@
                 Lampa.Storage.set('applecation_ratings_position', value);
                 $('body').removeClass('applecation--ratings-card applecation--ratings-corner');
                 $('body').addClass('applecation--ratings-' + value);
-                // Обновляем шаблоны и перезагружаем активность
                 addCustomTemplate();
                 addOverlayTemplate();
                 Lampa.Activity.back();
             }
         });
 
-        // Показывать реакции (дефолтная настройка Lampa)
         Lampa.SettingsApi.addParam({
             component: 'applecation_settings',
             param: {
@@ -931,7 +881,6 @@
             }
         });
 
-        // Показывать логотип на другом языке
         Lampa.SettingsApi.addParam({
             component: 'applecation_settings',
             param: {
@@ -945,7 +894,6 @@
             }
         });
 
-        // Перевернуть список эпизодов
         Lampa.SettingsApi.addParam({
             component: 'applecation_settings',
             param: {
@@ -962,7 +910,6 @@
             }
         });
 
-        // Описание в оверлее
         Lampa.SettingsApi.addParam({
             component: 'applecation_settings',
             param: {
@@ -979,7 +926,6 @@
             }
         });
 
-        // Количество серий
         Lampa.SettingsApi.addParam({
             component: 'applecation_settings',
             param: {
@@ -993,7 +939,6 @@
             }
         });
 
-        // Жидкое стекло
         Lampa.SettingsApi.addParam({
             component: 'applecation_settings',
             param: {
@@ -1011,7 +956,6 @@
             }
         });
 
-        // Заголовок: Масштабирование
         Lampa.SettingsApi.addParam({
             component: 'applecation_settings',
             param: {
@@ -1023,7 +967,6 @@
             }
         });
 
-        // Размер логотипа
         Lampa.SettingsApi.addParam({
             component: 'applecation_settings',
             param: {
@@ -1057,7 +1000,6 @@
             }
         });
 
-        // Размер текста
         Lampa.SettingsApi.addParam({
             component: 'applecation_settings',
             param: {
@@ -1091,7 +1033,6 @@
             }
         });
 
-        // Отступы между строками
         Lampa.SettingsApi.addParam({
             component: 'applecation_settings',
             param: {
@@ -1128,7 +1069,6 @@
             }
         });
 
-        // Применяем текущие настройки
         if (!Lampa.Storage.get('applecation_show_ratings', false)) {
             $('body').addClass('applecation--hide-ratings');
         }
@@ -1136,31 +1076,46 @@
         applyScales();
     }
 
-    // Применяем масштабирование контента
+    // ВИПРАВЛЕНО: функція масштабування
     function applyScales() {
         const logoScale = parseInt(Lampa.Storage.get('applecation_logo_scale', '100'));
         const textScale = parseInt(Lampa.Storage.get('applecation_text_scale', '100'));
         const spacingScale = parseInt(Lampa.Storage.get('applecation_spacing_scale', '100'));
 
-        // Удаляем старые стили если есть
         $('style[data-id="applecation_scales"]').remove();
 
-        // Создаем новые стили
+        // Правильні розрахунки для масштабування
+        const baseLogoWidth = 35; // базова ширина у vw
+        const baseLogoHeight = 180; // базова висота у px
+        const scaledLogoWidth = (baseLogoWidth * logoScale / 100);
+        const scaledLogoHeight = (baseLogoHeight * logoScale / 100);
+
         const scaleStyles = `
             <style data-id="applecation_scales">
-                /* Масштаб логотипа */
-                
+                /* Масштаб логотипа - ВИПРАВЛЕНО */
                 .applecation .applecation__logo img {
-                    max-width: ${35 * logoScale / 100}vw !important;
-                    max-height: ${180 * logoScale / 100}px !important;
+                    max-width: ${scaledLogoWidth}vw !important;
+                    max-height: ${scaledLogoHeight}px !important;
+                    width: auto !important;
+                    height: auto !important;
                 }
 
-                /* Масштаб текста и мета-информации */
+                /* Ширина слогана також масштабується */
+                .applecation .applecation__slogan {
+                    max-width: ${scaledLogoWidth}vw !important;
+                }
+
+                /* Масштаб тексту */
                 .applecation .applecation__content-wrapper {
                     font-size: ${textScale}% !important;
                 }
 
-                /* Отступы между элементами */
+                /* Масштаб шрифту слогана окремо */
+                .applecation .applecation__slogan {
+                    font-size: ${1.3 * textScale / 100}em !important;
+                }
+
+                /* Відступи з урахуванням масштабу */
                 .applecation .full-start-new__title {
                     margin-bottom: ${0.5 * spacingScale / 100}em !important;
                 }
@@ -1187,7 +1142,6 @@
         $('body').append(scaleStyles);
     }
 
-    // Регистрируем шаблон для оверлея описания
     function addOverlayTemplate() {
         const overlayTemplate = `
             <div class="applecation-description-overlay">
@@ -1217,11 +1171,9 @@
         Lampa.Template.add('applecation_overlay', overlayTemplate);
     }
 
-    // Регистрируем кастомный шаблон страницы full
     function addCustomTemplate() {
         const ratingsPosition = Lampa.Storage.get('applecation_ratings_position', 'card');
         
-        // Блок с рейтингами
         const ratingsBlock = `<!-- Рейтинги -->
                     <div class="applecation__ratings">
                         <div class="rate--imdb hide">
@@ -1250,7 +1202,7 @@
                 <div class="applecation__left">
                     <div class="applecation__logo"></div>
                     
-                    <!-- ДОДАНО: БЛОК ДЛЯ СЛОГАНУ ПІД ЛОГОТИПОМ -->
+                    <!-- Слоган під логотипом -->
                     <div class="applecation__slogan"></div>
                     
                     <div class="applecation__content-wrapper">
@@ -1272,7 +1224,6 @@
                         <div class="applecation__info"></div>
                     </div>
                     
-                    <!-- Скрытые оригинальные элементы -->
                     <div class="full-start-new__head" style="display: none;"></div>
                     <div class="full-start-new__details" style="display: none;"></div>
 
@@ -1325,12 +1276,10 @@
                     
                     ${ratingsPosition === 'corner' ? ratingsBlock : ''}
 
-                    <!-- Скрытый элемент для совместимости (предотвращает выход реакций за экран) -->
                     <div class="full-start-new__rate-line">
                         <div class="full-start__status hide"></div>
                     </div>
                     
-                    <!-- Пустой маркер для предотвращения вставки элементов от modss.js -->
                     <div class="rating--modss" style="display: none;"></div>
                 </div>
             </div>
@@ -1355,7 +1304,6 @@
 
         Lampa.Template.add('full_start_new', template);
 
-        // Переопределяем шаблон эпизода для стиля Apple TV
         const episodeTemplate = `<div class="full-episode selector layer--visible">
             <div class="full-episode__img">
                 <img />
@@ -1375,7 +1323,6 @@
 
     function disableFullDescription(e) {
         if (e.type === 'start' && e.link) {
-            // Удаляем 'description' из списка rows перед рендерингом
             const rows = e.link.rows;
             const index = rows.indexOf('description');
             if (index > -1) {
@@ -1409,9 +1356,9 @@
     text-shadow: 0 0 .1em rgba(0, 0, 0, 0.3);
 }
 
-/* Логотип */
+/* Логотип - ВИПРАВЛЕНО: збільшений відступ */
 .applecation__logo {
-    margin-bottom: 0.2em; /* ЗМІНЕНО: зменшений відступ для слогана */
+    margin-bottom: 1em; /* ЗБІЛЬШЕНО з 0.2em */
     opacity: 0;
     transform: translateY(20px);
     transition: opacity 0.4s ease-out, transform 0.4s ease-out;
@@ -1432,19 +1379,20 @@
     object-position: left center;
 }
 
-/* Слоган під логотипом */
+/* Слоган під логотипом - ВИПРАВЛЕНО: збільшений шрифт та відступи */
 .applecation__slogan {
-    color: rgba(255, 255, 255, 0.75);
-    font-size: 1.1em;
+    color: rgba(255, 255, 255, 0.85); /* Яскравіший */
+    font-size: 1.4em; /* ЗБІЛЬШЕНО з 1.1em */
     font-weight: 500;
     font-style: italic;
-    margin-bottom: 0.5em;
-    line-height: 1.3;
+    margin-bottom: 0.8em; /* ДОДАНО: відступ після слогана */
+    line-height: 1.4;
     opacity: 0;
     transform: translateY(15px);
     transition: opacity 0.4s ease-out, transform 0.4s ease-out;
     transition-delay: 0.02s;
     max-width: 35vw;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* Легка тінь для читабельності */
 }
 
 .applecation__slogan.show {
@@ -1457,7 +1405,7 @@
     font-size: 100%;
 }
 
-/* Мета информация (Тип/Жанр/поджанр) */
+/* Мета информация */
 .applecation__meta {
     display: flex;
     align-items: center;
@@ -1556,12 +1504,12 @@
     color: #fff;
 }
 
-/* Управление видимостью рейтингов через настройки */
+/* Управление видимостью рейтингов */
 body.applecation--hide-ratings .applecation__ratings {
     display: none !important;
 }
 
-/* Расположение рейтингов - в правом нижнем углу */
+/* Расположение рейтингов */
 body.applecation--ratings-corner .applecation__right {
     gap: 1em;
 }
@@ -1599,15 +1547,9 @@ body.applecation--ratings-corner .applecation__ratings {
   padding: .15em .4em 0 .7em;
   border-radius: 1em;
   width: fit-content;
-
-//   box-shadow:
-//     inset 0 1px 0 rgba(255, 255, 255, 0.35),
-//     0 8px 24px rgba(0, 0, 0, 0.25);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.35);
-
   transform: scale(1.07) translateY(0);
-  
   transition-delay: 0s;
 }
 
@@ -1625,12 +1567,11 @@ body.applecation--ratings-corner .applecation__ratings {
     text-overflow: ellipsis;
 }
 
-
 .focus .applecation__description {
   color: rgba(255, 255, 255, 0.92);
 }
 
-/* Дополнительная информация (Год/длительность) */
+/* Дополнительная информация */
 .applecation__info {
     color: rgba(255, 255, 255, 0.75);
     font-size: 1em;
@@ -1659,7 +1600,6 @@ body.applecation--ratings-corner .applecation__ratings {
     position: relative;
 }
 
-/* Выравнивание по baseline если рейтинги в углу */
 body.applecation--ratings-corner .applecation__right {
     align-items: last baseline;
 }
@@ -1684,7 +1624,6 @@ body.applecation--ratings-corner .applecation__right {
     display: none;
 }
 
-/* Стили первой реакции (всегда видимой) */
 .applecation .full-start-new__reactions > div:first-child .reaction {
     display: flex !important;
     align-items: center !important;
@@ -1707,7 +1646,6 @@ body.applecation--ratings-corner .applecation__right {
     font-weight: 500 !important;
 }
 
-/* При фокусе реакции раскрываются вверх */
 .applecation .full-start-new__reactions.focus {
     gap: 0.5em;
 }
@@ -1716,7 +1654,7 @@ body.applecation--ratings-corner .applecation__right {
     display: block;
 }
 
-/* Скрываем стандартный rate-line (используется только для статуса) */
+/* Скрываем стандартный rate-line */
 .applecation .full-start-new__rate-line {
     margin: 0;
     height: 0;
@@ -1725,7 +1663,7 @@ body.applecation--ratings-corner .applecation__right {
     pointer-events: none;
 }
 
-/* Фон - переопределяем стандартную анимацию на fade */
+/* Фон */
 .full-start__background {
     height: calc(100% + 6em);
     left: 0 !important;
@@ -1744,7 +1682,6 @@ body.applecation--ratings-corner .applecation__right {
   filter: blur(30px);
 }
 
-/* Удерживаем opacity при загрузке нового фона */
 .full-start__background.loaded.applecation-animated {
     opacity: 1 !important;
 }
@@ -1753,12 +1690,10 @@ body:not(.menu--open) .full-start__background {
     mask-image: none;
 }
 
-/* Отключаем стандартную анимацию Lampa для фона */
 body.advanced--animation:not(.no--animation) .full-start__background.loaded {
     animation: none !important;
 }
 
-/* Скрываем статус для предотвращения выхода реакций за экран */
 .applecation .full-start__status {
     display: none;
 }
@@ -1808,7 +1743,7 @@ body.advanced--animation:not(.no--animation) .full-start__background.loaded {
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
 }
 
-/* Эпизоды Apple TV */
+/* Епизоди Apple TV */
 .applecation .full-episode--small {
     width: 20em !important;
     height: auto !important;
@@ -1911,64 +1846,42 @@ body.advanced--animation:not(.no--animation) .full-start__background.loaded {
     color: rgba(255,255,255,0.3) !important;
 }
 
-
-/* =========================================================
-   БАЗА: ничего не блюрим/не затемняем без фокуса
-   ========================================================= */
-
 .applecation .full-episode{
   position: relative;
   z-index: 1;
   opacity: 1;
   filter: none;
-
   transition: transform .6s cubic-bezier(.16,1,.3,1);
 }
 
-/* без фокуса — вообще без эффектов */
 .applecation .full-episode:not(.focus){
   transform: none;
 }
 
-/* фокус — мягкий "apple" подъём */
 .applecation .full-episode.focus{
   z-index: 10;
   transform: scale(1.03) translateY(-6px);
 }
 
-
-/* =========================================================
-   КАРТИНКА
-   ========================================================= */
-
 .applecation .full-episode__img{
   position: relative;
   overflow: hidden;
   border-radius: inherit;
-
   transition:
     box-shadow .6s cubic-bezier(.16,1,.3,1),
     backdrop-filter .6s cubic-bezier(.16,1,.3,1),
     transform .6s cubic-bezier(.16,1,.3,1);
 }
 
-
-/* =========================================================
-   ЖИДКОЕ СТЕКЛО — ТОЛЬКО НА ФОКУСЕ
-   ========================================================= */
-
 .applecation .full-episode.focus .full-episode__img{
   box-shadow:
     0 0 0 1px rgba(255,255,255,.18),
     0 26px 65px rgba(0,0,0,.4) !important;
-
   -webkit-backdrop-filter: blur(14px) saturate(1.25) contrast(1.05);
   backdrop-filter: blur(14px) saturate(1.25) contrast(1.05);
-
   background: rgba(255,255,255,.06);
 }
 
-/* толщина стекла */
 .applecation .full-episode.focus .full-episode__img::before{
   content: '';
   position: absolute;
@@ -1976,18 +1889,15 @@ body.advanced--animation:not(.no--animation) .full-start__background.loaded {
   border-radius: inherit;
   pointer-events: none;
   z-index: 2;
-
   box-shadow:
     inset 0 0 0 1px rgba(255,255,255,.22),
     inset 0 0 18px rgba(255,255,255,.12),
     inset 0 -14px 22px rgba(0,0,0,.18);
-
   filter: blur(.35px);
   opacity: 1;
   transition: opacity .45s ease;
 }
 
-/* блик */
 .applecation .full-episode.focus .full-episode__img::after{
   content: '';
   position: absolute;
@@ -1995,7 +1905,6 @@ body.advanced--animation:not(.no--animation) .full-start__background.loaded {
   border-radius: inherit;
   pointer-events: none;
   z-index: 3;
-
   background:
     radial-gradient(120% 85% at 18% 10%,
       rgba(255,255,255,.38),
@@ -2005,27 +1914,21 @@ body.advanced--animation:not(.no--animation) .full-start__background.loaded {
       rgba(255,255,255,.20),
       rgba(255,255,255,0) 52%,
       rgba(255,255,255,.06));
-
   mix-blend-mode: screen;
   opacity: .95;
-
   transition:
     opacity .45s ease,
     transform .65s cubic-bezier(.16,1,.3,1);
 }
 
-/* когда фокуса нет — просто не показываем слои стекла */
 .applecation .full-episode:not(.focus) .full-episode__img::before,
 .applecation .full-episode:not(.focus) .full-episode__img::after{
   opacity: 0;
 }
 
-/* убрать старый оверлей */
 .applecation .full-episode.focus::after{
   display: none !important;
 }
-
-
 
 .applecation .full-episode__viewed {
     top: 0.8em !important;
@@ -2036,7 +1939,6 @@ body.advanced--animation:not(.no--animation) .full-start__background.loaded {
     backdrop-filter: blur(10px) !important;
 }
 
-/* Статус следующей серии */
 .applecation .full-episode--next .full-episode__img:after {
     border-radius: 0.8em !important;
 }
@@ -2132,7 +2034,7 @@ body.advanced--animation:not(.no--animation) .full-start__background.loaded {
     opacity: 0.6;
 }
 
-/* Скроллбар для описания */
+/* Скроллбар */
 .applecation-description-overlay__content::-webkit-scrollbar {
     width: 0.5em;
 }
@@ -2151,10 +2053,7 @@ body.advanced--animation:not(.no--animation) .full-start__background.loaded {
     background: rgba(255, 255, 255, 0.5);
 }
 
-/* =========================================================
-   ПЕРСОНЫ (АКТЕРЫ И СЪЕМОЧНАЯ ГРУППА) - APPLE TV СТИЛЬ
-   ========================================================= */
-
+/* Персони */
 .applecation .full-person {
     display: flex !important;
     flex-direction: column !important;
@@ -2173,7 +2072,6 @@ body.advanced--animation:not(.no--animation) .full-start__background.loaded {
     z-index: 10;
 }
 
-/* Фото персоны - круглое */
 .applecation .full-person__photo {
     position: relative !important;
     width: 9.4em !important;
@@ -2201,18 +2099,15 @@ body.advanced--animation:not(.no--animation) .full-start__background.loaded {
     border-radius: 50% !important;
 }
 
-/* Смещаем лицо только при высоком качестве (w500), так как там другой кроп у TMDB */
 .applecation.applecation--poster-high .full-person__photo img {
     object-position: center calc(50% + 20px) !important;
 }
 
-/* Дефолтные заглушки оставляем по центру, чтобы не ломать симметрию иконок */
 .applecation .full-person__photo img[src*="actor.svg"],
 .applecation .full-person__photo img[src*="img_broken.svg"] {
     object-position: center !important;
 }
 
-/* ЖИДКОЕ СТЕКЛО — БАЗОВЫЕ СЛОИ (скрыты) */
 .applecation .full-person__photo::before,
 .applecation .full-person__photo::after {
     content: '';
@@ -2225,7 +2120,6 @@ body.advanced--animation:not(.no--animation) .full-start__background.loaded {
     will-change: opacity;
 }
 
-/* толщина стекла */
 .applecation .full-person__photo::before {
     z-index: 2;
     box-shadow:
@@ -2233,7 +2127,6 @@ body.advanced--animation:not(.no--animation) .full-start__background.loaded {
         inset -2px -2px 2px rgba(255, 255, 255, 0.30);
 }
 
-/* ореол и блик */
 .applecation .full-person__photo::after {
     z-index: 3;
     background:
@@ -2248,8 +2141,6 @@ body.advanced--animation:not(.no--animation) .full-start__background.loaded {
     mix-blend-mode: screen;
 }
 
-/* ЭФФЕКТЫ ПРИ ФОКУСЕ */
-
 .applecation .full-person.focus .full-person__photo::before,
 .applecation .full-person.focus .full-person__photo::after {
     opacity: 1;
@@ -2259,7 +2150,6 @@ body.advanced--animation:not(.no--animation) .full-start__background.loaded {
     opacity: 0.9;
 }
 
-/* Текстовая информация */
 .applecation .full-person__body {
     display: flex !important;
     flex-direction: column !important;
@@ -2269,7 +2159,6 @@ body.advanced--animation:not(.no--animation) .full-start__background.loaded {
     padding: 0 0.3em !important;
 }
 
-/* Имя персоны */
 .applecation .full-person__name {
     font-size: 1em !important;
     font-weight: 600 !important;
@@ -2282,14 +2171,12 @@ body.advanced--animation:not(.no--animation) .full-start__background.loaded {
     position: relative !important;
 }
 
-/* Бегущая строка для длинных имен */
 .applecation .full-person__name.marquee-active {
     text-overflow: clip !important;
     mask-image: linear-gradient(to right, #000 92%, transparent 100%);
     -webkit-mask-image: linear-gradient(to right, #000 92%, transparent 100%);
 }
 
-/* При фокусе (когда строка едет) прозрачность с обеих сторон */
 .applecation .full-person.focus .full-person__name.marquee-active {
     mask-image: linear-gradient(to right, transparent 0%, #000 7%, #000 93%, transparent 100%);
     -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 7%, #000 93%, transparent 100%);
@@ -2305,7 +2192,6 @@ body.advanced--animation:not(.no--animation) .full-start__background.loaded {
     display: inline-block;
 }
 
-/* Запуск анимации при фокусе */
 .applecation .full-person.focus .full-person__name.marquee-active .marquee__inner {
     animation: marquee var(--marquee-duration, 5s) linear infinite;
 }
@@ -2315,7 +2201,6 @@ body.advanced--animation:not(.no--animation) .full-start__background.loaded {
     100% { transform: translateX(-50%); }
 }
 
-/* Роль персоны */
 .applecation .full-person__role {
     font-size: 0.8em !important;
     font-weight: 400 !important;
@@ -2332,7 +2217,6 @@ body.advanced--animation:not(.no--animation) .full-start__background.loaded {
     color: rgb(255, 255, 255) !important;
 }
 
-/* ОТКЛЮЧЕНИЕ ЖИДКОГО СТЕКЛА */
 body.applecation--no-liquid-glass .applecation .full-episode.focus .full-episode__img,
 body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__photo {
     backdrop-filter: none !important;
@@ -2353,22 +2237,18 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         $('body').append(Lampa.Template.get('applecation_css', {}, true));
     }
 
-    // Патчим внутренние методы Лампы для корректной работы эпизодов и качества
     function patchApiImg() {
         const tmdbSource = Lampa.Api.sources.tmdb;
 
         if (!tmdbSource) return;
 
-        // 0. Патчим формирование URL для TMDB, чтобы добавить логотипы в основной запрос (append_to_response)
         if (window.Lampa && Lampa.TMDB && Lampa.TMDB.api) {
             const originalTmdbApi = Lampa.TMDB.api;
             Lampa.TMDB.api = function(url) {
                 let newUrl = url;
                 if (typeof newUrl === 'string' && newUrl.indexOf('append_to_response=') !== -1 && newUrl.indexOf('images') === -1) {
-                    // Добавляем images в список append_to_response
                     newUrl = newUrl.replace('append_to_response=', 'append_to_response=images,');
                     
-                    // Добавляем языки для картинок, если они еще не указаны
                     if (newUrl.indexOf('include_image_language=') === -1) {
                         const lang = Lampa.Storage.field('tmdb_lang') || Lampa.Storage.get('language') || 'ru';
                         newUrl += (newUrl.indexOf('?') === -1 ? '?' : '&') + 'include_image_language=en,null,' + lang;
@@ -2378,18 +2258,15 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
             };
         }
         
-        // 1. Патчим шаблонизатор, чтобы принудительно изменить формат даты и времени в карточках
         const originalTemplateJs = Lampa.Template.js;
         Lampa.Template.js = function(name, vars) {
             if (name === 'full_episode' && vars) {
-                // Форматируем время (локализовано: 1 ч 10 м или 39 м) - убираем точки
                 if (vars.runtime > 0) {
                     vars.time = Lampa.Utils.secondsToTimeHuman(vars.runtime * 60).replace(/\./g, '');
                 } else {
                     vars.time = '';
                 }
 
-                // Форматируем дату: всегда с годом
                 if (vars.air_date) {
                     const dateObj = new Date(vars.air_date.replace(/-/g, '/'));
                     const month = dateObj.getMonth() + 1;
@@ -2401,7 +2278,6 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
             return originalTemplateJs.call(Lampa.Template, name, vars);
         };
 
-        // 2. Патчим метод изображений для улучшения качества
         const originalImg = tmdbSource.img;
         tmdbSource.img = function(src, size) {
             const posterSize = Lampa.Storage.field('poster_size');
@@ -2434,18 +2310,16 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         Lampa.Api.img = tmdbSource.img;
     }
 
-    // Получаем качество логотипа на основе poster_size
     function getLogoQuality() {
         const posterSize = Lampa.Storage.field('poster_size');
         const qualityMap = {
-            'w200': 'w300',      // Низкое постера → низкое лого
-            'w300': 'w500',      // Среднее постера → среднее лого
-            'w500': 'original'   // Высокое постера → оригинальное лого
+            'w200': 'w300',
+            'w300': 'w500',
+            'w500': 'original'
         };
         return qualityMap[posterSize] || 'w500';
     }
 
-    // Получаем локализованный тип медиа
     function getMediaType(data) {
         const lang = Lampa.Storage.get('language', 'ru');
         const isTv = !!data.name;
@@ -2465,11 +2339,9 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         return types[lang] || types['en'];
     }
 
-    // Загружаем иконку студии/сети
     function loadNetworkIcon(activity, data) {
         const networkContainer = activity.render().find('.applecation__network');
         
-        // Для сериалов - телесеть
         if (data.networks && data.networks.length) {
             const network = data.networks[0];
             if (network.logo_path) {
@@ -2479,7 +2351,6 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
             }
         }
         
-        // Для фильмов - студия
         if (data.production_companies && data.production_companies.length) {
             const company = data.production_companies[0];
             if (company.logo_path) {
@@ -2489,19 +2360,15 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
             }
         }
         
-        // Если нет иконки - скрываем контейнер
         networkContainer.remove();
     }
 
-    // Заполняем мета информацию (Тип/Жанр/поджанр)
     function fillMetaInfo(activity, data) {
         const metaTextContainer = activity.render().find('.applecation__meta-text');
         const metaParts = [];
 
-        // Тип контента
         metaParts.push(getMediaType(data));
 
-        // Жанры (первые 2-3)
         if (data.genres && data.genres.length) {
             const genres = data.genres.slice(0, 2).map(g => 
                 Lampa.Utils.capitalizeFirstLetter(g.name)
@@ -2511,29 +2378,24 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
 
         metaTextContainer.html(metaParts.join(' · '));
         
-        // Загружаем иконку студии/сети
         loadNetworkIcon(activity, data);
     }
 
-    // Заполняем слоган фільму/серіалу
     function fillSlogan(activity, data) {
         const sloganContainer = activity.render().find('.applecation__slogan');
         const slogan = data.tagline || data.slogan || '';
         
         if (slogan) {
             sloganContainer.text(slogan);
-            // Показуємо слоган тільки після завантаження фону
             waitForBackgroundLoad(activity, () => {
                 if (!isAlive(activity)) return;
                 sloganContainer.addClass('show');
             });
         } else {
-            // Якщо слогана немає, приховуємо контейнер
             sloganContainer.hide();
         }
     }
 
-    // Заполняем описание
     function fillDescription(activity, data) {
         const descContainer = activity.render().find('.applecation__description');
         const descWrapper = activity.render().find('.applecation__description-wrapper');
@@ -2543,21 +2405,17 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         descContainer.text(description);
         
         if (useOverlay) {
-            // Создаем оверлей заранее
             createDescriptionOverlay(activity, data);
             
-            // Добавляем обработчик клика для показа полного описания
             descWrapper.off('hover:enter').on('hover:enter', function() {
                 showFullDescription();
             });
         } else {
-            // Если оверлей отключен, убираем обработчики и удаляем оверлей
             descWrapper.off('hover:enter');
             $('.applecation-description-overlay').remove();
         }
     }
     
-    // Обновляем логотип в оверлее
     function updateOverlayLogo(logoUrl) {
         const overlay = $('.applecation-description-overlay');
         
@@ -2570,7 +2428,6 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         }
     }
     
-    // Парсим страны с локализацией (как в ядре Lampa)
     function parseCountries(movie) {
         if (!movie.production_countries) return [];
         
@@ -2579,29 +2436,24 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
             const langKey = 'country_' + isoCode.toLowerCase();
             const translated = Lampa.Lang.translate(langKey);
             
-            // Если перевод найден (не равен ключу), используем его, иначе оригинальное имя
             return translated !== langKey ? translated : country.name;
         });
     }
     
-    // Создаем оверлей заранее
     function createDescriptionOverlay(activity, data) {
         const text = data.overview || '';
         const title = data.title || data.name;
         
         if (!text) return;
         
-        // Удаляем старый оверлей если есть
         $('.applecation-description-overlay').remove();
         
-        // Парсим данные как в Lampa
         const date = (data.release_date || data.first_air_date || '') + '';
         const relise = date.length > 3 ? Lampa.Utils.parseTime(date).full : date.length > 0 ? date : Lampa.Lang.translate('player_unknown');
         const budget = '$ ' + Lampa.Utils.numberWithSpaces(data.budget || 0);
         const countriesArr = parseCountries(data);
         const countries = countriesArr.join(', ');
         
-        // Создаем оверлей через шаблон Lampa
         const overlay = $(Lampa.Template.get('applecation_overlay', {
             title: title,
             text: text,
@@ -2610,33 +2462,26 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
             countries: countries
         }));
         
-        // Скрываем бюджет если 0
         if (!data.budget || data.budget === 0) {
             overlay.find('.applecation--budget').remove();
         }
         
-        // Скрываем страны если пусто
         if (!countries) {
             overlay.find('.applecation--countries').remove();
         }
         
-        // Добавляем в body но НЕ показываем
         $('body').append(overlay);
         
-        // Сохраняем ссылку
         overlay.data('controller-created', false);
     }
     
-    // Показываем полное описание в оверлее
     function showFullDescription() {
         const overlay = $('.applecation-description-overlay');
         
         if (!overlay.length) return;
         
-        // Анимация появления
         setTimeout(() => overlay.addClass('show'), 10);
         
-        // Создаем контроллер только один раз
         if (!overlay.data('controller-created')) {
             const controller = {
                 toggle: function() {
@@ -2655,7 +2500,6 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         Lampa.Controller.toggle('applecation_description');
     }
     
-    // Закрываем оверлей с описанием
     function closeDescriptionOverlay() {
         const overlay = $('.applecation-description-overlay');
         
@@ -2668,11 +2512,9 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         }, 300);
     }
 
-    // Склонение сезонов с локализацией
     function formatSeasons(count) {
         const lang = Lampa.Storage.get('language', 'ru');
         
-        // Славянские языки (ru, uk, be, bg) - сложное склонение
         if (['ru', 'uk', 'be', 'bg'].includes(lang)) {
             const cases = [2, 0, 1, 1, 1, 2];
             const titles = {
@@ -2688,45 +2530,37 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
             return `${count} ${langTitles[caseIndex]}`;
         }
         
-        // Английский
         if (lang === 'en') {
             return count === 1 ? `${count} Season` : `${count} Seasons`;
         }
         
-        // Чешский
         if (lang === 'cs') {
             if (count === 1) return `${count} série`;
             if (count >= 2 && count <= 4) return `${count} série`;
             return `${count} sérií`;
         }
         
-        // Португальский
         if (lang === 'pt') {
             return count === 1 ? `${count} Temporada` : `${count} Temporadas`;
         }
         
-        // Иврит
         if (lang === 'he') {
             if (count === 1) return `עונה ${count}`;
             if (count === 2) return `${count} עונות`;
             return `${count} עונות`;
         }
         
-        // Китайский (без склонения)
         if (lang === 'zh') {
             return `${count} 季`;
         }
         
-        // Остальные языки - базовое склонение
         const seasonWord = Lampa.Lang.translate('full_season');
         return count === 1 ? `${count} ${seasonWord}` : `${count} ${seasonWord}s`;
     }
 
-    // Склонение серий с локализацией
     function formatEpisodes(count) {
         const lang = Lampa.Storage.get('language', 'ru');
         
-        // Славянские языки (ru, uk, be, bg) - сложное склонение
         if (['ru', 'uk', 'be', 'bg'].includes(lang)) {
             const cases = [2, 0, 1, 1, 1, 2];
             const titles = {
@@ -2742,67 +2576,55 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
             return `${count} ${langTitles[caseIndex]}`;
         }
         
-        // Английский
         if (lang === 'en') {
             return count === 1 ? `${count} Episode` : `${count} Episodes`;
         }
         
-        // Чешский
         if (lang === 'cs') {
             if (count === 1) return `${count} epizoda`;
             if (count >= 2 && count <= 4) return `${count} epizody`;
             return `${count} epizod`;
         }
         
-        // Португальский
         if (lang === 'pt') {
             return count === 1 ? `${count} Episódio` : `${count} Episódios`;
         }
         
-        // Иврит
         if (lang === 'he') {
             if (count === 1) return `פרק ${count}`;
             return `${count} פרקים`;
         }
         
-        // Китайский (без склонения)
         if (lang === 'zh') {
             return `${count} 集`;
         }
         
-        // Остальные языки - базовое склонение
         const episodeWord = Lampa.Lang.translate('full_episode');
         return count === 1 ? `${count} ${episodeWord}` : `${count} ${episodeWord}s`;
     }
 
-    // Заполняем дополнительную информацию (Год/длительность)
     function fillAdditionalInfo(activity, data) {
         const infoContainer = activity.render().find('.applecation__info');
         const infoParts = [];
 
-        // Год выпуска
         const releaseDate = data.release_date || data.first_air_date || '';
         if (releaseDate) {
             const year = releaseDate.split('-')[0];
             infoParts.push(year);
         }
 
-        // Длительность
         if (data.name) {
-            // Сериал - показываем и продолжительность эпизода, и количество сезонов
             if (data.episode_run_time && data.episode_run_time.length) {
                 const avgRuntime = data.episode_run_time[0];
                 const timeM = Lampa.Lang.translate('time_m').replace('.', '');
                 infoParts.push(`${avgRuntime} ${timeM}`);
             }
             
-            // Всегда показываем количество сезонов для сериалов
             const seasons = Lampa.Utils.countSeasons(data);
             if (seasons) {
                 infoParts.push(formatSeasons(seasons));
             }
 
-            // Показываем количество серий, если включено в настройках
             if (Lampa.Storage.get('applecation_show_episode_count', false)) {
                 const episodes = data.number_of_episodes;
                 if (episodes) {
@@ -2810,7 +2632,6 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
                 }
             }
         } else {
-            // Фильм - общая продолжительность
             if (data.runtime && data.runtime > 0) {
                 const hours = Math.floor(data.runtime / 60);
                 const minutes = data.runtime % 60;
@@ -2827,16 +2648,12 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         infoContainer.html(textContent + '<span class="applecation__quality-badges"></span>');
     }
     
-    // Обновляем бейджи качества
     function updateQualityBadges(activity, qualityInfo) {
         const badgesContainer = activity.render().find('.applecation__quality-badges');
         if (!badgesContainer.length) return;
         
         const badges = [];
         
-        // Порядок: Quality, Dolby Vision, HDR, Sound, DUB
-        
-        // 1. Quality (4K/2K/FHD/HD)
         if (qualityInfo.quality) {
             let qualitySvg = '';
             if (qualityInfo.quality === '4K') {
@@ -2853,17 +2670,14 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
             }
         }
         
-        // 2. Dolby Vision
         if (qualityInfo.dv) {
             badges.push('<div class="quality-badge quality-badge--dv"><svg viewBox="0 0 1051 393" xmlns="http://www.w3.org/2000/svg"><g transform="translate(0,393) scale(0.1,-0.1)" fill="currentColor"><path d="M50 2905 l0 -1017 223 5 c146 4 244 11 287 21 361 85 638 334 753 677 39 116 50 211 44 366 -7 200 -52 340 -163 511 -130 199 -329 344 -574 419 -79 24 -102 26 -327 31 l-243 4 0 -1017z"/><path d="M2436 3904 c-443 -95 -762 -453 -806 -905 -30 -308 86 -611 320 -832 104 -99 212 -165 345 -213 133 -47 253 -64 468 -64 l177 0 0 1015 0 1015 -217 -1 c-152 0 -239 -5 -287 -15z"/><path d="M3552 2908 l3 -1013 425 0 c309 0 443 4 490 13 213 43 407 148 550 299 119 124 194 255 247 428 25 84 27 103 27 270 1 158 -2 189 -22 259 -72 251 -221 458 -424 590 -97 63 -170 97 -288 134 l-85 26 -463 4 -462 3 2 -1013z m825 701 c165 -22 283 -81 404 -199 227 -223 279 -550 133 -831 -70 -133 -176 -234 -319 -304 -132 -65 -197 -75 -490 -75 l-245 0 0 703 c0 387 3 707 7 710 11 11 425 8 510 -4z"/><path d="M7070 2905 l0 -1015 155 0 155 0 0 1015 0 1015 -155 0 -155 0 0 -1015z"/><path d="M7640 2905 l0 -1015 150 0 150 0 0 60 c0 33 2 60 5 60 2 0 33 -15 67 -34 202 -110 433 -113 648 -9 79 38 108 59 180 132 72 71 95 102 134 181 102 207 102 414 1 625 -120 251 -394 411 -670 391 -115 -8 -225 -42 -307 -93 -21 -13 -42 -23 -48 -23 -7 0 -10 125 -10 370 l0 370 -150 0 -150 0 0 -1015z m832 95 c219 -67 348 -310 280 -527 -62 -198 -268 -328 -466 -295 -96 15 -168 52 -235 119 -131 132 -164 311 -87 478 27 60 101 145 158 181 100 63 234 80 350 44z"/><path d="M6035 3286 c-253 -49 -460 -232 -542 -481 -23 -70 -26 -96 -26 -210 0 -114 3 -140 26 -210 37 -113 90 -198 177 -286 84 -85 170 -138 288 -177 67 -22 94 -26 207 -26 113 0 140 4 207 26 119 39 204 92 288 177 87 89 140 174 177 286 22 67 26 99 27 200 1 137 -14 207 -69 320 -134 277 -457 440 -760 381z m252 -284 c117 -37 206 -114 260 -229 121 -253 -38 -548 -321 -595 -258 -43 -503 183 -483 447 20 271 287 457 544 377z"/><path d="M9059 3258 c10 -24 138 -312 285 -642 l266 -598 -72 -162 c-39 -88 -78 -171 -86 -183 -37 -58 -132 -80 -208 -48 l-35 14 -18 -42 c-10 -23 -37 -84 -60 -135 -23 -52 -39 -97 -36 -102 3 -4 40 -23 83 -41 70 -31 86 -34 177 -34 93 0 105 2 167 33 76 37 149 104 180 166 29 57 799 1777 805 1799 5 16 -6 17 -161 15 l-167 -3 -185 -415 c-102 -228 -192 -431 -200 -450 l-15 -35 -201 453 -201 452 -168 0 -168 0 18 -42z"/><path d="M2650 968 c0 -2 81 -211 179 -463 l179 -460 59 -3 59 -3 178 453 c98 249 180 459 183 466 4 9 -13 12 -65 12 -47 0 -71 -4 -74 -12 -3 -7 -65 -176 -138 -375 -73 -200 -136 -363 -139 -363 -3 0 -67 168 -142 373 l-136 372 -72 3 c-39 2 -71 1 -71 0z"/><path d="M3805 958 c-3 -7 -4 -215 -3 -463 l3 -450 63 -3 62 -3 0 466 0 465 -60 0 c-39 0 -62 -4 -65 -12z"/><path d="M4580 960 c-97 -16 -178 -72 -211 -145 -23 -50 -24 -143 -3 -193 32 -77 91 -117 244 -167 99 -32 146 -64 166 -112 28 -65 -11 -149 -83 -179 -78 -33 -212 -1 -261 61 l-19 24 -48 -43 -48 -42 43 -37 c121 -103 347 -112 462 -17 54 44 88 120 88 194 -1 130 -79 213 -242 256 -24 7 -71 25 -104 41 -48 22 -66 37 -79 65 -32 67 -5 138 65 174 73 37 193 18 244 -39 l20 -22 43 43 c41 40 42 43 25 61 -27 30 -102 64 -167 76 -64 12 -70 12 -135 1z"/><path d="M5320 505 l0 -465 65 0 65 0 0 465 0 465 -65 0 -65 0 0 -465z"/><path d="M6210 960 c-147 -25 -264 -114 -328 -249 -32 -65 -36 -84 -40 -175 -7 -161 33 -271 135 -367 140 -132 360 -164 541 -77 227 108 316 395 198 634 -88 177 -290 271 -506 234z m232 -132 c100 -46 165 -136 188 -261 20 -106 -18 -237 -88 -310 -101 -105 -245 -132 -377 -73 -74 33 -120 79 -157 154 -31 62 -33 74 -33 167 0 87 4 107 26 155 64 137 173 204 320 196 43 -2 85 -12 121 -28z"/><path d="M7135 958 c-3 -7 -4 -215 -3 -463 l3 -450 63 -3 62 -3 0 376 c0 207 3 374 8 371 4 -2 115 -171 247 -375 l240 -371 78 0 77 0 0 465 0 465 -60 0 -60 0 -2 -372 -3 -372 -241 370 -241 369 -82 3 c-59 2 -83 -1 -86 -10z"/></g></svg></div>');
         }
         
-        // 3. HDR
         if (qualityInfo.hdr && qualityInfo.hdr_type) {
             badges.push('<div class="quality-badge quality-badge--hdr"><svg viewBox="-1 178 313 136" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2.5" y="181.5" width="306" height="129" rx="17.5" stroke="currentColor" stroke-width="5" fill="none"/><path d="M27.2784 293V199.909H46.9602V238.318H86.9148V199.909H106.551V293H86.9148V254.545H46.9602V293H27.2784ZM155.778 293H122.778V199.909H156.051C165.415 199.909 173.475 201.773 180.233 205.5C186.991 209.197 192.188 214.515 195.824 221.455C199.491 228.394 201.324 236.697 201.324 246.364C201.324 256.061 199.491 264.394 195.824 271.364C192.188 278.333 186.96 283.682 180.142 287.409C173.354 291.136 165.233 293 155.778 293ZM142.46 276.136H154.96C160.778 276.136 165.672 275.106 169.642 273.045C173.642 270.955 176.642 267.727 178.642 263.364C180.672 258.97 181.688 253.303 181.688 246.364C181.688 239.485 180.672 233.864 178.642 229.5C176.642 225.136 173.657 221.924 169.688 219.864C165.718 217.803 160.824 216.773 155.006 216.773H142.46V276.136ZM215.903 293V199.909H252.631C259.661 199.909 265.661 201.167 270.631 203.682C275.631 206.167 279.434 209.697 282.04 214.273C284.676 218.818 285.994 224.167 285.994 230.318C285.994 236.5 284.661 241.818 281.994 246.273C279.328 250.697 275.464 254.091 270.403 256.455C265.373 258.818 259.282 260 252.131 260H227.54V244.182H248.949C252.706 244.182 255.828 243.667 258.312 242.636C260.797 241.606 262.646 240.061 263.858 238C265.1 235.939 265.722 233.379 265.722 230.318C265.722 227.227 265.1 224.621 263.858 222.5C262.646 220.379 260.782 218.773 258.267 217.682C255.782 216.561 252.646 216 248.858 216H235.585V293H215.903ZM266.176 250.636L289.312 293H267.585L244.949 250.636H266.176Z" fill="currentColor"/></svg></div>');
         }
         
-        // 4. Sound (7.1/5.1/2.0)
         if (qualityInfo.sound) {
             let soundSvg = '';
             if (qualityInfo.sound === '7.1') {
@@ -2878,7 +2692,6 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
             }
         }
         
-        // 5. DUB
         if (qualityInfo.dub) {
             badges.push('<div class="quality-badge quality-badge--dub"><svg viewBox="-1 558 313 136" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2.5" y="561.5" width="306" height="129" rx="17.5" stroke="currentColor" stroke-width="5" fill="none"/><path d="M60.5284 673H27.5284V579.909H60.8011C70.1648 579.909 78.2254 581.773 84.983 585.5C91.7405 589.197 96.9375 594.515 100.574 601.455C104.241 608.394 106.074 616.697 106.074 626.364C106.074 636.061 104.241 644.394 100.574 651.364C96.9375 658.333 91.7102 663.682 84.892 667.409C78.1042 671.136 69.983 673 60.5284 673ZM47.2102 656.136H59.7102C65.5284 656.136 70.4223 655.106 74.392 653.045C78.392 650.955 81.392 647.727 83.392 643.364C85.4223 638.97 86.4375 633.303 86.4375 626.364C86.4375 619.485 85.4223 613.864 83.392 609.5C81.392 605.136 78.4072 601.924 74.4375 599.864C70.4678 597.803 65.5739 596.773 59.7557 596.773H47.2102V656.136ZM178.153 579.909H197.835V640.364C197.835 647.152 196.214 653.091 192.972 658.182C189.759 663.273 185.259 667.242 179.472 670.091C173.684 672.909 166.941 674.318 159.244 674.318C151.517 674.318 144.759 672.909 138.972 670.091C133.184 667.242 128.684 663.273 125.472 658.182C122.259 653.091 120.653 647.152 120.653 640.364V579.909H140.335V638.682C140.335 642.227 141.108 645.379 142.653 648.136C144.229 650.894 146.441 653.061 149.29 654.636C152.138 656.212 155.456 657 159.244 657C163.063 657 166.381 656.212 169.199 654.636C172.047 653.061 174.244 650.894 175.79 648.136C177.366 645.379 178.153 642.227 178.153 638.682V579.909ZM214.028 673V579.909H251.301C258.15 579.909 263.862 580.924 268.438 582.955C273.013 584.985 276.453 587.803 278.756 591.409C281.059 594.985 282.21 599.106 282.21 603.773C282.21 607.409 281.483 610.606 280.028 613.364C278.574 616.091 276.574 618.333 274.028 620.091C271.513 621.818 268.634 623.045 265.392 623.773V624.682C268.938 624.833 272.256 625.833 275.347 627.682C278.468 629.53 280.998 632.121 282.938 635.455C284.877 638.758 285.847 642.697 285.847 647.273C285.847 652.212 284.619 656.621 282.165 660.5C279.741 664.348 276.15 667.394 271.392 669.636C266.634 671.879 260.771 673 253.801 673H214.028ZM233.71 656.909H249.756C255.241 656.909 259.241 655.864 261.756 653.773C264.271 651.652 265.528 648.833 265.528 645.318C265.528 642.742 264.907 640.47 263.665 638.5C262.422 636.53 260.65 634.985 258.347 633.864C256.074 632.742 253.362 632.182 250.21 632.182H233.71V656.909ZM233.71 618.864H248.301C250.998 618.864 253.392 618.394 255.483 617.455C257.604 616.485 259.271 615.121 260.483 613.364C261.725 611.606 262.347 609.5 262.347 607.045C262.347 603.682 261.15 600.97 258.756 598.909C256.392 596.848 253.028 595.818 248.665 595.818H233.71V618.864Z" fill="currentColor"/></svg></div>');
         }
@@ -2889,24 +2702,20 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         }
     }
 
-    // Загружаем логотип фильма
     function loadLogo(event) {
         const data = event.data.movie;
         const activity = event.object.activity;
         
         if (!data || !activity) return;
 
-        // Заполняем основную информацию
         fillMetaInfo(activity, data);
-        fillSlogan(activity, data); // ДОДАНО: заповнюємо слоган
+        fillSlogan(activity, data);
         fillDescription(activity, data);
         fillAdditionalInfo(activity, data);
 
-        // Ждем когда фон загрузится и появится
         waitForBackgroundLoad(activity, () => {
             if (!isAlive(activity)) return;
 
-            // После загрузки фона показываем контент
             activity.render().find('.applecation__meta').addClass('show');
             
             const useOverlay = Lampa.Storage.get('applecation_description_overlay', true);
@@ -2926,7 +2735,6 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         const logoContainer = activity.render().find('.applecation__logo');
         const titleElement = activity.render().find('.full-start-new__title');
 
-        // Функция для отрисовки найденного логотипа
         const renderLogo = (logoPath) => {
             const quality = getLogoQuality();
             const logoUrl = Lampa.TMDB.image(`/t/p/${quality}${logoPath}`);
@@ -2941,22 +2749,18 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
                     logoContainer.addClass('loaded');
                 });
                 
-                // Обновляем логотип в оверлее
                 updateOverlayLogo(logoUrl);
             };
             img.src = logoUrl;
         };
 
-        // 1. Пытаемся взять логотип из уже загруженных данных (благодаря патчу append_to_response)
         if (data.images && data.images.logos && data.images.logos.length > 0) {
-            // Находим логотип на текущем языке или английский/нейтральный
             const lang = Lampa.Storage.field('tmdb_lang') || Lampa.Storage.get('language') || 'ru';
             let logo = data.images.logos.find(l => l.iso_639_1 === lang);
             
-            // Если логотипа на текущем языке нет, ищем на английском или нейтральном
             if (!logo && Lampa.Storage.get('applecation_show_foreign_logo', true)) {
                 logo = data.images.logos.find(l => l.iso_639_1 === 'en');
-                if (!logo) logo = data.images.logos.find(l => !l.iso_639_1); // null
+                if (!logo) logo = data.images.logos.find(l => !l.iso_639_1);
                 if (!logo) logo = data.images.logos[0];
             }
 
@@ -2965,7 +2769,6 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
             }
         }
 
-        // 2. Если логотипа нет в данных (например, другой источник или ошибка патча), делаем старый запрос
         const mediaType = data.name ? 'tv' : 'movie';
         const apiUrl = Lampa.TMDB.api(
             `${mediaType}/${data.id}/images?api_key=${Lampa.TMDB.key()}&language=${Lampa.Storage.get('language')}`
@@ -2987,13 +2790,11 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
                 }
             }
             
-            // Нет подходящего логотипа - показываем текстовое название
             titleElement.show();
             waitForBackgroundLoad(activity, () => {
                 logoContainer.addClass('loaded');
             });
         }).fail(() => {
-            // При ошибке показываем текстовое название
             titleElement.show();
             waitForBackgroundLoad(activity, () => {
                 logoContainer.addClass('loaded');
@@ -3001,7 +2802,6 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         });
     }
 
-    // Ждем загрузки и появления фона
     function waitForBackgroundLoad(activity, callback) {
         const background = activity.render().find('.full-start__background:not(.applecation__overlay)');
         
@@ -3010,23 +2810,19 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
             return;
         }
 
-        // Если фон уже загружен и анимация завершена
         if (background.hasClass('loaded') && background.hasClass('applecation-animated')) {
             callback();
             return;
         }
 
-        // Если фон загружен но анимация еще идет
         if (background.hasClass('loaded')) {
-            // Ждем завершения transition + небольшая задержка для надежности
             setTimeout(() => {
                 background.addClass('applecation-animated');
                 callback();
-            }, 350); // 600ms transition + 50ms запас
+            }, 350);
             return;
         }
 
-        // Ждем загрузки фона
         const checkInterval = setInterval(() => {
             if (!isAlive(activity)) {
                 clearInterval(checkInterval);
@@ -3035,17 +2831,15 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
 
             if (background.hasClass('loaded')) {
                 clearInterval(checkInterval);
-                // Ждем завершения transition + небольшая задержка
                 setTimeout(() => {
                     if (!isAlive(activity)) return;
                     
                     background.addClass('applecation-animated');
                     callback();
-                }, 650); // 600ms transition + 50ms запас
+                }, 650);
             }
         }, 50);
 
-        // Таймаут на случай если что-то пошло не так
         setTimeout(() => {
             clearInterval(checkInterval);
             if (!background.hasClass('applecation-animated')) {
@@ -3055,7 +2849,6 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         }, 2000);
     }
 
-    // Добавляем оверлей рядом с фоном
     function addOverlay(activity) {
         const background = activity.render().find('.full-start__background');
         if (background.length && !background.next('.applecation__overlay').length) {
@@ -3063,23 +2856,19 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         }
     }
 
-    // Применяем размытие фона при прокрутке
     function attachScrollBlur(activity) {
         const background = activity.render().find('.full-start__background:not(.applecation__overlay)')[0];
         const scrollBody = activity.render().find('.scroll__body')[0];
         
         if (!background || !scrollBody) return;
         
-        // Кешируем состояние для избежания лишних DOM операций
         let isBlurred = false;
         
-        // Перехватываем сеттер стиля - самый быстрый и синхронный способ
         const originalDescriptor = Object.getOwnPropertyDescriptor(scrollBody.style, '-webkit-transform') || 
                                    Object.getOwnPropertyDescriptor(CSSStyleDeclaration.prototype, 'webkitTransform');
         
         Object.defineProperty(scrollBody.style, '-webkit-transform', {
             set: function(value) {
-                // Оптимизированный парсинг без regex
                 if (value) {
                     const yStart = value.indexOf(',') + 1;
                     const yEnd = value.indexOf(',', yStart);
@@ -3087,7 +2876,6 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
                         const yValue = parseFloat(value.substring(yStart, yEnd));
                         const shouldBlur = yValue < 0;
                         
-                        // Применяем только если состояние изменилось
                         if (shouldBlur !== isBlurred) {
                             isBlurred = shouldBlur;
                             background.classList.toggle('dim', shouldBlur);
@@ -3095,7 +2883,6 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
                     }
                 }
                 
-                // Вызываем оригинальный сеттер
                 if (originalDescriptor && originalDescriptor.set) {
                     originalDescriptor.set.call(this, value);
                 } else {
@@ -3112,12 +2899,10 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         });
     }
 
-    // Добавляем бегущую строку для длинных имен персон
     function attachPersonMarquee(activity) {
         const render = activity.render();
         const names = render.find('.full-person__name');
         
-        // Очищаем старые marquee если они есть (на случай повторного вызова)
         names.each(function() {
             const nameElement = $(this);
             if (nameElement.hasClass('marquee-processed')) {
@@ -3130,14 +2915,10 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
             }
         });
 
-        // Функция для проверки переполнения
         function isTextOverflowing(element) {
-            // Для корректной проверки на скрытых элементах или в процессе отрисовки
             return element.scrollWidth > element.clientWidth + 1;
         }
         
-        // Инициализируем marquee для тех, кто переполнен
-        // Небольшая задержка, чтобы лайаут успел пересчитаться
         setTimeout(() => {
             if (!isAlive(activity)) return;
 
@@ -3148,14 +2929,11 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
                 if (!text) return;
                 
                 if (isTextOverflowing(nameElement[0])) {
-                    // Рассчитываем длительность: ~250мс на символ, но не менее 5с и не более 20с
                     const duration = Math.min(Math.max(text.length * 0.25, 5), 20);
                     
                     nameElement.addClass('marquee-processed marquee-active');
                     nameElement.css('--marquee-duration', duration + 's');
                     
-                    // Оборачиваем в структуру для анимации
-                    // Используем text() для безопасности от XSS
                     const span1 = $('<span>').text(text);
                     const span2 = $('<span>').text(text);
                     const inner = $('<div class="marquee__inner">').append(span1).append(span2);
@@ -3168,10 +2946,8 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         }, 100);
     }
 
-    // Подключаем загрузку логотипов
     function attachLogoLoader() {
         Lampa.Listener.follow('full', (event) => {
-            // Отключаем блок "Подробно", если включен оверлей
             if (Lampa.Storage.get('applecation_description_overlay', true)) {
                 disableFullDescription(event);
             }
@@ -3180,20 +2956,16 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
                 const activity = event.object.activity;
                 const render = activity.render();
                 
-                // Добавляем класс для применения стилей
                 render.addClass('applecation');
 
-                // Помечаем активность при уничтожении
                 activity.__destroyed = false;
                 
-                // Сохраняем оригинальный метод destroy если он есть
                 var originalDestroy = activity.destroy;
                 activity.destroy = function() {
                     activity.__destroyed = true;
                     if (originalDestroy) originalDestroy.apply(activity, arguments);
                 };
 
-                // Добавляем класс качества постеров для CSS
                 const posterSize = Lampa.Storage.field('poster_size');
                 render.toggleClass('applecation--poster-high', posterSize === 'w500');
 
@@ -3202,7 +2974,6 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
                 attachScrollBlur(activity);
                 attachPersonMarquee(activity);
 
-                // Анализируем качество контента
                 const data = event.data;
                 const movie = data && data.movie;
                 if (movie) {
@@ -3212,7 +2983,6 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         });
     }
 
-    // Регистрация плагина в манифесте
     var pluginManifest = {
         type: 'other',
         version: APPLECATION_VERSION,
@@ -3222,12 +2992,10 @@ body.applecation--no-liquid-glass .applecation .full-person.focus .full-person__
         icon: PLUGIN_ICON
     };
 
-    // Регистрируем плагин
     if (Lampa.Manifest && Lampa.Manifest.plugins) {
         Lampa.Manifest.plugins = pluginManifest;
     }
 
-    // Запуск плагина
     if (window.appready) {
         initializePlugin();
     } else {
