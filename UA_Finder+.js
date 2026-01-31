@@ -1,61 +1,36 @@
 /**
- * Lampa Track Finder v3
+ * Lampa Track Finder v3 (Сумісна версія для старих Samsung TV)
  * --------------------------------------------------------------------------------
  * Цей плагін призначений для пошуку та відображення інформації про наявність
  * українських аудіодоріжок у торент релізах, доступних через Jacred API.
  * --------------------------------------------------------------------------------
- * Основні можливості:
- * - Шукає згадки українських доріжок (Ukr, 2xUkr і т.д.) у назвах торрентів.
- * - Ігнорує українські субтитри, аналізуючи лише частину назви до слова "sub".
- * - Виконує паралельний пошук за оригінальною та локалізованою назвою для максимального охоплення.
- * - Обирає реліз з найбільшою кількістю знайдених українських доріжок.
- * - Має надійний дворівневий фільтр для розрізнення фільмів та серіалів.
- * - Оптимізована обробка карток (дебаунсинг) для уникнення пропусків та підвищення продуктивності.
- * - Відображає мітку на постерах (динамічно адаптується до присутності плагіна RatingUp.js).
- * - Має систему кешування для зменшення навантаження та пришвидшення роботи.
- * - Не виконує пошук для майбутніх релізів або релізів з невідомою датою.
- * --------------------------------------------------------------------------------
- * - 🟩 Розширено 'DISPLAY_MODE'. Тепер 3 опції: 'text', 'flag_count', 'flag_only'.(Прапор в SVG)
- * - 🟩 Детальні коментарі для всіх функцій, блоків та ключових налаштувань
- * - 🟩 Повністю перероблено логіку `processListCard` на ідемпотентну.
- * - 🟩 Мітки, що зникали при перемальовуванні DOM 
- * - 🟩 "Примарні" мітки (хибний кеш) тепер коректно видаляються.
- * - 🟩 Збережено оптимізації (дебаунс, пакетна обробка).
- * - 🟩 Додано разову перевірку кешу при старті.
- * --------------------------------------------------------------------------------
- * Виправлення для Samsung TV:
- * - Замінено стрілочні функції на звичайні function
- * - Використовуємо var замість let/const
- * - Замінено Promise.all на власну реалізацію
- * - Використовуємо XMLHttpRequest замість fetch для кращої сумісності
- * - Додано перевірки на наявність об'єктів
- * - Збільшено таймаути
+ * Змінено для сумісності зі старими WebView:
+ * - Замінено всі `let` на `var`
+ * - Замінено всі стрілкові функції на традиційні
+ * - Використано більш сумісний синтаксис
+ * - Додано більше перевірок на доступність API
  */
 
 (function () {
     'use strict';
 
-    // ===================== КОНФІГУРАЦІЯ ПЛАГІНА (LTF - Lampa Track Finder) =====================
+    // ===================== КОНФІГУРАЦІЯ ПЛАГІНА =====================
     var ukraineFlagSVG = '<i class="flag-css"></i>';
     var LTF_CONFIG = window.LTF_CONFIG || {
         BADGE_STYLE: 'flag_count',
         SHOW_FOR_TV: true,
         CACHE_VERSION: 4,
         CACHE_KEY: 'lampa_ukr_tracks_cache',
-        CACHE_VALID_TIME_MS: 24 * 60 * 60 * 1000,
-        CACHE_REFRESH_THRESHOLD_MS: 12 * 60 * 60 * 1000,
-        LOGGING_GENERAL: true,
+        CACHE_VALID_TIME_MS: 48 * 60 * 60 * 1000,
+        CACHE_REFRESH_THRESHOLD_MS: 24 * 60 * 60 * 1000,
+        LOGGING_GENERAL: false,
         LOGGING_TRACKS: false,
-        LOGGING_CARDLIST: true,
+        LOGGING_CARDLIST: false,
         JACRED_PROTOCOL: 'https://',
-        JACRED_URL: 'redapi.cfhttp.top',
-        PROXY_LIST: [
-            'https://my-finder.kozak-bohdan.workers.dev/?url=',
-            'https://cors.bwa.workers.dev/',
-            'https://api.allorigins.win/raw?url='
-        ],
-        PROXY_TIMEOUT_MS: 5000,
-        MAX_PARALLEL_REQUESTS: 10,
+        JACRED_URL: 'jacred.xyz',
+        PROXY_LIST: [],
+        PROXY_TIMEOUT_MS: 3000,
+        MAX_PARALLEL_REQUESTS: 12,
         MAX_RETRY_ATTEMPTS: 2,
         SHOW_TRACKS_FOR_TV_SERIES: true,
         DISPLAY_MODE: 'flag_count',
@@ -71,24 +46,21 @@
 
     window.LTF_CONFIG = LTF_CONFIG;
 
-    // ======== АВТОМАТИЧНЕ СКИДАННЯ СТАРОГО КЕШУ ПРИ ОНОВЛЕННІ ========
+    // ======== АВТОМАТИЧНЕ СКИДАННЯ СТАРОГО КЕШУ ========
     (function resetOldCache() {
-        try {
-            var cache = Lampa.Storage.get(LTF_CONFIG.CACHE_KEY) || {};
-            var hasOld = false;
-            var keys = Object.keys(cache);
-            for (var i = 0; i < keys.length; i++) {
-                if (!keys[i].startsWith(LTF_CONFIG.CACHE_VERSION + '_')) {
-                    hasOld = true;
-                    break;
-                }
+        var cache = Lampa.Storage.get(LTF_CONFIG.CACHE_KEY) || {};
+        var hasOld = false;
+        
+        for (var key in cache) {
+            if (cache.hasOwnProperty(key) && !key.startsWith(LTF_CONFIG.CACHE_VERSION + '_')) {
+                hasOld = true;
+                break;
             }
-            if (hasOld) {
-                console.log('UA-Finder: виявлено старий кеш, виконується очищення...');
-                Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, {});
-            }
-        } catch (e) {
-            console.log('UA-Finder: помилка очищення кешу:', e);
+        }
+        
+        if (hasOld) {
+            console.log('UA-Finder: виявлено старий кеш, очищення...');
+            Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, {});
         }
     })();
 
@@ -140,21 +112,16 @@
         "}" +
         "</style>";
 
-    // Додаємо стилі в DOM
-    if (typeof Lampa !== 'undefined' && Lampa.Template) {
-        Lampa.Template.add('lampa_tracks_css', styleTracks);
-        try {
-            if (document.body) {
-                document.body.insertAdjacentHTML('beforeend', Lampa.Template.get('lampa_tracks_css', {}, true));
-            }
-        } catch (e) {
-            // Додаємо при завантаженні DOM
-            setTimeout(function() {
-                if (document.body) {
-                    document.body.insertAdjacentHTML('beforeend', Lampa.Template.get('lampa_tracks_css', {}, true));
-                }
-            }, 1000);
-        }
+    Lampa.Template.add('lampa_tracks_css', styleTracks);
+    if (typeof $ !== 'undefined') {
+        $('body').append(Lampa.Template.get('lampa_tracks_css', {}, true));
+    } else {
+        // Fallback для старих TV
+        document.addEventListener('DOMContentLoaded', function() {
+            var styleEl = document.createElement('style');
+            styleEl.innerHTML = styleTracks;
+            document.head.appendChild(styleEl);
+        });
     }
 
     // ===================== УПРАВЛІННЯ ЧЕРГОЮ ЗАПИТІВ =====================
@@ -183,7 +150,7 @@
                 setTimeout(processQueue, 0);
             });
         } catch (e) {
-            console.error("LTF-LOG", "Помилка виконання завдання з черги:", e);
+            console.error("LTF-LOG", "Помилка виконання завдання:", e);
             activeRequests--;
             setTimeout(processQueue, 0);
         }
@@ -199,75 +166,82 @@
     }
 
     // ===================== МЕРЕЖЕВІ ФУНКЦІЇ =====================
-    function fetchWithProxy(url, cardId, callback) {
-        var currentProxyIndex = 0;
-        var callbackCalled = false;
+    function LTF_safeFetchText(url, timeoutMs) {
+        timeoutMs = timeoutMs || 5000;
         
-        function tryNextProxy() {
-            if (currentProxyIndex >= LTF_CONFIG.PROXY_LIST.length) {
-                if (!callbackCalled) {
-                    callbackCalled = true;
-                    updateNetworkHealth(false);
-                    callback(new Error('Всі проксі не відповіли для ' + url));
-                }
-                return;
-            }
-            
-            var proxyUrl = LTF_CONFIG.PROXY_LIST[currentProxyIndex] + encodeURIComponent(url);
-            var timeoutId = setTimeout(function () {
-                if (!callbackCalled) {
-                    currentProxyIndex++;
-                    tryNextProxy();
-                }
-            }, LTF_CONFIG.PROXY_TIMEOUT_MS);
-            
-            // Використовуємо XMLHttpRequest для кращої сумісності з Samsung TV
+        // Старий спосіб через XMLHttpRequest (найкраща сумісність)
+        return new Promise(function (resolve, reject) {
             var xhr = new XMLHttpRequest();
-            xhr.timeout = LTF_CONFIG.PROXY_TIMEOUT_MS - 500;
-            xhr.open('GET', proxyUrl, true);
-            xhr.setRequestHeader('Accept', 'application/json, text/plain, */*');
-            
-            xhr.onload = function() {
-                clearTimeout(timeoutId);
-                if (!callbackCalled) {
-                    callbackCalled = true;
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        updateNetworkHealth(true);
-                        callback(null, xhr.responseText);
-                    } else {
-                        currentProxyIndex++;
-                        tryNextProxy();
-                    }
+            xhr.open('GET', url, true);
+            xhr.timeout = timeoutMs;
+            xhr.onload = function () {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    resolve(xhr.responseText);
+                } else {
+                    reject(new Error('HTTP ' + xhr.status));
                 }
             };
-            
-            xhr.onerror = function() {
-                clearTimeout(timeoutId);
-                if (!callbackCalled) {
-                    currentProxyIndex++;
-                    tryNextProxy();
-                }
+            xhr.onerror = function () {
+                reject(new Error('XHR error'));
             };
-            
-            xhr.ontimeout = function() {
-                clearTimeout(timeoutId);
-                if (!callbackCalled) {
-                    currentProxyIndex++;
-                    tryNextProxy();
-                }
+            xhr.ontimeout = function () {
+                reject(new Error('Timeout'));
             };
-            
-            try {
-                xhr.send();
-            } catch (e) {
-                clearTimeout(timeoutId);
-                if (!callbackCalled) {
-                    currentProxyIndex++;
-                    tryNextProxy();
-                }
+            xhr.send();
+        });
+    }
+
+    function fetchSmart(url, cardId, callback) {
+        var called = false;
+        
+        function done(err, data) {
+            if (called) return;
+            called = true;
+            if (typeof updateNetworkHealth === 'function') {
+                updateNetworkHealth(!err);
             }
+            callback(err, data);
         }
-        tryNextProxy();
+        
+        // 1. Прямий запит
+        LTF_safeFetchText(url, Math.max(1500, LTF_CONFIG.PROXY_TIMEOUT_MS || 3000))
+            .then(function (text) {
+                done(null, text);
+            })
+            .catch(function () {
+                // 2. Проксі тільки як fallback
+                if (!LTF_CONFIG.PROXY_LIST || LTF_CONFIG.PROXY_LIST.length === 0) {
+                    done(new Error('Direct fetch failed'));
+                    return;
+                }
+                
+                var index = 0;
+                
+                function tryProxy() {
+                    if (index >= LTF_CONFIG.PROXY_LIST.length) {
+                        done(new Error('All proxies failed'));
+                        return;
+                    }
+                    
+                    var proxy = LTF_CONFIG.PROXY_LIST[index];
+                    index++;
+                    
+                    var proxyUrl;
+                    if (proxy.indexOf('url=') !== -1) {
+                        proxyUrl = proxy + encodeURIComponent(url);
+                    } else {
+                        proxyUrl = proxy + url;
+                    }
+                    
+                    LTF_safeFetchText(proxyUrl, LTF_CONFIG.PROXY_TIMEOUT_MS)
+                        .then(function (text) {
+                            done(null, text);
+                        })
+                        .catch(tryProxy);
+                }
+                
+                tryProxy();
+            });
     }
 
     // ===================== ДОПОМІЖНІ ФУНКЦІЇ =====================
@@ -277,7 +251,7 @@
         return cardData.name || cardData.original_name ? 'tv' : 'movie';
     }
 
-    // ===================== ОСНОВНА ЛОГІКА ПІДРАХУНКУ ДОРІЖОК =====================
+    // ===================== ПІДРАХУНОК ДОРІЖОК =====================
     function countUkrainianTracks(title) {
         if (!title) return 0;
         var cleanTitle = title.toLowerCase();
@@ -287,11 +261,13 @@
             cleanTitle = cleanTitle.substring(0, subsIndex);
         }
         
+        // Мульти-доріжки
         var multiTrackMatch = cleanTitle.match(/(\d+)x\s*ukr/);
         if (multiTrackMatch && multiTrackMatch[1]) {
             return parseInt(multiTrackMatch[1], 10);
         }
         
+        // Одиночні доріжки
         var singleTrackMatches = cleanTitle.match(/\bukr\b/g);
         if (singleTrackMatches) {
             return singleTrackMatches.length;
@@ -321,7 +297,9 @@
     // ===================== ПОШУК НА JACRED =====================
     function getBestReleaseWithUkr(normalizedCard, cardId, callback) {
         enqueueTask(function (done) {
-            if (!normalizedCard.release_date || normalizedCard.release_date.toLowerCase().includes('невідомо') || isNaN(new Date(normalizedCard.release_date).getTime())) {
+            if (!normalizedCard.release_date || 
+                normalizedCard.release_date.toLowerCase().includes('невідомо') || 
+                isNaN(new Date(normalizedCard.release_date).getTime())) {
                 callback(null);
                 done();
                 return;
@@ -359,24 +337,19 @@
             }
             
             function searchJacredApi(searchTitle, searchYear, apiCallback) {
-                var userId = '';
-                try {
-                    userId = Lampa.Storage.get('lampac_unic_id', '');
-                } catch (e) {}
+                var userId = Lampa.Storage.get('lampac_unic_id', '');
+                var apiUrl = LTF_CONFIG.JACRED_PROTOCOL + LTF_CONFIG.JACRED_URL + 
+                    '/api/v1.0/torrents?search=' + encodeURIComponent(searchTitle) +
+                    '&year=' + searchYear + '&uid=' + userId;
                 
-                var apiUrl = LTF_CONFIG.JACRED_PROTOCOL + LTF_CONFIG.JACRED_URL + '/api/v1.0/torrents?search=' +
-                    encodeURIComponent(searchTitle) +
-                    '&year=' + searchYear +
-                    '&uid=' + userId;
-                
-                fetchWithProxy(apiUrl, cardId, function (error, responseText) {
+                fetchSmart(apiUrl, cardId, function (error, responseText) {
                     if (error || !responseText) {
                         apiCallback(null);
                         return;
                     }
                     try {
                         var torrents = JSON.parse(responseText);
-                        if (!torrents || !Array.isArray(torrents) || torrents.length === 0) {
+                        if (!Array.isArray(torrents) || torrents.length === 0) {
                             apiCallback(null);
                             return;
                         }
@@ -386,33 +359,30 @@
                         
                         for (var i = 0; i < torrents.length; i++) {
                             var currentTorrent = torrents[i];
-                            var torrentTitle = currentTorrent.title ? currentTorrent.title.toLowerCase() : '';
+                            var torrentTitle = currentTorrent.title.toLowerCase();
                             
+                            // Фільтр фільм/серіал
                             var isSeriesTorrent = /(сезон|season|s\d{1,2}|серии|серії|episodes|епізод|\d{1,2}\s*из\s*\d{1,2}|\d+×\d+)/.test(torrentTitle);
                             
                             if (normalizedCard.type === 'tv' && !isSeriesTorrent) {
-                                if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG [' + cardId + ']: Пропускаємо (схожий на фільм для картки серіалу):', currentTorrent.title);
                                 continue;
                             }
-                            
                             if (normalizedCard.type === 'movie' && isSeriesTorrent) {
-                                if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG [' + cardId + ']: Пропускаємо (схожий на серіал для картки фільму):', currentTorrent.title);
                                 continue;
                             }
                             
                             if (normalizedCard.type === 'movie') {
                                 var hasStrongSeriesIndicators = /(сезон|season|s\d|серії|episodes|епізод|\d+×\d+)/i.test(torrentTitle);
                                 if (hasStrongSeriesIndicators) {
-                                    if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG [' + cardId + ']: Пропускаємо (чіткі ознаки серіалу для картки фільму):', currentTorrent.title);
                                     continue;
                                 }
                             }
                             
+                            // Фільтр за роком
                             var parsedYear = extractYearFromTitle(currentTorrent.title) || parseInt(currentTorrent.relased, 10);
                             var yearDifference = Math.abs(parsedYear - searchYearNum);
                             
                             if (parsedYear > 1900 && yearDifference > 0) {
-                                if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG [' + cardId + ']: Пропускаємо (рік не співпадає: ' + parsedYear + ' vs ' + searchYearNum + '):', currentTorrent.title);
                                 continue;
                             }
                             
@@ -421,7 +391,10 @@
                             if (currentTrackCount > bestTrackCount) {
                                 bestTrackCount = currentTrackCount;
                                 bestFoundTorrent = currentTorrent;
-                            } else if (currentTrackCount === bestTrackCount && bestTrackCount > 0 && bestFoundTorrent && currentTorrent.title.length > bestFoundTorrent.title.length) {
+                            } else if (currentTrackCount === bestTrackCount && 
+                                       bestTrackCount > 0 && 
+                                       bestFoundTorrent && 
+                                       currentTorrent.title.length > bestFoundTorrent.title.length) {
                                 bestFoundTorrent = currentTorrent;
                             }
                         }
@@ -439,83 +412,64 @@
             
             var titlesToSearch = [normalizedCard.original_title, normalizedCard.title];
             var uniqueTitles = [];
-            var seen = {};
+            var titlesMap = {};
             
-            for (var i = 0; i < titlesToSearch.length; i++) {
-                var title = titlesToSearch[i];
-                if (title && !seen[title]) {
-                    seen[title] = true;
+            for (var j = 0; j < titlesToSearch.length; j++) {
+                var title = titlesToSearch[j];
+                if (title && !titlesMap[title]) {
+                    titlesMap[title] = true;
                     uniqueTitles.push(title);
                 }
             }
             
             if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG', '[' + cardId + '] Запускаємо пошук за назвами:', uniqueTitles);
             
-            // Власна реалізація Promise.all для сумісності
-            var results = [];
-            var completed = 0;
-            
-            function checkAllDone() {
-                if (completed === uniqueTitles.length) {
-                    var bestOverallResult = null;
-                    var maxTrackCount = 0;
-                    
-                    for (var j = 0; j < results.length; j++) {
-                        var result = results[j];
-                        if (result && result.track_count && result.track_count > maxTrackCount) {
-                            maxTrackCount = result.track_count;
-                            bestOverallResult = result;
-                        }
-                    }
-                    
-                    if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG', '[' + cardId + '] Найкращий результат з усіх пошуків:', bestOverallResult);
-                    
-                    callback(bestOverallResult);
-                    done();
-                }
-            }
-            
-            if (uniqueTitles.length === 0) {
-                callback(null);
-                done();
-                return;
-            }
-            
+            var searchPromises = [];
             for (var k = 0; k < uniqueTitles.length; k++) {
-                (function(index, title) {
-                    searchJacredApi(title, year, function(result) {
-                        results[index] = result;
-                        completed++;
-                        checkAllDone();
-                    });
-                })(k, uniqueTitles[k]);
+                searchPromises.push(new Promise(function(resolve) {
+                    searchJacredApi(uniqueTitles[k], year, resolve);
+                }));
             }
+            
+            Promise.all(searchPromises).then(function(results) {
+                var bestOverallResult = null;
+                var maxTrackCount = 0;
+                
+                for (var l = 0; l < results.length; l++) {
+                    var result = results[l];
+                    if (!result || !result.track_count) continue;
+                    if (result.track_count > maxTrackCount) {
+                        maxTrackCount = result.track_count;
+                        bestOverallResult = result;
+                    }
+                }
+                
+                if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG', '[' + cardId + '] Найкращий результат:', bestOverallResult);
+                
+                callback(bestOverallResult);
+                done();
+            });
         });
     }
 
     // ===================== РОБОТА З КЕШЕМ =====================
     var memoryCache = {};
     var storageCache = null;
+    var inflightRequests = {};
 
     function getStorageCache() {
         if (!storageCache) {
-            try {
-                storageCache = Lampa.Storage.get(LTF_CONFIG.CACHE_KEY) || {};
-            } catch (e) {
-                storageCache = {};
-            }
+            storageCache = Lampa.Storage.get(LTF_CONFIG.CACHE_KEY) || {};
         }
         return storageCache;
     }
-
-    var inflightRequests = {};
 
     function getTracksCache(key) {
         var memoryItem = memoryCache[key];
         if (memoryItem && (Date.now() - memoryItem.timestamp < LTF_CONFIG.CACHE_VALID_TIME_MS)) {
             return memoryItem;
         }
-
+        
         var cache = getStorageCache();
         var item = cache[key];
         var isCacheValid = item && (Date.now() - item.timestamp < LTF_CONFIG.CACHE_VALID_TIME_MS);
@@ -531,82 +485,69 @@
         };
         cache[key] = payload;
         memoryCache[key] = payload;
-        try {
-            Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, cache);
-        } catch (e) {
-            console.log('LTF-LOG: помилка збереження кешу:', e);
-        }
+        Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, cache);
     }
 
     function clearTracksCache() {
         storageCache = {};
         memoryCache = {};
-        try {
-            Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, storageCache);
-        } catch (e) {}
-        console.log('UA-Finder: Кеш повністю очищено користувачем.');
+        Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, storageCache);
+        console.log('UA-Finder: Кеш очищено.');
     }
 
-    // Подія для оновлення налаштувань
-    if (typeof document !== 'undefined') {
-        try {
-            document.addEventListener('ltf:settings-changed', function () {
-                var cards = document.querySelectorAll('.card');
-                for (var i = 0; i < cards.length; i++) {
-                    var card = cards[i];
-                    var view = card.querySelector('.card__view');
-                    var data = card.card_data;
-                    if (!view || !data) continue;
-                    
-                    var type = (data.media_type || data.type || (data.name || data.original_name ? 'tv' : 'movie'));
-                    if (type === 'tv' && !LTF_CONFIG.SHOW_TRACKS_FOR_TV_SERIES) {
-                        var ex = view.querySelector('.card__tracks');
-                        if (ex) ex.remove();
-                        continue;
-                    }
-                    
-                    var id = data.id || '';
-                    var manual = LTF_CONFIG.MANUAL_OVERRIDES && LTF_CONFIG.MANUAL_OVERRIDES[id];
-                    if (manual) {
-                        updateCardListTracksElement(view, manual.track_count || 0);
-                        continue;
-                    }
-                    
-                    var cacheKey = LTF_CONFIG.CACHE_VERSION + '_' + type + '_' + id;
-                    var cached = getTracksCache(cacheKey);
-                    var count = cached ? (cached.track_count || 0) : 0;
-                    
-                    updateCardListTracksElement(view, count);
-                }
-            });
-        } catch (e) {}
-    }
+    document.addEventListener('ltf:settings-changed', function () {
+        var cards = document.querySelectorAll('.card');
+        for (var i = 0; i < cards.length; i++) {
+            var card = cards[i];
+            var view = card.querySelector('.card__view');
+            var data = card.card_data;
+            if (!view || !data) continue;
+            
+            var type = getCardType(data);
+            if (type === 'tv' && !LTF_CONFIG.SHOW_TRACKS_FOR_TV_SERIES) {
+                var ex = view.querySelector('.card__tracks');
+                if (ex) ex.remove();
+                continue;
+            }
+            
+            var id = data.id || '';
+            var manual = LTF_CONFIG.MANUAL_OVERRIDES && LTF_CONFIG.MANUAL_OVERRIDES[id];
+            if (manual) {
+                updateCardListTracksElement(view, manual.track_count || 0);
+                continue;
+            }
+            
+            var cacheKey = LTF_CONFIG.CACHE_VERSION + '_' + type + '_' + id;
+            var cached = getTracksCache(cacheKey);
+            var count = cached ? (cached.track_count || 0) : 0;
+            
+            updateCardListTracksElement(view, count);
+        }
+    });
 
-    // ===================== ОНОВЛЕННЯ ІНТЕРФЕЙСУ (UI) =====================
+    // ===================== ОНОВЛЕННЯ ІНТЕРФЕЙСУ =====================
     function updateCardListTracksElement(cardView, trackCount) {
         var displayLabel = formatTrackLabel(trackCount);
         var wrapper = cardView.querySelector('.card__tracks');
         
         function ensurePositionClass(el) {
-            try {
-                var parentCard = cardView.closest('.card');
-                if (!parentCard) return;
-                var vote = parentCard.querySelector('.card__vote');
-                if (!vote) { 
-                    el.classList.remove('positioned-below-rating'); 
-                    return; 
-                }
-                var topStyle = window.getComputedStyle(vote).top;
-                if (topStyle !== 'auto' && parseInt(topStyle) < 100) {
-                    el.classList.add('positioned-below-rating');
-                } else {
-                    el.classList.remove('positioned-below-rating');
-                }
-            } catch (e) {}
+            var parentCard = cardView.closest('.card');
+            if (!parentCard) return;
+            var vote = parentCard.querySelector('.card__vote');
+            if (!vote) { 
+                el.classList.remove('positioned-below-rating'); 
+                return; 
+            }
+            var topStyle = getComputedStyle(vote).top;
+            if (topStyle !== 'auto' && parseInt(topStyle) < 100) {
+                el.classList.add('positioned-below-rating');
+            } else {
+                el.classList.remove('positioned-below-rating');
+            }
         }
         
         if (!displayLabel) {
-            if (wrapper) wrapper.parentNode.removeChild(wrapper);
+            if (wrapper) wrapper.remove();
             return;
         }
         
@@ -640,61 +581,41 @@
 
     // ===================== ГОЛОВНИЙ ОБРОБНИК КАРТОК =====================
     function processListCard(cardInstance) {
-        try {
-            var cardRoot = cardInstance && cardInstance.html ? (cardInstance.html[0] || cardInstance.html) : cardInstance;
-            if (!cardRoot || !cardRoot.parentNode) return;
+        var cardRoot = cardInstance && cardInstance.html ? (cardInstance.html[0] || cardInstance.html) : cardInstance;
+        if (!cardRoot || !cardRoot.isConnected || !document.body.contains(cardRoot)) return;
+        
+        var cardData = cardInstance && cardInstance.data ? cardInstance.data : cardRoot.card_data;
+        var cardView = cardRoot.querySelector ? cardRoot.querySelector('.card__view') : null;
+        if (!cardData || !cardView) return;
+        
+        var isTvSeries = (getCardType(cardData) === 'tv');
+        if (isTvSeries && !LTF_CONFIG.SHOW_TRACKS_FOR_TV_SERIES) return;
+        
+        var normalizedCard = {
+            id: cardData.id || '',
+            title: cardData.title || cardData.name || '',
+            original_title: cardData.original_title || cardData.original_name || '',
+            type: getCardType(cardData),
+            release_date: cardData.release_date || cardData.first_air_date || ''
+        };
+        var cardId = normalizedCard.id;
+        if (!cardId) return;
+        var cacheKey = LTF_CONFIG.CACHE_VERSION + '_' + normalizedCard.type + '_' + cardId;
+        
+        var manualOverrideData = LTF_CONFIG.MANUAL_OVERRIDES[cardId];
+        if (manualOverrideData) {
+            if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG [' + cardId + ']: Використовується ручне перевизначення:', manualOverrideData);
+            updateCardListTracksElement(cardView, manualOverrideData.track_count);
+            return;
+        }
+        
+        var cachedData = getTracksCache(cacheKey);
+        
+        if (cachedData) {
+            updateCardListTracksElement(cardView, cachedData.track_count);
             
-            var cardData = cardInstance && cardInstance.data ? cardInstance.data : cardRoot.card_data;
-            var cardView = cardRoot.querySelector ? cardRoot.querySelector('.card__view') : null;
-            if (!cardData || !cardView) return;
-            
-            var isTvSeries = (getCardType(cardData) === 'tv');
-            if (isTvSeries && !LTF_CONFIG.SHOW_TRACKS_FOR_TV_SERIES) return;
-            
-            var normalizedCard = {
-                id: cardData.id || '',
-                title: cardData.title || cardData.name || '',
-                original_title: cardData.original_title || cardData.original_name || '',
-                type: getCardType(cardData),
-                release_date: cardData.release_date || cardData.first_air_date || ''
-            };
-            var cardId = normalizedCard.id;
-            if (!cardId) return;
-            var cacheKey = LTF_CONFIG.CACHE_VERSION + '_' + normalizedCard.type + '_' + cardId;
-            
-            var manualOverrideData = LTF_CONFIG.MANUAL_OVERRIDES[cardId];
-            if (manualOverrideData) {
-                if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG [' + cardId + ']: Використовується ручне перевизначення:', manualOverrideData);
-                updateCardListTracksElement(cardView, manualOverrideData.track_count);
-                return;
-            }
-            
-            var cachedData = getTracksCache(cacheKey);
-            
-            if (cachedData) {
-                updateCardListTracksElement(cardView, cachedData.track_count);
-                
-                if (Date.now() - cachedData.timestamp > LTF_CONFIG.CACHE_REFRESH_THRESHOLD_MS) {
-                    if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG [' + cardId + ']: Кеш застарілий, фонове оновлення...');
-                    
-                    if (inflightRequests[cacheKey]) return;
-                    inflightRequests[cacheKey] = true;
-                    
-                    getBestReleaseWithUkr(normalizedCard, cardId, function (liveResult) {
-                        var trackCount = liveResult ? liveResult.track_count : 0;
-                        saveTracksCache(cacheKey, { track_count: trackCount });
-                        
-                        try {
-                            if (cardView.parentNode) {
-                                updateCardListTracksElement(cardView, trackCount);
-                            }
-                        } catch (e) {}
-                        
-                        delete inflightRequests[cacheKey];
-                    });
-                }
-            } else {
-                if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG [' + cardId + ']: Кеш відсутній, новий пошук...');
+            if (Date.now() - cachedData.timestamp > LTF_CONFIG.CACHE_REFRESH_THRESHOLD_MS) {
+                if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG [' + cardId + ']: Кеш застарілий, фонове оновлення...');
                 
                 if (inflightRequests[cacheKey]) return;
                 inflightRequests[cacheKey] = true;
@@ -703,17 +624,29 @@
                     var trackCount = liveResult ? liveResult.track_count : 0;
                     saveTracksCache(cacheKey, { track_count: trackCount });
                     
-                    try {
-                        if (cardView.parentNode) {
-                            updateCardListTracksElement(cardView, trackCount);
-                        }
-                    } catch (e) {}
+                    if (document.body.contains(cardRoot)) {
+                        updateCardListTracksElement(cardView, trackCount);
+                    }
                     
                     delete inflightRequests[cacheKey];
                 });
             }
-        } catch (e) {
-            console.log('LTF-LOG: помилка обробки картки:', e);
+        } else {
+            if (LTF_CONFIG.LOGGING_TRACKS) console.log('LTF-LOG [' + cardId + ']: Кеш відсутній, новий пошук...');
+            
+            if (inflightRequests[cacheKey]) return;
+            inflightRequests[cacheKey] = true;
+            
+            getBestReleaseWithUkr(normalizedCard, cardId, function (liveResult) {
+                var trackCount = liveResult ? liveResult.track_count : 0;
+                saveTracksCache(cacheKey, { track_count: trackCount });
+                
+                if (document.body.contains(cardRoot)) {
+                    updateCardListTracksElement(cardView, trackCount);
+                }
+                
+                delete inflightRequests[cacheKey];
+            });
         }
     }
 
@@ -722,225 +655,172 @@
         if (window.lampaTrackFinderPlugin) return;
         window.lampaTrackFinderPlugin = true;
         
-        try {
-            var card = Lampa.Maker.map('Card');
-            if (!card || !card.Card) {
-                if (LTF_CONFIG.LOGGING_GENERAL) console.log('LTF-LOG: Card module недоступний, плагін не ініціалізовано');
-                return;
-            }
-            var originalOnVisible = card.Card.onVisible;
-            
-            card.Card.onVisible = function () {
-                var self = this;
-                if (typeof originalOnVisible === 'function') originalOnVisible.apply(self, arguments);
-                try {
-                    processListCard(self);
-                } catch (e) {}
-            };
-            
-            if (LTF_CONFIG.LOGGING_GENERAL) console.log("LTF-LOG: Плагін пошуку українських доріжок (v3.3 Samsung TV) успішно ініціалізовано!");
-        } catch (e) {
-            console.log('LTF-LOG: помилка ініціалізації:', e);
+        var card = Lampa.Maker.map('Card');
+        if (!card || !card.Card) {
+            if (LTF_CONFIG.LOGGING_GENERAL) console.log('LTF-LOG: Card module недоступний');
+            return;
         }
+        
+        var originalOnVisible = card.Card.onVisible;
+        
+        card.Card.onVisible = function () {
+            if (typeof originalOnVisible === 'function') {
+                originalOnVisible.apply(this, arguments);
+            }
+            processListCard(this);
+        };
+        
+        if (LTF_CONFIG.LOGGING_GENERAL) console.log("LTF-LOG: Плагін успішно ініціалізовано!");
     }
 
-    // Запускаємо ініціалізацію
-    if (typeof Lampa !== 'undefined') {
-        if (document.body) {
-            setTimeout(initializeLampaTracksPlugin, 1000);
-        } else {
-            document.addEventListener('DOMContentLoaded', function() {
-                setTimeout(initializeLampaTracksPlugin, 1000);
-            });
-        }
+    if (document.body) {
+        initializeLampaTracksPlugin();
     } else {
-        setTimeout(function() {
-            if (typeof Lampa !== 'undefined') {
-                initializeLampaTracksPlugin();
-            }
-        }, 3000);
+        document.addEventListener('DOMContentLoaded', initializeLampaTracksPlugin);
     }
 
-    /* Налаштування (Інтерфейс → "Мітки "UA" доріжок") */
+    // ===================== НАЛАШТУВАННЯ =====================
     (function () {
         'use strict';
-
+        
         var SETTINGS_KEY = 'ltf_user_settings_v1';
         var st;
-
+        
         function ltfToast(msg) {
             try { 
                 if (Lampa && Lampa.Noty) return Lampa.Noty(msg); 
             } catch (e) { }
             
-            try {
-                var id = 'ltf_toast', el = document.getElementById(id);
-                if (!el) {
-                    el = document.createElement('div');
-                    el.id = id;
-                    el.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:2rem;padding:.6rem 1rem;background:rgba(0,0,0,.85);color:#fff;border-radius:.5rem;z-index:9999;font-size:14px;transition:opacity .2s;opacity:0';
-                    document.body.appendChild(el);
-                }
-                el.textContent = msg; 
-                el.style.opacity = '1';
-                setTimeout(function () { 
-                    try {
-                        el.style.opacity = '0'; 
-                    } catch (e) {}
-                }, 1300);
-            } catch (e) {}
+            var id = 'ltf_toast';
+            var el = document.getElementById(id);
+            if (!el) {
+                el = document.createElement('div');
+                el.id = id;
+                el.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:2rem;padding:.6rem 1rem;background:rgba(0,0,0,.85);color:#fff;border-radius:.5rem;z-index:9999;font-size:14px;transition:opacity .2s;opacity:0';
+                document.body.appendChild(el);
+            }
+            el.textContent = msg; 
+            el.style.opacity = '1';
+            setTimeout(function () { 
+                el.style.opacity = '0'; 
+            }, 1300);
         }
-
+        
         function toBool(v) { 
             return v === true || String(v) === 'true'; 
         }
-
+        
         function load() {
-            try {
-                var s = Lampa.Storage.get(SETTINGS_KEY) || {};
-                return {
-                    badge_style: s.badge_style || 'flag_count',
-                    show_tv: (typeof s.show_tv === 'boolean') ? s.show_tv : true
-                };
-            } catch (e) {
-                return {
-                    badge_style: 'flag_count',
-                    show_tv: true
-                };
-            }
+            var s = Lampa.Storage.get(SETTINGS_KEY) || {};
+            return {
+                badge_style: s.badge_style || 'flag_count',
+                show_tv: (typeof s.show_tv === 'boolean') ? s.show_tv : true
+            };
         }
-
+        
         function apply() {
-            try {
-                LTF_CONFIG.DISPLAY_MODE = st.badge_style;
-                LTF_CONFIG.BADGE_STYLE = st.badge_style;
-                LTF_CONFIG.SHOW_TRACKS_FOR_TV_SERIES = !!st.show_tv;
-                LTF_CONFIG.SHOW_FOR_TV = !!st.show_tv;
-                
-                try { 
-                    var event = new CustomEvent('ltf:settings-changed', { detail: st });
-                    document.dispatchEvent(event);
-                } catch (e) {}
-            } catch (e) {}
+            LTF_CONFIG.DISPLAY_MODE = st.badge_style;
+            LTF_CONFIG.BADGE_STYLE = st.badge_style;
+            LTF_CONFIG.SHOW_TRACKS_FOR_TV_SERIES = !!st.show_tv;
+            LTF_CONFIG.SHOW_FOR_TV = !!st.show_tv;
+            try { 
+                document.dispatchEvent(new CustomEvent('ltf:settings-changed', { detail: st })); 
+            } catch (e) { }
         }
-
+        
         function save() { 
-            try {
-                Lampa.Storage.set(SETTINGS_KEY, st); 
-                apply(); 
-                ltfToast('Збережено');
-            } catch (e) {}
+            Lampa.Storage.set(SETTINGS_KEY, st); 
+            apply(); 
+            ltfToast('Збережено'); 
         }
-
+        
         function clearTracks() {
             try {
-                if (typeof clearTracksCache === 'function') {
-                    clearTracksCache();
-                } else {
-                    Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, {});
-                }
+                clearTracksCache();
             } catch (e) { }
-
+            
             try { 
-                var event = new CustomEvent('ltf:settings-changed', { detail: st });
-                document.dispatchEvent(event);
+                document.dispatchEvent(new CustomEvent('ltf:settings-changed', { detail: st })); 
             } catch (e) { }
-
+            
             ltfToast('Кеш очищено. Оновлюю дані...');
-
-            try {
-                var cards = document.querySelectorAll('.card');
-                var index = 0;
-
-                function processNext() {
-                    if (index >= cards.length) return;
-
-                    var card = cards[index];
-                    if (card.parentNode) {
-                        try {
-                            if (typeof processListCard === 'function') {
-                                processListCard(card);
-                            }
-                        } catch (e) {}
+            
+            var cards = Array.from(document.querySelectorAll('.card'));
+            var index = 0;
+            
+            function processNext() {
+                if (index >= cards.length) return;
+                
+                var card = cards[index];
+                if (card.isConnected && card.getBoundingClientRect().top < window.innerHeight) {
+                    if (typeof processListCard === 'function') {
+                        processListCard(card);
                     }
-
-                    index++;
-                    setTimeout(processNext, 250);
                 }
-
-                processNext();
-            } catch (e) {}
+                
+                index++;
+                setTimeout(processNext, 250);
+            }
+            
+            processNext();
         }
-
+        
         Lampa.Template.add('settings_ltf', '<div></div>');
-
+        
         function registerUI() {
-            try {
-                Lampa.SettingsApi.addParam({
-                    component: 'interface',
-                    param: { type: 'button', component: 'ltf' },
-                    field: { name: 'Мітки "UA" доріжок', description: 'Керування відображенням міток українських доріжок' },
-                    onChange: function () {
-                        Lampa.Settings.create('ltf', {
-                            template: 'settings_ltf',
-                            onBack: function () { Lampa.Settings.create('interface'); }
-                        });
-                    }
-                });
-
-                Lampa.SettingsApi.addParam({
-                    component: 'ltf',
-                    param: {
-                        name: 'ltf_badge_style', type: 'select',
-                        values: { text: 'Текстова мітка (“Ukr”, “2xUkr”)', flag_count: 'Прапорець із лічильником', flag_only: 'Лише прапорець' },
-                        default: st.badge_style
-                    },
-                    field: { name: 'Стиль мітки' },
-                    onChange: function (v) { st.badge_style = v; save(); }
-                });
-
-                Lampa.SettingsApi.addParam({
-                    component: 'ltf',
-                    param: { name: 'ltf_show_tv', type: 'select', values: { 'true': 'Увімкнено', 'false': 'Вимкнено' }, default: String(st.show_tv) },
-                    field: { name: 'Показувати для серіалів' },
-                    onChange: function (v) { st.show_tv = toBool(v); save(); }
-                });
-
-                Lampa.SettingsApi.addParam({
-                    component: 'ltf',
-                    param: { type: 'button', component: 'ltf_clear_cache' },
-                    field: { name: 'Очистити кеш доріжок' },
-                    onChange: clearTracks
-                });
-            } catch (e) {
-                console.log('LTF-LOG: помилка реєстрації UI:', e);
-            }
-        }
-
-        function start() {
-            try {
-                st = load();
-                apply();
-
-                if (Lampa && Lampa.SettingsApi && Lampa.SettingsApi.addParam) {
-                    setTimeout(registerUI, 0);
+            Lampa.SettingsApi.addParam({
+                component: 'interface',
+                param: { type: 'button', component: 'ltf' },
+                field: { name: 'Мітки "UA" доріжок', description: 'Керування відображенням міток українських доріжок' },
+                onChange: function () {
+                    Lampa.Settings.create('ltf', {
+                        template: 'settings_ltf',
+                        onBack: function () { Lampa.Settings.create('interface'); }
+                    });
                 }
-            } catch (e) {
-                console.log('LTF-LOG: помилка запуску налаштувань:', e);
+            });
+            
+            Lampa.SettingsApi.addParam({
+                component: 'ltf',
+                param: {
+                    name: 'ltf_badge_style', type: 'select',
+                    values: { text: 'Текстова мітка', flag_count: 'Прапорець з лічильником', flag_only: 'Лише прапорець' },
+                    default: st.badge_style
+                },
+                field: { name: 'Стиль мітки' },
+                onChange: function (v) { st.badge_style = v; save(); }
+            });
+            
+            Lampa.SettingsApi.addParam({
+                component: 'ltf',
+                param: { name: 'ltf_show_tv', type: 'select', values: { 'true': 'Увімкнено', 'false': 'Вимкнено' }, default: String(st.show_tv) },
+                field: { name: 'Показувати для серіалів' },
+                onChange: function (v) { st.show_tv = toBool(v); save(); }
+            });
+            
+            Lampa.SettingsApi.addParam({
+                component: 'ltf',
+                param: { type: 'button', component: 'ltf_clear_cache' },
+                field: { name: 'Очистити кеш доріжок' },
+                onChange: clearTracks
+            });
+        }
+        
+        function start() {
+            st = load();
+            apply();
+            
+            if (Lampa && Lampa.SettingsApi && Lampa.SettingsApi.addParam) {
+                setTimeout(registerUI, 0);
             }
         }
-
+        
         if (window.appready) {
-            setTimeout(start, 1000);
+            start();
         } else if (Lampa && Lampa.Listener) {
             Lampa.Listener.follow('app', function(e) { 
-                if (e.type === 'ready') setTimeout(start, 1000); 
+                if (e.type === 'ready') start(); 
             });
-        } else {
-            setTimeout(function() {
-                if (Lampa) start();
-            }, 3000);
         }
     })();
-
 })();
