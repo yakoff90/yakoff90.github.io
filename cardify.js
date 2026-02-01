@@ -998,7 +998,7 @@
                         if (originalTagline.length && originalTagline.is(':hidden')) {
                             // Показуємо його знову зі стилями
                             originalTagline.show().css({
-                                'font-size': '1.1em',
+                                'font-size': '1.3em',
                                 'font-style': 'italic',
                                 'color': 'rgba(255,255,255,0.7)',
                                 'margin': '0.3em 0 1.2em 0'
