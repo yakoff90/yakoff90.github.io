@@ -51,20 +51,36 @@
       $(".plugin-uk-title", render).remove();
 
       // Налаштування стилю: font-size (розмір) та font-weight (жирність)
-      var html = '<div class="plugin-uk-title" style="margin-top: 10px; margin-bottom: 15px; text-align: left; width: 100%;">' +
+      var html = '<div class="plugin-uk-title" style="margin-top: 10px; margin-bottom: 10px; text-align: left; width: 100%;">' +
                     '<div style="font-size: 1.6em; font-weight: bold; color: #fff; line-height: 1.2;">' +
                         title +
                     '</div>' +
                  '</div>';
 
-      $(".full-start-new__title", render).after(html);
+      // ВАЖЛИВО: Вставляємо НЕПІСЛЯ слогана, а ПІСЛЯ ОРИГІНАЛЬНОЇ НАЗВИ
+      // Знаходимо оригінальну назву і вставляємо після неї
+      var originalTitle = $(".full-start-new__title", render);
+      if (originalTitle.length) {
+        originalTitle.after(html);
+      } else {
+        // Якщо оригінальної назви немає (на всяк випадок)
+        var tagline = $(".full-start-new__tagline", render);
+        if (tagline.length) {
+          tagline.before(html); // Вставляємо перед слоганом
+        } else {
+          $(".cardify__left", render).prepend(html);
+        }
+      }
     }
 
     if (!window.uk_title_plugin_loaded) {
       window.uk_title_plugin_loaded = true;
       Lampa.Listener.follow("full", function (e) {
         if (e.type === "complite" && e.data.movie) {
-          showTitles(e.data.movie);
+          // Збільшуємо затримку, щоб Cardify встиг створити слоган
+          setTimeout(function() {
+            showTitles(e.data.movie);
+          }, 300); // Збільшено до 300мс
         }
       });
     }
