@@ -42,9 +42,10 @@
     var PROJECTOR_EMOJI = '<span style="margin: 0 4px; font-size: 1.1em; vertical-align: middle;">📽️</span>';
 
     // --- STYLES ---
+    // Змінити клас, щоб не конфліктувати з Quality+Mod
     var style = document.createElement('style');
     style.textContent = [
-        '.full-start__status.surs_quality {',
+        '.full-start__status.surs_ua_quality {',
         '    padding: 0.1em 0.3em;',
         '    font-weight: bold;',
         '    margin-left: 0.8em;',
@@ -53,9 +54,17 @@
         '    background: transparent !important;',
         '    text-shadow: none !important;',
         '    color: inherit !important;',
+        '    border: 1px solid #FFD700 !important;',
+        '    border-radius: 0.2em;',
         '}',
-        '.surs_quality span { white-space: nowrap; color: inherit !important; }',
-        '.surs_quality .seeds_info { margin-left: 3px; font-size: 0.8em; opacity: 0.8; font-weight: normal; color: inherit !important; }'
+        '.surs_ua_quality span { white-space: nowrap; color: inherit !important; }',
+        '.surs_ua_quality .seeds_info { margin-left: 3px; font-size: 0.8em; opacity: 0.8; font-weight: normal; color: inherit !important; }',
+        // Стилі для якостей
+        '.q_cam_text { color: #FF4444 !important; }',
+        '.q_4k_text { color: #00FF00 !important; }',
+        '.q_1080_text { color: #FFD700 !important; }',
+        '.q_720_text { color: #87CEEB !important; }',
+        '.q_sd_text { color: #AAAAAA !important; }'
     ].join('\n');
     document.head.appendChild(style);
 
@@ -168,14 +177,20 @@
     function injectUI(data, render) {
         if (!render) return;
         var rateLine = $('.full-start-new__rate-line', render);
-        $('.surs_quality', render).remove();
+        
+        // Видаляємо тільки наші елементи, не чужі
+        $('.surs_ua_quality', render).remove();
 
         if (!data || !data.hasUa) {
-            rateLine.append('<div class="full-start__status surs_quality" style="opacity: 0.6">UA 🚫</div>');
+            // Показуємо тільки якщо немає українських релізів
+            var existingUaElements = $('.full-start__status[class*="surs"]', render);
+            if (existingUaElements.length === 0) {
+                rateLine.append('<div class="full-start__status surs_ua_quality" style="opacity: 0.6">UA 🚫</div>');
+            }
             return;
         }
 
-        var container = $('<div class="full-start__status surs_quality"></div>');
+        var container = $('<div class="full-start__status surs_ua_quality"></div>');
         var html = UA_FLAG_EMOJI + createHtml(data.best);
 
         if (data.popular) {
@@ -187,15 +202,32 @@
         }
 
         container.html(html);
-        rateLine.append(container);
+        
+        // Вставляємо наш елемент ПІСЛЯ елементів Quality+Mod, якщо вони є
+        var qualityElements = $('.full-start__status.lqe-quality', render);
+        if (qualityElements.length > 0) {
+            qualityElements.last().after(container);
+        } else {
+            rateLine.append(container);
+        }
     }
 
     function startProcess(movie, render) {
         if (!movie || movie.number_of_seasons || movie.first_air_date) return;
 
-        $('.surs_quality', render).remove();
-        var ph = $('<div class="full-start__status surs_quality" style="opacity:0.5">...</div>');
-        $('.full-start-new__rate-line', render).append(ph);
+        // Видаляємо тільки наші елементи
+        $('.surs_ua_quality', render).remove();
+        
+        // Створюємо placeholder
+        var ph = $('<div class="full-start__status surs_ua_quality" style="opacity:0.5">...</div>');
+        
+        // Вставляємо placeholder після Quality+Mod або в кінець
+        var qualityElements = $('.full-start__status.lqe-quality', render);
+        if (qualityElements.length > 0) {
+            qualityElements.last().after(ph);
+        } else {
+            $('.full-start-new__rate-line', render).append(ph);
+        }
 
         searchUaDual(movie, function(result) {
             ph.remove();
@@ -207,11 +239,15 @@
         if (window.sursQualityUA_Ultimate) return;
         window.sursQualityUA_Ultimate = true;
 
-        SURS_QUALITY.log("Ultimate UA Quality (Projector & Emoji Edition) Loaded");
+        SURS_QUALITY.log("Ultimate UA Quality (Compatible with Quality+Mod) Loaded");
 
+        // Чекаємо, коли Quality+Mod завершить свою роботу
         Lampa.Listener.follow('full', function (e) {
             if (e.type === 'complite') {
-                startProcess(e.data.movie, e.object.activity.render());
+                // Невелика затримка, щоб Quality+Mod встиг додати свої елементи
+                setTimeout(function() {
+                    startProcess(e.data.movie, e.object.activity.render());
+                }, 100);
             }
         });
     }
