@@ -1008,7 +1008,7 @@
                         // Якщо слоган відсутній у DOM, але є в даних
                         if (!originalTagline.length && e.data && e.data.movie && e.data.movie.tagline) {
                             // Створюємо елемент з класами як у оригіналі та стилями
-                            var taglineHtml = '<div class="full-start-new__tagline" style="font-size:1.1em; font-style:italic; color:rgba(255,255,255,0.7); margin:0.3em 0 1.2em 0;">' + 
+                            var taglineHtml = '<div class="full-start-new__tagline" style="font-size:1.3em; font-style:italic; color:rgba(255,255,255,0.7); margin:0.3em 0 1.2em 0;">' + 
                                              e.data.movie.tagline + '</div>';
                             render.find('.full-start-new__title').after(taglineHtml);
                         }
