@@ -212,17 +212,23 @@
         }).catch(function() { callback({ hasUa: false }); });
     }
 
-    // Допоміжна функція для вставки елемента у правильне місце
+    // Допоміжна функція для вставки елемента ПІД СЛОГАНОМ
     function injectToUI(targetRow, render) {
+        // Шукаємо слоган - рядок з описом фільму
         var slogan = $('.full-start__slogan', render);
-        var ratings = $('.full-start-new__rate-line', render);
-
+        
         if (slogan.length) {
+            // Вставляємо після слогана
             slogan.after(targetRow);
-        } else if (ratings.length) {
-            ratings.before(targetRow);
         } else {
-            $('.full-start__info', render).prepend(targetRow);
+            // Якщо слогана немає, вставляємо перед рейтингами
+            var ratings = $('.full-start-new__rate-line', render);
+            if (ratings.length) {
+                ratings.before(targetRow);
+            } else {
+                // Якщо немає і рейтингів, вставляємо в початок інфо-блоку
+                $('.full-start__info', render).prepend(targetRow);
+            }
         }
     }
 
