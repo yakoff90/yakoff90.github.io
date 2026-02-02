@@ -75,7 +75,13 @@
         '.surs_quality_box .seeds_info { margin-left: 5px; font-size: 0.8em; color: #2ecc71 !important; }',
         '.surs_quality_box .pop-tag { text-transform: uppercase; font-size: 0.9em; font-weight: 500; }',
         '.surs_quality_box .ua_not_found { opacity: 0.4; display: flex; align-items: center; }',
-        '.surs_quality_box .icon-none { width: 1.4em; height: 1.4em; }'
+        '.surs_quality_box .icon-none { width: 1.4em; height: 1.4em; }',
+        // Нові стилі для кращого позиціонування
+        '.surs_quality_container {',
+        '    margin: 10px 0 !important;',
+        '    position: relative !important;',
+        '    z-index: 5 !important;',
+        '}'
     ].join('\n');
     document.head.appendChild(style);
 
@@ -212,29 +218,76 @@
         }).catch(function() { callback({ hasUa: false }); });
     }
 
+    // Покращена функція для пошуку слогана в різних структурах Cardify
+    function findSloganElement(render) {
+        // Спроба 1: стандартний клас Lampa
+        var slogan = $('.full-start__slogan', render);
+        if (slogan.length) return slogan;
+        
+        // Спроба 2: можливі класи Cardify
+        slogan = $('.cardify-slogan, .film-description, .movie-slogan, .description-text', render);
+        if (slogan.length) return slogan;
+        
+        // Спроба 3: шукаємо будь-який елемент з описом
+        var allElements = $('.full-start__info > *', render);
+        for (var i = 0; i < allElements.length; i++) {
+            var el = $(allElements[i]);
+            var text = el.text().trim();
+            // Шукаємо довгий текст (опис фільму)
+            if (text.length > 30 && text.length < 300 && !text.includes('★') && !text.includes('IMDb')) {
+                return el;
+            }
+        }
+        
+        // Спроба 4: елемент після року та країни
+        var yearCountry = $('.full-start__info :contains("2025"), .full-start__info :contains("США"), .full-start__info :contains("Україна")', render);
+        if (yearCountry.length) {
+            var next = yearCountry.last().next();
+            if (next.length) return next;
+        }
+        
+        return null;
+    }
+
     // Допоміжна функція для вставки елемента ПІД СЛОГАНОМ
     function injectToUI(targetRow, render) {
-        // Шукаємо слоган - рядок з описом фільму
-        var slogan = $('.full-start__slogan', render);
+        // Спочатку видаляємо всі попередні елементи
+        $('.surs_quality_row, .surs_quality_container', render).remove();
         
-        if (slogan.length) {
+        // Знаходимо слоган
+        var slogan = findSloganElement(render);
+        
+        if (slogan && slogan.length) {
+            // Створюємо контейнер для кращого контролю
+            var container = $('<div class="surs_quality_container"></div>');
+            container.append(targetRow);
+            
             // Вставляємо після слогана
-            slogan.after(targetRow);
+            slogan.after(container);
+            
+            // Додатково: перевіряємо, чи не вставлено в кінець блоку
+            var parent = container.parent();
+            if (parent.is('.full-start__info, .cardify-info, .movie-info')) {
+                // Якщо ми останній елемент - це нормально
+                // Але якщо після нас йдуть рейтинги - це добре
+            }
         } else {
-            // Якщо слогана немає, вставляємо перед рейтингами
-            var ratings = $('.full-start-new__rate-line', render);
+            // Резервний варіант: вставляємо перед рейтингами
+            var ratings = $('.full-start-new__rate-line, .ratings-container, .rating-line', render);
             if (ratings.length) {
                 ratings.before(targetRow);
             } else {
-                // Якщо немає і рейтингів, вставляємо в початок інфо-блоку
-                $('.full-start__info', render).prepend(targetRow);
+                // Останній варіант: в початок інфо-блоку
+                $('.full-start__info, .cardify-info-section, .movie-details', render).first().prepend(targetRow);
             }
         }
     }
 
     function renderUI(data, render) {
         if (!render) return;
-        $('.surs_quality_row', render).remove();
+        
+        // Видаляємо всі попередні елементи
+        $('.surs_quality_row, .surs_quality_container', render).remove();
 
         var row = $('<div class="surs_quality_row"></div>');
         var box = $('<div class="surs_quality_box"></div>');
@@ -262,11 +315,29 @@
         box.html(html);
         row.append(box);
         injectToUI(row, render);
+        
+        // Додаткова перевірка через 500мс
+        setTimeout(function() {
+            var currentRow = $('.surs_quality_row', render);
+            if (currentRow.length) {
+                var position = currentRow.offset();
+                var parent = currentRow.parent();
+                
+                // Якщо елемент знаходиться дуже низько (ймовірно внизу картки)
+                if (position && position.top > 500) {
+                    // Перевставляємо вище
+                    currentRow.remove();
+                    injectToUI(row, render);
+                }
+            }
+        }, 500);
     }
 
     function process(movie, render) {
         if (!movie) return;
-        $('.surs_quality_row', render).remove();
+        
+        // Видаляємо всі попередні елементи
+        $('.surs_quality_row, .surs_quality_container', render).remove();
         
         var ldRow = $('<div class="surs_quality_row"><div class="surs_quality_box" style="opacity:0.5">Пошук UA...</div></div>');
         injectToUI(ldRow, render);
@@ -278,12 +349,15 @@
     }
 
     function init() {
-        if (window.sursQualityUA_V6) return;
-        window.sursQualityUA_V6 = true;
+        if (window.sursQualityUA_V7) return;
+        window.sursQualityUA_V7 = true;
 
         Lampa.Listener.follow('full', function (e) {
             if (e.type === 'complite') {
-                process(e.data.movie, e.object.activity.render());
+                // Невелика затримка для того, щоб Cardify встиг відрендеритись
+                setTimeout(function() {
+                    process(e.data.movie, e.object.activity.render());
+                }, 300);
             }
         });
     }
