@@ -11,6 +11,7 @@
   var recommendedTorrents = [];
   var configPollInterval = null;
   var isProcessing = false;
+  var lastTorrentRequest = null;
 
   // Базова конфігурація
   var DEFAULT_CONFIG = {
@@ -1094,7 +1095,11 @@
           Title: torrent.Title,
           title: torrent.title,
           Tracker: torrent.Tracker,
-          tracker: torrent.tracker
+          tracker: torrent.tracker,
+          Size: torrent.Size,
+          size_bytes: torrent.size_bytes,
+          ffprobe: torrent.ffprobe,
+          bitrate: torrent.bitrate
         });
         
         scoredTorrents.push({
@@ -1216,10 +1221,20 @@
       
       console.log("[EasyTorrent] Рекомендації збережені: " + recommendedTorrents.length + " шт.");
       
-      // НАЙВАЖЛИВІШЕ: Зберігаємо відсортовані результати в глобальну змінну
-      window.EasyTorrentSortedResults = scoredTorrents.map(function(item) {
+      // НАЙВАЖЛИВІШЕ: Зберігаємо відсортовані результати
+      var sortedResults = scoredTorrents.map(function(item) {
         return item.element;
       });
+      
+      // Зберігаємо в глобальній змінній та додатково в об'єкті з timestamp
+      window.EasyTorrentSortedResults = sortedResults;
+      window.EasyTorrentLastSort = {
+        results: sortedResults,
+        timestamp: Date.now(),
+        count: sortedResults.length
+      };
+      
+      console.log("[EasyTorrent] Результати збережені для перевпорядкування: " + sortedResults.length + " шт.");
       
     } catch (error) {
       console.error("[EasyTorrent] Помилка обробки торрентів:", error);
@@ -1366,68 +1381,76 @@
         return;
       }
       
-      console.log("[EasyTorrent] Знайдено " + torrentItems.length + " елементів торрентів");
+      console.log("[EasyTorrent] Знайдено " + torrentItems.length + " елементів торрентів, відсортовано " + window.EasyTorrentSortedResults.length + " шт.");
+      
+      // Якщо кількість елементів не співпадає, не сортуємо
+      if (torrentItems.length !== window.EasyTorrentSortedResults.length) {
+        console.log("[EasyTorrent] Кількість елементів не співпадає (" + torrentItems.length + " ≠ " + window.EasyTorrentSortedResults.length + "), пропускаємо сортування");
+        return;
+      }
       
       // Створюємо масив для відсортованих елементів
       var sortedItems = [];
+      var usedIndices = {};
       
-      // Збираємо всі елементи торрентів з їхніми даними
-      var torrentElements = [];
-      torrentItems.each(function(index) {
-        var item = $(this);
-        var torrentData = item.data('torrent') || {};
-        torrentElements.push({
-          element: item,
-          torrent: torrentData,
-          index: index
-        });
-      });
-      
-      // Спочатку додаємо рекомендовані торренти
+      // Проходимо по відсортованих результатах і знаходимо відповідні DOM елементи
       for (var i = 0; i < window.EasyTorrentSortedResults.length; i++) {
         var sortedTorrent = window.EasyTorrentSortedResults[i];
-        var found = false;
+        var foundIndex = -1;
         
-        // Шукаємо відповідний елемент DOM
-        for (var j = 0; j < torrentElements.length; j++) {
-          var elemData = torrentElements[j];
-          var elemTorrent = elemData.torrent;
+        // Шукаємо відповідний елемент DOM за даними торрента
+        for (var j = 0; j < torrentItems.length; j++) {
+          if (usedIndices[j]) continue;
           
-          // Порівнюємо за назвою та сідами
-          if (elemTorrent && sortedTorrent && 
-              elemTorrent.Title === sortedTorrent.Title &&
-              elemTorrent.Seeds === sortedTorrent.Seeds) {
-            sortedItems.push(elemData.element);
-            torrentElements.splice(j, 1); // Видаляємо знайдений елемент
-            found = true;
-            break;
-          }
-        }
-        
-        // Якщо не знайшли за точним співпадінням, шукаємо за частиною назви
-        if (!found && sortedTorrent && sortedTorrent.Title) {
-          for (var j = 0; j < torrentElements.length; j++) {
-            var elemData = torrentElements[j];
-            var elemTorrent = elemData.torrent;
+          var item = torrentItems.eq(j);
+          var torrentData = item.data('torrent') || {};
+          
+          // Спроба знайти за точним співпадінням
+          if (torrentData && sortedTorrent) {
+            var sameTitle = torrentData.Title === sortedTorrent.Title;
+            var sameSeeds = torrentData.Seeds === sortedTorrent.Seeds;
+            var sameSize = torrentData.Size === sortedTorrent.Size;
             
-            if (elemTorrent && elemTorrent.Title && 
-                elemTorrent.Title.indexOf(sortedTorrent.Title.substring(0, 30)) !== -1) {
-              sortedItems.push(elemData.element);
-              torrentElements.splice(j, 1);
-              found = true;
+            if (sameTitle && (sameSeeds || sameSize)) {
+              foundIndex = j;
+              break;
+            }
+            
+            // Спроба знайти за частиною назви та розміром
+            if (torrentData.Title && sortedTorrent.Title &&
+                torrentData.Title.substring(0, 40) === sortedTorrent.Title.substring(0, 40) &&
+                Math.abs((torrentData.Size || 0) - (sortedTorrent.Size || 0)) < 1000000) {
+              foundIndex = j;
               break;
             }
           }
         }
+        
+        // Якщо не знайшли за точним співпадінням, беремо наступний доступний
+        if (foundIndex === -1) {
+          for (var j = 0; j < torrentItems.length; j++) {
+            if (!usedIndices[j]) {
+              foundIndex = j;
+              break;
+            }
+          }
+        }
+        
+        if (foundIndex !== -1) {
+          sortedItems.push(torrentItems.eq(foundIndex));
+          usedIndices[foundIndex] = true;
+        }
       }
       
-      // Додаємо решту торрентів, які не були знайдені
-      for (var i = 0; i < torrentElements.length; i++) {
-        sortedItems.push(torrentElements[i].element);
+      // Додаємо решту елементів, якщо такі залишилися
+      for (var i = 0; i < torrentItems.length; i++) {
+        if (!usedIndices[i]) {
+          sortedItems.push(torrentItems.eq(i));
+        }
       }
       
       // Якщо знайшли достатньо елементів, перевпорядковуємо
-      if (sortedItems.length > 0) {
+      if (sortedItems.length > 0 && sortedItems.length === torrentItems.length) {
         // Видаляємо всі елементи
         torrentsContainer.empty();
         
@@ -1436,8 +1459,14 @@
           torrentsContainer.append(sortedItems[i]);
         }
         
-        console.log("[EasyTorrent] Торренти перевпорядковано! Перший торрент має оцінку: " + 
-                   (window.EasyTorrentSortedResults[0] ? window.EasyTorrentSortedResults[0]._recommendScore : "N/A"));
+        console.log("[EasyTorrent] Торренти перевпорядковано! Перші 3 торренти:");
+        for (var i = 0; i < Math.min(3, sortedItems.length); i++) {
+          var torrentData = sortedItems[i].data('torrent');
+          if (torrentData && torrentData._recommendScore !== undefined) {
+            console.log("  " + (i+1) + ". Оцінка: " + torrentData._recommendScore + ", " + 
+                      (torrentData.Title || "").substring(0, 60));
+          }
+        }
       }
       
     } catch (error) {
@@ -1710,6 +1739,8 @@
     var originalGet = parser.get;
     
     parser.get = function(requestData, successCallback, errorCallback) {
+      lastTorrentRequest = requestData;
+      
       return originalGet.call(
         this,
         requestData,
@@ -1724,26 +1755,43 @@
             successCallback(results);
           }
           
-          // Після відображення торрентів намагаємося їх перевпорядкувати
-          setTimeout(function() {
-            reorderTorrents();
-          }, 500);
-          
-          // Додаткова спроба через 1 секунду
-          setTimeout(function() {
-            reorderTorrents();
-          }, 1000);
-          
-          // І ще одна через 2 секунди
-          setTimeout(function() {
-            reorderTorrents();
-          }, 2000);
+          // Плануємо перевпорядкування після рендерингу
+          scheduleReorder();
         },
         errorCallback
       );
     };
     
     console.log("[EasyTorrent] Parser.get успішно пропатчено");
+  }
+
+  function scheduleReorder() {
+    // Очищуємо старі таймери
+    if (window.easyTorrentReorderTimer) {
+      clearTimeout(window.easyTorrentReorderTimer);
+    }
+    if (window.easyTorrentReorderTimer2) {
+      clearTimeout(window.easyTorrentReorderTimer2);
+    }
+    if (window.easyTorrentReorderTimer3) {
+      clearTimeout(window.easyTorrentReorderTimer3);
+    }
+    
+    // Запускаємо перевпорядкування з затримками
+    window.easyTorrentReorderTimer = setTimeout(function() {
+      console.log("[EasyTorrent] Спроба перевпорядкування 1 (через 800мс)");
+      reorderTorrents();
+    }, 800);
+    
+    window.easyTorrentReorderTimer2 = setTimeout(function() {
+      console.log("[EasyTorrent] Спроба перевпорядкування 2 (через 1500мс)");
+      reorderTorrents();
+    }, 1500);
+    
+    window.easyTorrentReorderTimer3 = setTimeout(function() {
+      console.log("[EasyTorrent] Спроба перевпорядкування 3 (через 2500мс)");
+      reorderTorrents();
+    }, 2500);
   }
 
   function addStyles() {
@@ -1906,6 +1954,14 @@
         70% { box-shadow: 0 0 0 10px rgba(255, 215, 0, 0); }
         100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
       }
+      
+      /* Індикатор сортування */
+      .torrent-item.sorted-high {
+        border-left: 3px solid rgba(76,175,80,0.5);
+      }
+      .torrent-item.sorted-ideal {
+        border-left: 3px solid rgba(255,215,0,0.7);
+      }
     `;
     
     document.head.appendChild(style);
@@ -1952,20 +2008,22 @@
         console.log("[EasyTorrent] Нова сторінка торрентів");
         recommendedTorrents = [];
         window.EasyTorrentSortedResults = null;
+        window.EasyTorrentLastSort = null;
         
         // Після завантаження торрентів намагаємося їх перевпорядкувати
         setTimeout(function() {
-          reorderTorrents();
-        }, 1500);
+          scheduleReorder();
+        }, 500);
       }
     });
     
     // Додатковий слухач для перевпорядкування при зміні фокусу
     Lampa.Listener.follow('full', function(e) {
       if (e.type === 'focus' && e.name === 'torrent-item') {
+        // Невелика затримка для перевпорядкування після фокусу
         setTimeout(function() {
           reorderTorrents();
-        }, 100);
+        }, 50);
       }
     });
     
