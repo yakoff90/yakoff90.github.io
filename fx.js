@@ -1824,8 +1824,8 @@ else if (element.url) {
         zh: '按住“确定”键调出上下文菜单'
       },
       title_online: { //
-        ru: 'Онлайн',
-        uk: 'Онлайн',
+        ru: 'Філмікс 4К',
+        uk: 'Філмікс 4К',
         en: 'Online',
         zh: '在线的'
       },
