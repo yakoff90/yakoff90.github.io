@@ -25,7 +25,6 @@
     if (movie && movie.production_companies) {
       movie.production_companies.forEach(function(co) {
         if (co.logo_path) {
-          // ЗБІЛЬШЕНО: height: 1.8em (було 1.1em)
           html += '<div class="quality-badge studio-logo" style="margin-right: 12px; display: inline-block; vertical-align: middle;">' +
                     '<img src="' + TMDB_IMAGE_URL + co.logo_path + '" title="' + co.name + '" style="filter: brightness(0) invert(1); opacity: 0.9; height: 1.8em; width: auto; margin-top: -2px;">' +
                   '</div>';
@@ -111,28 +110,65 @@
 
   Lampa.Listener.follow('full', function(e) {
     if (e.type !== 'complite') return;
-    var details = $('.full-start-new__details');
-    if (details.length) {
+    
+    // В Cardify інтерфейсі знаходимо блок з кнопками онлайн та торрентів
+    var cardifyContainer = $('.cardify');
+    if (cardifyContainer.length) {
+      // Знаходимо блок з кнопками онлайн та торрентів
+      var buttonsContainer = $('.buttons--container');
+      
+      if (buttonsContainer.length) {
+        // Створюємо контейнер для міток якості під кнопками
+        if (!$('.quality-badges-container-cardify').length) {
+          buttonsContainer.after('<div class="quality-badges-container-cardify"></div>');
+        }
+        
+        // Додаємо логотипи студій
+        var studioHtml = getStudioLogos(e.data.movie);
+        $('.quality-badges-container-cardify').html(studioHtml);
+        
+        // Отримуємо інформацію про якість
+        Lampa.Parser.get({ search: e.data.movie.title || e.data.movie.name, movie: e.data.movie, page: 1 }, function(response) {
+          if (response && response.Results) {
+            var best = getBest(response.Results);
+            var badges = [];
+            
+            if (best.ukr) badges.push(createBadgeImg('UKR', false, badges.length));
+            if (best.resolution) badges.push(createBadgeImg(best.resolution, false, badges.length));
+            if (best.dolbyVision) badges.push(createBadgeImg('Dolby Vision', false, badges.length));
+            if (best.hdr) badges.push(createBadgeImg('HDR', false, badges.length));
+            if (best.audio) badges.push(createBadgeImg(best.audio, false, badges.length));
+            if (best.dub) badges.push(createBadgeImg('DUB', false, badges.length));
+            
+            $('.quality-badges-container-cardify').append(badges.join(''));
+          }
+        });
+      }
+    } else {
+      // Стандартний інтерфейс (не Cardify)
+      var details = $('.full-start-new__details');
+      if (details.length) {
         if (!$('.quality-badges-container').length) details.after('<div class="quality-badges-container"></div>');
         
         var studioHtml = getStudioLogos(e.data.movie);
         $('.quality-badges-container').html(studioHtml);
-
+        
         Lampa.Parser.get({ search: e.data.movie.title || e.data.movie.name, movie: e.data.movie, page: 1 }, function(response) {
-            if (response && response.Results) {
-                var best = getBest(response.Results);
-                var badges = [];
-                
-                if (best.ukr) badges.push(createBadgeImg('UKR', false, badges.length));
-                if (best.resolution) badges.push(createBadgeImg(best.resolution, false, badges.length));
-                if (best.dolbyVision) badges.push(createBadgeImg('Dolby Vision', false, badges.length));
-                if (best.hdr) badges.push(createBadgeImg('HDR', false, badges.length));
-                if (best.audio) badges.push(createBadgeImg(best.audio, false, badges.length));
-                if (best.dub) badges.push(createBadgeImg('DUB', false, badges.length));
-                
-                $('.quality-badges-container').append(badges.join(''));
-            }
+          if (response && response.Results) {
+            var best = getBest(response.Results);
+            var badges = [];
+            
+            if (best.ukr) badges.push(createBadgeImg('UKR', false, badges.length));
+            if (best.resolution) badges.push(createBadgeImg(best.resolution, false, badges.length));
+            if (best.dolbyVision) badges.push(createBadgeImg('Dolby Vision', false, badges.length));
+            if (best.hdr) badges.push(createBadgeImg('HDR', false, badges.length));
+            if (best.audio) badges.push(createBadgeImg(best.audio, false, badges.length));
+            if (best.dub) badges.push(createBadgeImg('DUB', false, badges.length));
+            
+            $('.quality-badges-container').append(badges.join(''));
+          }
         });
+      }
     }
   });
 
@@ -140,6 +176,16 @@
 
   var style = '<style>\
     .quality-badges-container { display: flex; align-items: center; gap: 0.5em; margin: 0.8em 0; min-height: 2em; flex-wrap: wrap; }\
+    .quality-badges-container-cardify { \
+      display: flex; \
+      align-items: center; \
+      gap: 0.5em; \
+      margin: 1.5em 0 0 0; \
+      min-height: 2em; \
+      flex-wrap: wrap; \
+      justify-content: center; \
+      width: 100%; \
+    }\
     .quality-badge { height: 1.3em; opacity: 0; transform: translateY(8px); animation: qb_in 0.4s ease forwards; display: flex; align-items: center; }\
     .studio-logo { height: 1.8em !important; }\
     .card-quality-badges { position: absolute; top: 0.3em; right: 0.3em; display: flex; flex-direction: row; gap: 0.2em; pointer-events: none; z-index: 5; }\
