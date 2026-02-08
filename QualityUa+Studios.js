@@ -111,21 +111,23 @@
   Lampa.Listener.follow('full', function(e) {
     if (e.type !== 'complite') return;
     
-    // В Cardify інтерфейсі знаходимо блок з кнопками онлайн та торрентів
+    // В Cardify інтерфейсі знаходимо правий блок (.cardify__right)
     var cardifyContainer = $('.cardify');
     if (cardifyContainer.length) {
-      // Знаходимо блок з кнопками онлайн та торрентів
-      var buttonsContainer = $('.buttons--container');
+      // Знаходимо правий блок Cardify
+      var cardifyRight = $('.cardify__right');
       
-      if (buttonsContainer.length) {
-        // Створюємо контейнер для міток якості під кнопками
-        if (!$('.quality-badges-container-cardify').length) {
-          buttonsContainer.after('<div class="quality-badges-container-cardify"></div>');
-        }
+      if (cardifyRight.length) {
+        // Видаляємо попередній контейнер, якщо він є
+        $('.quality-badges-container-cardify').remove();
+        
+        // Створюємо контейнер для міток якості в правому нижньому куті
+        var badgesContainer = $('<div class="quality-badges-container-cardify"></div>');
+        cardifyRight.append(badgesContainer);
         
         // Додаємо логотипи студій
         var studioHtml = getStudioLogos(e.data.movie);
-        $('.quality-badges-container-cardify').html(studioHtml);
+        badgesContainer.html(studioHtml);
         
         // Отримуємо інформацію про якість
         Lampa.Parser.get({ search: e.data.movie.title || e.data.movie.name, movie: e.data.movie, page: 1 }, function(response) {
@@ -140,7 +142,7 @@
             if (best.audio) badges.push(createBadgeImg(best.audio, false, badges.length));
             if (best.dub) badges.push(createBadgeImg('DUB', false, badges.length));
             
-            $('.quality-badges-container-cardify').append(badges.join(''));
+            badgesContainer.append(badges.join(''));
           }
         });
       }
@@ -148,7 +150,8 @@
       // Стандартний інтерфейс (не Cardify)
       var details = $('.full-start-new__details');
       if (details.length) {
-        if (!$('.quality-badges-container').length) details.after('<div class="quality-badges-container"></div>');
+        $('.quality-badges-container').remove();
+        details.after('<div class="quality-badges-container"></div>');
         
         var studioHtml = getStudioLogos(e.data.movie);
         $('.quality-badges-container').html(studioHtml);
@@ -175,24 +178,68 @@
   setInterval(processCards, 3000);
 
   var style = '<style>\
-    .quality-badges-container { display: flex; align-items: center; gap: 0.5em; margin: 0.8em 0; min-height: 2em; flex-wrap: wrap; }\
-    .quality-badges-container-cardify { \
+    .quality-badges-container { \
       display: flex; \
       align-items: center; \
       gap: 0.5em; \
-      margin: 1.5em 0 0 0; \
+      margin: 0.8em 0; \
       min-height: 2em; \
       flex-wrap: wrap; \
-      justify-content: center; \
-      width: 100%; \
     }\
-    .quality-badge { height: 1.3em; opacity: 0; transform: translateY(8px); animation: qb_in 0.4s ease forwards; display: flex; align-items: center; }\
-    .studio-logo { height: 1.8em !important; }\
-    .card-quality-badges { position: absolute; top: 0.3em; right: 0.3em; display: flex; flex-direction: row; gap: 0.2em; pointer-events: none; z-index: 5; }\
-    .card-quality-badge { height: 0.9em; opacity: 0; transform: translateY(5px); animation: qb_in 0.3s ease forwards; }\
-    @keyframes qb_in { to { opacity: 1; transform: translateY(0); } }\
-    .quality-badge img, .card-quality-badge img { height: 100%; width: auto; display: block; }\
-    .card-quality-badge img { filter: drop-shadow(0 1px 2px #000); }\
+    .quality-badges-container-cardify { \
+      position: absolute; \
+      bottom: 20px; \
+      right: 20px; \
+      display: flex; \
+      align-items: center; \
+      gap: 0.5em; \
+      flex-wrap: wrap; \
+      justify-content: flex-end; \
+      z-index: 10; \
+      max-width: 60%; \
+    }\
+    .quality-badge { \
+      height: 1.3em; \
+      opacity: 0; \
+      transform: translateY(8px); \
+      animation: qb_in 0.4s ease forwards; \
+      display: flex; \
+      align-items: center; \
+    }\
+    .studio-logo { \
+      height: 1.8em !important; \
+    }\
+    .card-quality-badges { \
+      position: absolute; \
+      top: 0.3em; \
+      right: 0.3em; \
+      display: flex; \
+      flex-direction: row; \
+      gap: 0.2em; \
+      pointer-events: none; \
+      z-index: 5; \
+    }\
+    .card-quality-badge { \
+      height: 0.9em; \
+      opacity: 0; \
+      transform: translateY(5px); \
+      animation: qb_in 0.3s ease forwards; \
+    }\
+    @keyframes qb_in { \
+      to { \
+        opacity: 1; \
+        transform: translateY(0); \
+      } \
+    }\
+    .quality-badge img, \
+    .card-quality-badge img { \
+      height: 100%; \
+      width: auto; \
+      display: block; \
+    }\
+    .card-quality-badge img { \
+      filter: drop-shadow(0 1px 2px #000); \
+    }\
   </style>';
   $('body').append(style);
 
