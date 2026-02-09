@@ -12,8 +12,7 @@
     position: 'details', // 'details' або 'card'
     size: 'medium', // 'small', 'medium', 'large', 'custom'
     customHeight: '1.8em',
-    maxLogos: 5,
-    showOnCards: false,
+    maxLogos: 3, // На картках менше місця
     animation: true,
     brightness: 0,
     invert: 1,
@@ -36,7 +35,11 @@
   }
 
   // Отримання розміру в залежності від налаштувань
-  function getSize() {
+  function getSize(forCard) {
+    if (forCard) {
+      return '1.2em'; // Фіксований малий розмір для карток
+    }
+    
     switch(settings.size) {
       case 'small': return '1.2em';
       case 'medium': return '1.8em';
@@ -48,129 +51,71 @@
 
   // Отримання логотипів студій
   function getStudioLogos(movie, forCard) {
-    if (!settings.enabled) return '';
+    if (!settings.enabled || !movie || !movie.production_companies) return '';
     
     var html = '';
     var count = 0;
-    var size = getSize();
-    var maxLogos = forCard ? 3 : settings.maxLogos; // На картках менше місця
+    var size = getSize(forCard);
+    var maxLogos = forCard ? Math.min(3, settings.maxLogos) : settings.maxLogos;
     
-    if (movie && movie.production_companies) {
-      movie.production_companies.forEach(function(co) {
-        if (co.logo_path && count < maxLogos) {
-          var filter = 'brightness(' + settings.brightness + ') invert(' + settings.invert + ')';
-          var style = 'filter: ' + filter + '; opacity: ' + settings.opacity + '; height: ' + size + '; width: auto;';
-          
-          if (forCard) {
-            style += ' margin-top: 0;';
-          } else {
-            style += ' margin-top: -2px;';
-          }
-          
-          html += '<div class="studio-logo-badge' + (forCard ? ' card-logo' : '') + '" ' +
-                  'style="margin-right: ' + (forCard ? '4px' : '12px') + '; display: inline-block; vertical-align: middle;">' +
-                  '<img src="' + TMDB_IMAGE_URL + co.logo_path + '" title="' + co.name + '" style="' + style + '">' +
-                  '</div>';
-          count++;
-        }
-      });
-    }
+    movie.production_companies.forEach(function(co) {
+      if (co.logo_path && count < maxLogos) {
+        var filter = 'brightness(' + settings.brightness + ') invert(' + settings.invert + ')';
+        var style = 'filter: ' + filter + '; opacity: ' + settings.opacity + '; height: ' + size + '; width: auto;';
+        
+        html += '<div class="studio-logo-badge' + (forCard ? ' card-logo' : '') + '">' +
+                '<img src="' + TMDB_IMAGE_URL + co.logo_path + '" title="' + co.name + '" style="' + style + '">' +
+                '</div>';
+        count++;
+      }
+    });
+    
     return html;
   }
 
-  // Додавання логотипів на картки (ВИПРАВЛЕНО ДЛЯ CARDIFY)
-  function addCardLogos(card, movie) {
-    if (!settings.enabled || (settings.position !== 'card' && settings.position !== 'both')) return;
-    
-    // Видаляємо старі логотипи, якщо вони є
-    var existing = card.find('.card-studio-logos');
-    if (existing.length) existing.remove();
-    
-    var logos = getStudioLogos(movie, true);
-    if (logos) {
-      // Додаємо контейнер для логотипів
-      var logosContainer = $('<div class="card-studio-logos"></div>').html(logos);
-      
-      // Перевіряємо, чи це картка з плагіном Cardify
-      var isCardify = card.hasClass('cardify') || card.closest('.cardify').length > 0;
-      
-      if (isCardify) {
-        // Для Cardify розміщуємо в правому нижньому куті картки
-        var cardView = card.find('.card__view');
-        if (cardView.length) {
-          logosContainer.css({
-            'position': 'absolute',
-            'bottom': '8px',
-            'right': '8px',
-            'display': 'flex',
-            'flex-direction': 'row',
-            'justify-content': 'flex-end',
-            'align-items': 'center',
-            'gap': '4px',
-            'pointer-events': 'none',
-            'z-index': '5',
-            'max-width': '60%',
-            'flex-wrap': 'wrap'
-          });
-          cardView.css('position', 'relative').append(logosContainer);
-        }
-      } else {
-        // Для звичайних карток (оригінальна логіка)
-        card.find('.card__view').append(logosContainer);
-      }
-    }
-  }
-
-  // Обробка карток (ВИПРАВЛЕНО)
+  // Обробка карток (як у torqUAcardify.js)
   function processCards() {
-    if (!settings.enabled || (settings.position !== 'card' && settings.position !== 'both')) return;
-    
-    $('.card:not(.studio-processed)').addClass('studio-processed').each(function() {
+    $('.card:not(.studio-processed)').each(function() {
       var card = $(this);
       var movie = card.data('item');
+      
       if (movie) {
-        addCardLogos(card, movie);
-      }
-    });
-    
-    // Обробка карток у Cardify (якщо вони є)
-    $('.cardify .card:not(.studio-processed)').addClass('studio-processed').each(function() {
-      var card = $(this);
-      var movie = card.data('item');
-      if (movie) {
-        addCardLogos(card, movie);
+        card.addClass('studio-processed');
+        
+        // Видаляємо старі логотипи
+        card.find('.studio-logos-card-block').remove();
+        
+        // Перевіряємо налаштування
+        if (settings.enabled && (settings.position === 'card' || settings.position === 'both')) {
+          var logos = getStudioLogos(movie, true);
+          if (logos) {
+            // Створюємо контейнер як у torqUAcardify.js
+            var container = $('<div class="studio-logos-card-block"></div>').html(logos);
+            
+            // Знаходимо контейнер картки
+            var cardView = card.find('.card__view');
+            if (cardView.length) {
+              cardView.append(container);
+            }
+          }
+        }
       }
     });
   }
 
-  // Обробка сторінки деталей (ВИПРАВЛЕНО ДЛЯ CARDIFY)
+  // Обробка сторінки деталей
   function processDetails(movie) {
     if (!settings.enabled || (settings.position !== 'details' && settings.position !== 'both')) return;
     
-    // Перевіряємо, чи це сторінка з Cardify
-    var isCardifyPage = $('.cardify').length > 0;
-    
-    if (isCardifyPage) {
-      // Для Cardify розміщуємо в блоці деталей
-      var details = $('.cardify__details .full-start-new__details');
-      if (details.length) {
-        var container = $('.studio-logos-container');
-        if (!container.length) {
-          details.after('<div class="studio-logos-container"></div>');
-          container = $('.studio-logos-container');
-        }
-        
-        var logos = getStudioLogos(movie, false);
-        container.html(logos);
-      }
-    } else {
-      // Для звичайної сторінки деталей
-      var details = $('.full-start-new__details, .full-start__details');
-      if (details.length) {
-        var container = $('.studio-logos-container');
-        if (!container.length) {
-          details.after('<div class="studio-logos-container"></div>');
-          container = $('.studio-logos-container');
+    var renderTarget = $('.full-start-new, .full-start');
+    if (renderTarget.length) {
+      var rateLine = $('.full-start-new__rate-line, .full-start__rate-line', renderTarget);
+      
+      if (rateLine.length) {
+        var container = $('.studio-logos-details-container', renderTarget);
+        if (!container.length) { 
+          container = $('<div class="studio-logos-details-container"></div>'); 
+          rateLine.after(container);
         }
         
         var logos = getStudioLogos(movie, false);
@@ -179,37 +124,24 @@
     }
   }
 
-  // Слухач подій (ВИПРАВЛЕНО)
+  // Слухач подій для деталей фільму
   Lampa.Listener.follow('full', function(e) {
     if (e.type !== 'complite') return;
     
     // Обробляємо деталі фільму
     processDetails(e.data.movie);
     
-    // Також обробляємо картки, якщо вони є на сторінці
-    setTimeout(function() {
-      processCards();
-    }, 500);
+    // Також обробляємо картки
+    setTimeout(processCards, 500);
   });
 
-  // Слухач для Cardify (нові картки)
-  Lampa.Listener.follow('activity', function(e) {
-    if (e.type === 'start' && e.object && e.object.component && e.object.component.rows) {
-      // Затримка для завантаження карток
-      setTimeout(function() {
-        processCards();
-      }, 1000);
-    }
-  });
-
-  // Інтервал для обробки карток
-  setInterval(processCards, 1000);
+  // Інтервал для обробки карток (як у torqUAcardify.js)
+  setInterval(processCards, 2000);
 
   // Функція для відкриття меню налаштувань
   function openSettings() {
     loadSettings();
     
-    // Створення меню
     var menu = [
       {
         title: 'Увімкнути логотипи студій',
@@ -229,7 +161,7 @@
         ]
       },
       {
-        title: 'Розмір логотипів',
+        title: 'Розмір логотипів (деталі)',
         component: 'select',
         name: 'size',
         value: settings.size,
@@ -242,7 +174,6 @@
       }
     ];
     
-    // Додаємо поле для власного розміру тільки якщо вибрано "custom"
     if (settings.size === 'custom') {
       menu.push({
         title: 'Власна висота',
@@ -317,7 +248,7 @@
         saveSettings();
         
         // Оновлюємо відображення
-        $('.studio-logos-container, .card-studio-logos').remove();
+        $('.studio-logos-card-block, .studio-logos-details-container').remove();
         setTimeout(function() {
           processCards();
           var details = $('.full-start-new__details, .full-start__details');
@@ -339,68 +270,103 @@
   setTimeout(function() {
     loadSettings();
     
-    // Додаємо CSS стилі (ВИПРАВЛЕНО ДЛЯ CARDIFY)
+    // Додаємо CSS стилі (аналогічно torqUAcardify.js)
     var style = '<style>\
-      .studio-logos-container { \
+      /* Стилі для сторінки деталей */\
+      .studio-logos-details-container { \
         display: flex; \
+        gap: 8px; \
         align-items: center; \
-        gap: 0.8em; \
-        margin: 0.8em 0; \
-        min-height: 2em; \
+        margin: 8px 0; \
         flex-wrap: wrap; \
       }\
+      \
+      /* Стилі для карток */\
+      .studio-logos-card-block { \
+        position: absolute; \
+        bottom: 8px; \
+        right: 8px; \
+        z-index: 10; \
+        display: flex; \
+        flex-direction: row; \
+        justify-content: flex-end; \
+        align-items: center; \
+        gap: 3px; \
+        pointer-events: none; \
+        max-width: 70%; \
+        flex-wrap: wrap; \
+      }\
+      \
+      /* Загальні стилі для логотипів */\
       .studio-logo-badge { \
         display: flex; \
         align-items: center; \
+        justify-content: center; \
         ' + (settings.animation ? 'opacity: 0; transform: translateY(8px); animation: studio_logo_in 0.4s ease forwards;' : '') + '\
       }\
-      .card-studio-logos { \
-        position: absolute; \
-        top: 0.3em; \
-        left: 0.3em; \
-        display: flex; \
-        flex-direction: row; \
-        gap: 0.2em; \
-        pointer-events: none; \
-        z-index: 5; \
-      }\
-      /* Спеціальні стилі для карток з Cardify */\
-      .cardify .card .card-studio-logos {\
-        top: auto !important;\
-        left: auto !important;\
-        bottom: 8px !important;\
-        right: 8px !important;\
-        justify-content: flex-end;\
-        max-width: 60%;\
-        flex-wrap: wrap;\
-      }\
+      \
+      /* Стилі для логотипів на картках */\
       .card-logo { \
-        height: 1em !important; \
-        ' + (settings.animation ? 'opacity: 0; transform: translateY(5px); animation: studio_logo_in 0.3s ease forwards;' : '') + '\
+        background: rgba(0, 0, 0, 0.6); \
+        padding: 2px 4px; \
+        border-radius: 3px; \
+        border: 1px solid rgba(255, 255, 255, 0.2); \
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); \
+        ' + (settings.animation ? 'opacity: 0; transform: translateY(5px); animation: studio_logo_in 0.3s ease forwards 0.1s;' : '') + '\
       }\
+      \
+      /* Стилі для зображень */\
+      .studio-logo-badge img { \
+        height: 100%; \
+        width: auto; \
+        display: block; \
+        max-width: 100%; \
+      }\
+      \
+      /* Додаткові тіні для кращої видимості на картках */\
+      .card-logo img { \
+        filter: drop-shadow(0 1px 1px rgba(0,0,0,0.8)); \
+      }\
+      \
+      /* Анімація появи */\
       @keyframes studio_logo_in { \
         to { \
           opacity: 1; \
           transform: translateY(0); \
         } \
       }\
-      .studio-logo-badge img { \
-        height: 100%; \
-        width: auto; \
-        display: block; \
+      \
+      /* Гарантуємо, що інша інформація не перекривається */\
+      .card__info { \
+        z-index: 15 !important; \
       }\
-      .card-logo img { \
-        filter: drop-shadow(0 1px 2px rgba(0,0,0,0.7)) !important; \
-        max-height: 1.5em !important;\
+      .card__title { \
+        z-index: 15 !important; \
       }\
-      /* Забезпечуємо, щоб логотипи не перекривали інші елементи */\
-      .card__info {\
-        z-index: 10 !important;\
-        position: relative !important;\
+      .card__view:after { \
+        content: ""; \
+        position: absolute; \
+        bottom: 0; \
+        left: 0; \
+        right: 0; \
+        height: 40px; \
+        background: linear-gradient(to top, rgba(0,0,0,0.3), transparent); \
+        pointer-events: none; \
+        z-index: 5; \
       }\
-      .card__title {\
-        z-index: 10 !important;\
-        position: relative !important;\
+      \
+      /* Спеціальні стилі для Cardify */\
+      .cardify .card .studio-logos-card-block { \
+        bottom: 5px !important; \
+        right: 5px !important; \
+      }\
+      \
+      /* Адаптація для темної теми */\
+      @media (prefers-color-scheme: dark) { \
+        .card-logo { \
+          background: rgba(0, 0, 0, 0.7); \
+          border-color: rgba(255, 255, 255, 0.15); \
+        }\
       }\
     </style>';
     
@@ -416,22 +382,10 @@
       }
     };
     
-    // Перевіряємо, чи існує масив налаштувань
+    // Додаємо в налаштування
     if (Lampa.Settings && Lampa.Settings.list && Array.isArray(Lampa.Settings.list)) {
-      // Додаємо наш пункт
       Lampa.Settings.list.push(settingsItem);
-    } else if (Lampa.Storage && Lampa.Storage.field) {
-      // Альтернативний спосіб - через поле
-      Lampa.Storage.field('studio_logos_enabled', true);
-      
-      // Створюємо власний розділ в налаштуваннях
-      var originalSettings = Lampa.Storage.field('settings') || {};
-      originalSettings.studio_logos = settingsItem;
-      Lampa.Storage.field('settings', originalSettings);
-    }
-    
-    // Або спробуємо через SettingsApi
-    if (Lampa.SettingsApi && Lampa.SettingsApi.addParam) {
+    } else if (Lampa.SettingsApi && Lampa.SettingsApi.addParam) {
       Lampa.SettingsApi.addParam({
         component: 'block',
         name: 'studio_logos',
@@ -448,10 +402,10 @@
       });
     }
     
-    // Запускаємо обробку карток після завантаження
+    // Запускаємо обробку карток
     setTimeout(processCards, 2000);
     
-  }, 3000); // Затримка 3 секунди для завантаження Lampa
+  }, 3000);
 
 })();
 [file content end]
