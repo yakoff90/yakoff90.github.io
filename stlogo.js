@@ -33,109 +33,6 @@
     Lampa.Storage.set('studio_logos_settings', settings);
   }
 
-  // Створення інтерфейсу налаштувань
-  function createSettingsMenu() {
-    var menu = [];
-    
-    menu.push({
-      title: 'Логотипи студій',
-      component: {
-        template: '<div style="padding: 20px 15px; color: rgba(255,255,255,0.7);">Налаштування відображення логотипів студій</div>'
-      }
-    });
-
-    // Увімкнення/вимкнення
-    menu.push({
-      title: 'Увімкнути логотипи студій',
-      description: 'Відображати логотипи студій',
-      component: 'checkbox',
-      name: 'enabled',
-      value: settings.enabled
-    });
-
-    // Місце розташування
-    menu.push({
-      title: 'Місце розташування',
-      description: 'Де відображати логотипи',
-      component: 'select',
-      name: 'position',
-      value: settings.position,
-      values: [
-        { title: 'На сторінці деталей', value: 'details' },
-        { title: 'На картках', value: 'card' },
-        { title: 'В обох місцях', value: 'both' }
-      ]
-    });
-
-    // Розмір логотипів
-    menu.push({
-      title: 'Розмір логотипів',
-      description: 'Виберіть розмір логотипів',
-      component: 'select',
-      name: 'size',
-      value: settings.size,
-      values: [
-        { title: 'Маленький', value: 'small' },
-        { title: 'Середній', value: 'medium' },
-        { title: 'Великий', value: 'large' },
-        { title: 'Власний розмір', value: 'custom' }
-      ]
-    });
-
-    // Власний розмір (показується тільки якщо вибрано custom)
-    if (settings.size === 'custom') {
-      menu.push({
-        title: 'Власна висота',
-        description: 'Висота в px, em або rem',
-        component: 'text',
-        name: 'customHeight',
-        value: settings.customHeight
-      });
-    }
-
-    // Максимальна кількість логотипів
-    menu.push({
-      title: 'Максимальна кількість',
-      description: 'Скільки логотипів показувати',
-      component: 'select',
-      name: 'maxLogos',
-      value: settings.maxLogos,
-      values: [
-        { title: '3 логотипи', value: 3 },
-        { title: '5 логотипів', value: 5 },
-        { title: '8 логотипів', value: 8 },
-        { title: 'Усі логотипи', value: 99 }
-      ]
-    });
-
-    // Анімація
-    menu.push({
-      title: 'Анімація появи',
-      description: 'Плавна анімація при появі',
-      component: 'checkbox',
-      name: 'animation',
-      value: settings.animation
-    });
-
-    // Яскравість та інверсія
-    menu.push({
-      title: 'Фільтр кольорів',
-      description: 'Налаштування відображення логотипів',
-      component: {
-        template: '<div style="padding: 15px;">' +
-                  '<div style="margin-bottom: 10px;">Яскравість: <span id="studio_brightness_value">' + settings.brightness + '</span></div>' +
-                  '<input type="range" min="0" max="2" step="0.1" value="' + settings.brightness + '" style="width: 100%;" id="studio_brightness">' +
-                  '<div style="margin-top: 15px; margin-bottom: 10px;">Інверсія: <span id="studio_invert_value">' + settings.invert + '</span></div>' +
-                  '<input type="range" min="0" max="1" step="0.1" value="' + settings.invert + '" style="width: 100%;" id="studio_invert">' +
-                  '<div style="margin-top: 15px; margin-bottom: 10px;">Прозорість: <span id="studio_opacity_value">' + settings.opacity + '</span></div>' +
-                  '<input type="range" min="0" max="1" step="0.1" value="' + settings.opacity + '" style="width: 100%;" id="studio_opacity">' +
-                  '</div>'
-      }
-    });
-
-    return menu;
-  }
-
   // Отримання розміру в залежності від налаштувань
   function getSize() {
     switch(settings.size) {
@@ -231,119 +128,198 @@
   // Інтервал для обробки карток
   setInterval(processCards, 1000);
 
-  // Реєстрація плагіна в налаштуваннях
-  Lampa.SettingsApi.addParam({
-    component: 'block',
-    name: 'studio_logos',
-    params: [{
-      name: 'studio_logos_settings',
-      title: 'Логотипи студій',
-      button: {
-        title: 'Налаштування',
-        action: function() {
-          loadSettings();
-          var menu = createSettingsMenu();
-          
-          Lampa.SettingsApi.open({
-            title: 'Логотипи студій',
-            menu: menu,
-            onSave: function(data) {
-              // Обробка звичайних полів
-              Object.keys(data).forEach(function(key) {
-                if (settings[key] !== undefined && key !== 'customHeight') {
-                  settings[key] = data[key];
-                }
-              });
-              
-              // Обробка спеціальних полів
-              if (data.customHeight !== undefined) {
-                settings.customHeight = data.customHeight;
-              }
-              
-              saveSettings();
-              
-              // Оновити відображення
-              $('.studio-logos-container, .card-studio-logos').remove();
-              setTimeout(processCards, 100);
-              
-              return true;
-            },
-            onBack: function() {
-              return true;
-            }
-          });
-          
-          // Обробник для слайдерів
-          setTimeout(function() {
-            $('#studio_brightness').on('input', function() {
-              $('#studio_brightness_value').text($(this).val());
-              settings.brightness = parseFloat($(this).val());
-            });
-            
-            $('#studio_invert').on('input', function() {
-              $('#studio_invert_value').text($(this).val());
-              settings.invert = parseFloat($(this).val());
-            });
-            
-            $('#studio_opacity').on('input', function() {
-              $('#studio_opacity_value').text($(this).val());
-              settings.opacity = parseFloat($(this).val());
-            });
-          }, 100);
-        }
-      }
-    }]
-  });
-
-  // Завантаження налаштувань при старті
-  setTimeout(function() {
+  // Функція для відкриття меню налаштувань
+  function openSettings() {
     loadSettings();
     
-    // CSS стилі
-    var style = '<style>\
-      .studio-logos-container { \
-        display: flex; \
-        align-items: center; \
-        gap: 0.8em; \
-        margin: 0.8em 0; \
-        min-height: 2em; \
-        flex-wrap: wrap; \
-      }\
-      .studio-logo-badge { \
-        display: flex; \
-        align-items: center; \
-        ' + (settings.animation ? 'opacity: 0; transform: translateY(8px); animation: studio_logo_in 0.4s ease forwards;' : '') + '\
-      }\
-      .card-studio-logos { \
-        position: absolute; \
-        top: 0.3em; \
-        left: 0.3em; \
-        display: flex; \
-        flex-direction: row; \
-        gap: 0.2em; \
-        pointer-events: none; \
-        z-index: 5; \
-      }\
-      .card-logo { \
-        height: 1em !important; \
-        ' + (settings.animation ? 'opacity: 0; transform: translateY(5px); animation: studio_logo_in 0.3s ease forwards;' : '') + '\
-      }\
-      @keyframes studio_logo_in { \
-        to { \
-          opacity: 1; \
-          transform: translateY(0); \
-        } \
-      }\
-      .studio-logo-badge img { \
-        height: 100%; \
-        width: auto; \
-        display: block; \
-      }\
-      .card-logo img { \
-        filter: drop-shadow(0 1px 2px #000); \
-      }\
-    </style>';
-    $('body').append(style);
-  }, 1000);
+    // Створення меню
+    var menu = [
+      {
+        title: 'Увімкнути логотипи студій',
+        component: 'checkbox',
+        name: 'enabled',
+        value: settings.enabled
+      },
+      {
+        title: 'Місце розташування',
+        component: 'select',
+        name: 'position',
+        value: settings.position,
+        values: [
+          { title: 'На сторінці деталей', value: 'details' },
+          { title: 'На картках', value: 'card' },
+          { title: 'В обох місцях', value: 'both' }
+        ]
+      },
+      {
+        title: 'Розмір логотипів',
+        component: 'select',
+        name: 'size',
+        value: settings.size,
+        values: [
+          { title: 'Маленький', value: 'small' },
+          { title: 'Середній', value: 'medium' },
+          { title: 'Великий', value: 'large' },
+          { title: 'Власний розмір', value: 'custom' }
+        ]
+      }
+    ];
+    
+    // Додаємо поле для власного розміру тільки якщо вибрано "custom"
+    if (settings.size === 'custom') {
+      menu.push({
+        title: 'Власна висота',
+        component: 'text',
+        name: 'customHeight',
+        value: settings.customHeight,
+        placeholder: '1.8em, 24px, 2rem'
+      });
+    }
+    
+    menu.push(
+      {
+        title: 'Максимальна кількість',
+        component: 'select',
+        name: 'maxLogos',
+        value: settings.maxLogos,
+        values: [
+          { title: '3 логотипи', value: 3 },
+          { title: '5 логотипів', value: 5 },
+          { title: '8 логотипів', value: 8 },
+          { title: 'Усі логотипи', value: 99 }
+        ]
+      },
+      {
+        title: 'Анімація появи',
+        component: 'checkbox',
+        name: 'animation',
+        value: settings.animation
+      },
+      {
+        title: 'Яскравість',
+        component: 'slider',
+        name: 'brightness',
+        value: settings.brightness,
+        min: 0,
+        max: 2,
+        step: 0.1
+      },
+      {
+        title: 'Інверсія кольорів',
+        component: 'slider',
+        name: 'invert',
+        value: settings.invert,
+        min: 0,
+        max: 1,
+        step: 0.1
+      },
+      {
+        title: 'Прозорість',
+        component: 'slider',
+        name: 'opacity',
+        value: settings.opacity,
+        min: 0,
+        max: 1,
+        step: 0.1
+      }
+    );
+
+    // Відкриття меню налаштувань
+    Lampa.SettingsApi.open({
+      title: 'Логотипи студій',
+      menu: menu,
+      onSave: function(data) {
+        // Оновлюємо налаштування
+        Object.keys(data).forEach(function(key) {
+          if (settings[key] !== undefined) {
+            settings[key] = data[key];
+          }
+        });
+        
+        // Зберігаємо налаштування
+        saveSettings();
+        
+        // Оновлюємо відображення
+        $('.studio-logos-container, .card-studio-logos').remove();
+        setTimeout(function() {
+          processCards();
+          var details = $('.full-start-new__details, .full-start__details');
+          if (details.length) {
+            var movie = Lampa.Storage.get('full-movie');
+            if (movie) processDetails(movie);
+          }
+        }, 100);
+        
+        return true;
+      },
+      onBack: function() {
+        return true;
+      }
+    });
+  }
+
+  // Додавання плагіна в налаштування
+  Lampa.Settings.list.push({
+    component: 'settings_plugin_item',
+    name: 'studio_logos',
+    title: 'Логотипи студій',
+    onSelect: function() {
+      openSettings();
+    }
+  });
+
+  // Ініціалізація при завантаженні
+  Lampa.Listener.follow('app', function(e) {
+    if (e.type == 'ready') {
+      loadSettings();
+      
+      // Додаємо CSS стилі
+      var style = '<style>\
+        .studio-logos-container { \
+          display: flex; \
+          align-items: center; \
+          gap: 0.8em; \
+          margin: 0.8em 0; \
+          min-height: 2em; \
+          flex-wrap: wrap; \
+        }\
+        .studio-logo-badge { \
+          display: flex; \
+          align-items: center; \
+          ' + (settings.animation ? 'opacity: 0; transform: translateY(8px); animation: studio_logo_in 0.4s ease forwards;' : '') + '\
+        }\
+        .card-studio-logos { \
+          position: absolute; \
+          top: 0.3em; \
+          left: 0.3em; \
+          display: flex; \
+          flex-direction: row; \
+          gap: 0.2em; \
+          pointer-events: none; \
+          z-index: 5; \
+        }\
+        .card-logo { \
+          height: 1em !important; \
+          ' + (settings.animation ? 'opacity: 0; transform: translateY(5px); animation: studio_logo_in 0.3s ease forwards;' : '') + '\
+        }\
+        @keyframes studio_logo_in { \
+          to { \
+            opacity: 1; \
+            transform: translateY(0); \
+          } \
+        }\
+        .studio-logo-badge img { \
+          height: 100%; \
+          width: auto; \
+          display: block; \
+        }\
+        .card-logo img { \
+          filter: drop-shadow(0 1px 2px #000); \
+        }\
+      </style>';
+      
+      $('body').append(style);
+    }
+  });
 
 })();
