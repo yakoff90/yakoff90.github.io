@@ -258,68 +258,100 @@
     });
   }
 
-  // Додавання плагіна в налаштування
-  Lampa.Settings.list.push({
-    component: 'settings_plugin_item',
-    name: 'studio_logos',
-    title: 'Логотипи студій',
-    onSelect: function() {
-      openSettings();
-    }
-  });
-
-  // Ініціалізація при завантаженні
-  Lampa.Listener.follow('app', function(e) {
-    if (e.type == 'ready') {
-      loadSettings();
+  // Чекаємо, поки завантажиться додаток
+  setTimeout(function() {
+    loadSettings();
+    
+    // Додаємо CSS стилі
+    var style = '<style>\
+      .studio-logos-container { \
+        display: flex; \
+        align-items: center; \
+        gap: 0.8em; \
+        margin: 0.8em 0; \
+        min-height: 2em; \
+        flex-wrap: wrap; \
+      }\
+      .studio-logo-badge { \
+        display: flex; \
+        align-items: center; \
+        ' + (settings.animation ? 'opacity: 0; transform: translateY(8px); animation: studio_logo_in 0.4s ease forwards;' : '') + '\
+      }\
+      .card-studio-logos { \
+        position: absolute; \
+        top: 0.3em; \
+        left: 0.3em; \
+        display: flex; \
+        flex-direction: row; \
+        gap: 0.2em; \
+        pointer-events: none; \
+        z-index: 5; \
+      }\
+      .card-logo { \
+        height: 1em !important; \
+        ' + (settings.animation ? 'opacity: 0; transform: translateY(5px); animation: studio_logo_in 0.3s ease forwards;' : '') + '\
+      }\
+      @keyframes studio_logo_in { \
+        to { \
+          opacity: 1; \
+          transform: translateY(0); \
+        } \
+      }\
+      .studio-logo-badge img { \
+        height: 100%; \
+        width: auto; \
+        display: block; \
+      }\
+      .card-logo img { \
+        filter: drop-shadow(0 1px 2px #000); \
+      }\
+    </style>';
+    
+    $('body').append(style);
+    
+    // Додаємо пункт в налаштування - АНАЛОГІЧНО ДО ПЛАГІНУ ЯКОСТІ
+    // Створюємо об'єкт налаштувань
+    var settingsItem = {
+      component: 'settings_plugin_item',
+      name: 'studio_logos',
+      title: 'Логотипи студій',
+      onSelect: function() {
+        openSettings();
+      }
+    };
+    
+    // Перевіряємо, чи існує масив налаштувань
+    if (Lampa.Settings && Lampa.Settings.list && Array.isArray(Lampa.Settings.list)) {
+      // Додаємо наш пункт
+      Lampa.Settings.list.push(settingsItem);
+    } else if (Lampa.Storage && Lampa.Storage.field) {
+      // Альтернативний спосіб - через поле
+      Lampa.Storage.field('studio_logos_enabled', true);
       
-      // Додаємо CSS стилі
-      var style = '<style>\
-        .studio-logos-container { \
-          display: flex; \
-          align-items: center; \
-          gap: 0.8em; \
-          margin: 0.8em 0; \
-          min-height: 2em; \
-          flex-wrap: wrap; \
-        }\
-        .studio-logo-badge { \
-          display: flex; \
-          align-items: center; \
-          ' + (settings.animation ? 'opacity: 0; transform: translateY(8px); animation: studio_logo_in 0.4s ease forwards;' : '') + '\
-        }\
-        .card-studio-logos { \
-          position: absolute; \
-          top: 0.3em; \
-          left: 0.3em; \
-          display: flex; \
-          flex-direction: row; \
-          gap: 0.2em; \
-          pointer-events: none; \
-          z-index: 5; \
-        }\
-        .card-logo { \
-          height: 1em !important; \
-          ' + (settings.animation ? 'opacity: 0; transform: translateY(5px); animation: studio_logo_in 0.3s ease forwards;' : '') + '\
-        }\
-        @keyframes studio_logo_in { \
-          to { \
-            opacity: 1; \
-            transform: translateY(0); \
-          } \
-        }\
-        .studio-logo-badge img { \
-          height: 100%; \
-          width: auto; \
-          display: block; \
-        }\
-        .card-logo img { \
-          filter: drop-shadow(0 1px 2px #000); \
-        }\
-      </style>';
-      
-      $('body').append(style);
+      // Створюємо власний розділ в налаштуваннях
+      var originalSettings = Lampa.Storage.field('settings') || {};
+      originalSettings.studio_logos = settingsItem;
+      Lampa.Storage.field('settings', originalSettings);
     }
-  });
+    
+    // Або спробуємо через SettingsApi
+    if (Lampa.SettingsApi && Lampa.SettingsApi.addParam) {
+      Lampa.SettingsApi.addParam({
+        component: 'block',
+        name: 'studio_logos',
+        params: [{
+          name: 'studio_logos_settings',
+          title: 'Логотипи студій',
+          button: {
+            title: 'Налаштування',
+            action: function() {
+              openSettings();
+            }
+          }
+        }]
+      });
+    }
+    
+  }, 3000); // Затримка 3 секунди для завантаження Lampa
 
 })();
