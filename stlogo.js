@@ -60,11 +60,11 @@
         if (co.logo_path && count < maxLogos) {
           var filter = 'brightness(' + settings.brightness + ') invert(' + settings.invert + ')';
           
-          // Для карток використовуємо стилі як у торрент плагіні
+          // Для карток використовуємо стилі як у cardify плагіні
           if (forCard) {
-            html += '<div class="studio-badge">' +
+            html += '<div class="studio-badge card">' +
                     '<img src="' + TMDB_IMAGE_URL + co.logo_path + '" title="' + co.name + '" ' +
-                    'style="height: 1em; width: auto; display: block; filter: ' + filter + '; opacity: ' + settings.opacity + ';">' +
+                    'style="height: 0.9em; width: auto; display: block; filter: ' + filter + '; opacity: ' + settings.opacity + ';">' +
                     '</div>';
           } else {
             var style = 'filter: ' + filter + '; opacity: ' + settings.opacity + '; height: ' + size + '; width: auto;';
@@ -86,18 +86,15 @@
   function addCardLogos(card, movie) {
     if (!settings.enabled || (settings.position !== 'card' && settings.position !== 'both')) return;
     
-    var existing = card.find('.card-studio-logos');
+    var existing = card.find('.studio-logos-container');
     if (existing.length) return;
     
     var logos = getStudioLogos(movie, true);
     if (logos) {
-      // Знаходимо або створюємо контейнер для логотипів (як у торрент плагіні)
-      var container = card.find('.studio-logos-container');
-      if (!container.length) {
-        container = $('<div class="studio-logos-container"></div>');
-        card.find('.card__view').append(container);
-      }
+      // Створюємо контейнер для логотипів в правому нижньому куті (як у cardify)
+      var container = $('<div class="studio-logos-container"></div>');
       container.html(logos);
+      card.find('.card__box').append(container);
     }
   }
 
@@ -164,7 +161,7 @@
         ]
       },
       {
-        title: 'Розмір логотипів',
+        title: 'Розмір логотипів на картках',
         component: 'select',
         name: 'size',
         value: settings.size,
@@ -184,21 +181,33 @@
         component: 'text',
         name: 'customHeight',
         value: settings.customHeight,
-        placeholder: '1.8em, 24px, 2rem'
+        placeholder: '0.9em, 16px, 1rem'
       });
     }
     
     menu.push(
       {
-        title: 'Максимальна кількість',
+        title: 'Максимальна кількість на картках',
         component: 'select',
         name: 'maxLogos',
         value: settings.maxLogos,
         values: [
+          { title: '2 логотипи', value: 2 },
           { title: '3 логотипи', value: 3 },
-          { title: '5 логотипів', value: 5 },
-          { title: '8 логотипів', value: 8 },
-          { title: 'Усі логотипи', value: 99 }
+          { title: '4 логотипи', value: 4 },
+          { title: '5 логотипів', value: 5 }
+        ]
+      },
+      {
+        title: 'Позиція на картці',
+        component: 'select',
+        name: 'cardPosition',
+        value: settings.cardPosition || 'bottom-right',
+        values: [
+          { title: 'Правий нижній кут', value: 'bottom-right' },
+          { title: 'Лівий нижній кут', value: 'bottom-left' },
+          { title: 'Правий верхній кут', value: 'top-right' },
+          { title: 'Лівий верхній кут', value: 'top-left' }
         ]
       },
       {
@@ -252,7 +261,7 @@
         saveSettings();
         
         // Оновлюємо відображення
-        $('.studio-logos-container, .card-studio-logos').remove();
+        $('.studio-logos-container').remove();
         setTimeout(function() {
           processCards();
           var details = $('.full-start-new__details, .full-start__details');
@@ -278,27 +287,34 @@
     var style = '<style>\
       .studio-logos-container { \
         position: absolute; \
-        top: 5px; \
-        left: 5px; \
-        z-index: 9; \
+        bottom: 5px; \
+        right: 5px; \
+        z-index: 10; \
         display: flex; \
-        flex-direction: column; \
-        align-items: flex-start; \
-        gap: 3px; \
+        flex-direction: row; \
+        align-items: center; \
+        gap: 4px; \
+        pointer-events: none; \
       }\
-      .studio-badge { \
+      .studio-badge.card { \
         display: flex; \
         align-items: center; \
-        gap: 5px; \
-        color: #fff; \
-        padding: 2px 4px; \
-        height: auto; \
+        justify-content: center; \
+        width: auto; \
+        height: 1.4em; \
+        min-width: 1.4em; \
         background: rgba(0, 0, 0, 0.7); \
         border: 1px solid rgba(255, 255, 255, 0.3); \
-        border-radius: 4px; \
-        white-space: nowrap; \
+        border-radius: 3px; \
+        padding: 1px 3px; \
         box-sizing: border-box; \
         ' + (settings.animation ? 'opacity: 0; transform: translateY(5px); animation: studio_logo_in 0.3s ease forwards;' : '') + '\
+      }\
+      .studio-badge.card img { \
+        height: 0.9em; \
+        width: auto; \
+        max-width: 2.5em; \
+        object-fit: contain; \
       }\
       .studio-logo-badge { \
         display: flex; \
@@ -335,11 +351,6 @@
           opacity: 1; \
           transform: translateY(0); \
         } \
-      }\
-      .studio-badge img { \
-        height: 1em; \
-        width: auto; \
-        display: block; \
       }\
     </style>';
     
