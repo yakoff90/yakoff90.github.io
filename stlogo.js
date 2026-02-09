@@ -1,3 +1,5 @@
+[file name]: stlogo.js
+[file content begin]
 (function () {
   'use strict';
 
@@ -57,18 +59,22 @@
       movie.production_companies.forEach(function(co) {
         if (co.logo_path && count < maxLogos) {
           var filter = 'brightness(' + settings.brightness + ') invert(' + settings.invert + ')';
-          var style = 'filter: ' + filter + '; opacity: ' + settings.opacity + '; height: ' + size + '; width: auto;';
           
+          // Для карток використовуємо стилі як у торрент плагіні
           if (forCard) {
-            style += ' margin-top: 0;';
+            html += '<div class="studio-badge">' +
+                    '<img src="' + TMDB_IMAGE_URL + co.logo_path + '" title="' + co.name + '" ' +
+                    'style="height: 1em; width: auto; display: block; filter: ' + filter + '; opacity: ' + settings.opacity + ';">' +
+                    '</div>';
           } else {
+            var style = 'filter: ' + filter + '; opacity: ' + settings.opacity + '; height: ' + size + '; width: auto;';
             style += ' margin-top: -2px;';
+            
+            html += '<div class="studio-logo-badge"' + 
+                    'style="margin-right: 12px; display: inline-block; vertical-align: middle;">' +
+                    '<img src="' + TMDB_IMAGE_URL + co.logo_path + '" title="' + co.name + '" style="' + style + '">' +
+                    '</div>';
           }
-          
-          html += '<div class="studio-logo-badge' + (forCard ? ' card-logo' : '') + '" ' +
-                  'style="margin-right: ' + (forCard ? '6px' : '12px') + '; display: inline-block; vertical-align: middle;">' +
-                  '<img src="' + TMDB_IMAGE_URL + co.logo_path + '" title="' + co.name + '" style="' + style + '">' +
-                  '</div>';
           count++;
         }
       });
@@ -85,7 +91,13 @@
     
     var logos = getStudioLogos(movie, true);
     if (logos) {
-      card.find('.card__view').append('<div class="card-studio-logos">' + logos + '</div>');
+      // Знаходимо або створюємо контейнер для логотипів (як у торрент плагіні)
+      var container = card.find('.studio-logos-container');
+      if (!container.length) {
+        container = $('<div class="studio-logos-container"></div>');
+        card.find('.card__view').append(container);
+      }
+      container.html(logos);
     }
   }
 
@@ -265,31 +277,58 @@
     // Додаємо CSS стилі
     var style = '<style>\
       .studio-logos-container { \
+        position: absolute; \
+        top: 5px; \
+        left: 5px; \
+        z-index: 9; \
+        display: flex; \
+        flex-direction: column; \
+        align-items: flex-start; \
+        gap: 3px; \
+      }\
+      .studio-badge { \
         display: flex; \
         align-items: center; \
-        gap: 0.8em; \
-        margin: 0.8em 0; \
-        min-height: 2em; \
-        flex-wrap: wrap; \
+        gap: 5px; \
+        color: #fff; \
+        padding: 2px 4px; \
+        height: auto; \
+        background: rgba(0, 0, 0, 0.7); \
+        border: 1px solid rgba(255, 255, 255, 0.3); \
+        border-radius: 4px; \
+        white-space: nowrap; \
+        box-sizing: border-box; \
+        ' + (settings.animation ? 'opacity: 0; transform: translateY(5px); animation: studio_logo_in 0.3s ease forwards;' : '') + '\
       }\
       .studio-logo-badge { \
         display: flex; \
         align-items: center; \
         ' + (settings.animation ? 'opacity: 0; transform: translateY(8px); animation: studio_logo_in 0.4s ease forwards;' : '') + '\
       }\
-      .card-studio-logos { \
-        position: absolute; \
-        top: 0.3em; \
-        left: 0.3em; \
+      .full-start-new__details .studio-logos-container { \
+        position: static; \
         display: flex; \
+        align-items: center; \
+        gap: 0.8em; \
+        margin: 0.8em 0; \
+        min-height: 2em; \
+        flex-wrap: wrap; \
         flex-direction: row; \
-        gap: 0.2em; \
-        pointer-events: none; \
-        z-index: 5; \
       }\
-      .card-logo { \
+      .full-start-new__details .studio-badge { \
+        position: static; \
+        background: rgba(255, 255, 255, 0.08); \
+        border: 1px solid rgba(255, 255, 255, 0.15); \
+        border-radius: 6px; \
+        padding: 0px 8px; \
+        height: 2.2em; \
+        gap: 5px; \
+        margin-right: 12px; \
+      }\
+      .full-start-new__details .studio-badge img { \
         height: 1em !important; \
-        ' + (settings.animation ? 'opacity: 0; transform: translateY(5px); animation: studio_logo_in 0.3s ease forwards;' : '') + '\
+        width: auto; \
+        display: block; \
       }\
       @keyframes studio_logo_in { \
         to { \
@@ -297,20 +336,16 @@
           transform: translateY(0); \
         } \
       }\
-      .studio-logo-badge img { \
-        height: 100%; \
+      .studio-badge img { \
+        height: 1em; \
         width: auto; \
         display: block; \
-      }\
-      .card-logo img { \
-        filter: drop-shadow(0 1px 2px #000); \
       }\
     </style>';
     
     $('body').append(style);
     
-    // Додаємо пункт в налаштування - АНАЛОГІЧНО ДО ПЛАГІНУ ЯКОСТІ
-    // Створюємо об'єкт налаштувань
+    // Додаємо пункт в налаштування
     var settingsItem = {
       component: 'settings_plugin_item',
       name: 'studio_logos',
@@ -355,3 +390,4 @@
   }, 3000); // Затримка 3 секунди для завантаження Lampa
 
 })();
+[file content end]
