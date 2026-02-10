@@ -9,8 +9,8 @@
     if (movie && movie.production_companies) {
       movie.production_companies.forEach(function(co) {
         if (co.logo_path) {
-          html += '<div class="studio-logo-badge" style="margin-right: 12px; display: inline-block; vertical-align: middle;">' +
-                    '<img src="' + TMDB_IMAGE_URL + co.logo_path + '" title="' + co.name + '" style="filter: brightness(0) invert(1); opacity: 0.9; height: 1.8em; width: auto; margin-top: -2px;">' +
+          html += '<div class="studio-logo-badge" style="display: inline-block; vertical-align: middle; margin-right: 6px;">' +
+                    '<img src="' + TMDB_IMAGE_URL + co.logo_path + '" title="' + co.name + '" style="filter: brightness(0) invert(1); opacity: 0.9; height: 1.8em; width: auto; display: block;">' +
                   '</div>';
         }
       });
@@ -20,23 +20,29 @@
 
   Lampa.Listener.follow('full', function(e) {
     if (e.type !== 'complite') return;
-    var details = $('.full-start-new__details');
-    if (details.length) {
-        if (!$('.studio-logos-container').length) details.after('<div class="studio-logos-container"></div>');
-        
-        var studioHtml = getStudioLogos(e.data.movie);
-        $('.studio-logos-container').html(studioHtml);
+    
+    var renderTarget = e.object.activity.render();
+    var rateLine = $('.full-start-new__rate-line', renderTarget);
+    
+    if (rateLine.length) {
+        var cont = $('.studio-logos-container', renderTarget);
+        if (!cont.length) { 
+            cont = $('<div class="studio-logos-container"></div>'); 
+            // Вставляємо ВНУТРІШНЬО в рядок рейтингів у кінець
+            rateLine.append(cont); 
+        }
+        cont.html(getStudioLogos(e.data.movie));
     }
   });
 
-  var style = '<style>\
+  $('body').append('<style>\
+    .full-start-new__rate-line { display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; }\
     .studio-logos-container { \
-      display: flex; \
-      align-items: center; \
-      gap: 0.8em; \
-      margin: 0.8em 0; \
-      min-height: 2em; \
-      flex-wrap: wrap; \
+        display: inline-flex; \
+        vertical-align: middle; \
+        margin-left: 4px; \
+        gap: 6px; \
+        align-items: center; \
     }\
     .studio-logo-badge { \
       height: 1.8em; \
@@ -57,7 +63,6 @@
       width: auto; \
       display: block; \
     }\
-  </style>';
-  $('body').append(style);
+  </style>');
 
 })();
