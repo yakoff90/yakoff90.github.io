@@ -8,7 +8,7 @@
     o =
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvenVlbGFmdW1wemd2bGxjam5lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mjg1MDgsImV4cCI6MjA4MjUwNDUwOH0.ODnHlq_P-1wr_D6Jwaba1mLXIVuGBnnUZsrHI8Twdug",
     s = "https://darkestclouds.github.io/plugins/easytorrent/";
-  let a = [],
+  var a = [],
     i = null;
 
   // Оновлена конфігурація з вашими значеннями
@@ -61,7 +61,8 @@
     },
   };
 
-  let d = l;
+  // Оголошення глобальної змінної d для Tizen
+  var d = l;
   
   // Додана українська локалізація
   const c = {
@@ -101,11 +102,13 @@
   };
 
   function p(e) {
+    if (!window.Lampa || !window.Lampa.Storage) return e;
     const t = Lampa.Storage.get("language", "ru");
     return (c[e] && (c[e][t] || c[e].uk || c[e].ru)) || e;
   }
 
   function u(e) {
+    if (!window.Lampa || !window.Lampa.Storage) return;
     const t = "string" == typeof e ? e : JSON.stringify(e);
     Lampa.Storage.set("easytorrent_config_json", t);
     try {
@@ -116,6 +119,7 @@
   }
 
   function m() {
+    if (!window.Lampa || !window.Lampa.Select) return;
     const e = d,
       t = [
         { title: "Версія конфігу", subtitle: e.version, noselect: !0 },
@@ -176,7 +180,9 @@
           })();
       },
       onBack: () => {
-        Lampa.Controller.toggle("settings");
+        if (window.Lampa && window.Lampa.Controller) {
+          Lampa.Controller.toggle("settings");
+        }
       },
     });
   }
@@ -255,7 +261,7 @@
       hdr10: 32,
       sdr: -16,
     };
-    let o = n[0],
+    var o = n[0],
       s = r[o] || 0;
     return (
       n.forEach((e) => {
@@ -341,7 +347,7 @@
     title: s,
   }) {
     if (s && w(s)) return 0;
-    let a = o;
+    var a = o;
     const i = e ?? t?.start ?? null,
       l = n ?? r?.start ?? null;
     return (
@@ -352,10 +358,8 @@
       r && r.end !== r.start && (a += 5),
       null == i || _(i) || (a -= 60),
       null == l || y(l) || (a -= 60),
-      (d = a),
-      Number.isFinite(d) ? Math.max(0, Math.min(100, Math.round(d))) : 0
+      Number.isFinite(a) ? Math.max(0, Math.min(100, Math.round(a))) : 0
     );
-    var d;
   }
 
   function k(e) {
@@ -390,9 +394,8 @@
         const t = b(e[1]),
           n = h(b(e[2]), b(e[3])),
           s = n ? n.start : null;
-        (_(t) && r.push({ season: t, base: 90, name: "SxxEyy" }),
-          y(s) &&
-            o.push({ episode: s, episodeRange: n, base: 90, name: "SxxEyy" }));
+        (_(t) && r.push({ season: t, base: 90, name: "SxxEyy" }), 
+          y(s) && o.push({ episode: s, episodeRange: n, base: 90, name: "SxxEyy" }));
       }
     }
     {
@@ -778,13 +781,13 @@
     );
     const n = t?.movie,
       r = !(!n || !(n.original_name || n.number_of_seasons > 0 || n.seasons));
-    let o = 1;
+    var o = 1;
     if (r) {
       let t = 1,
         n = 1;
       (e.Results.forEach((e) => {
         const r = k(e.Title || e.title || "");
-        (r.episodesCount > t && (t = r.episodesCount),
+        (r.episodesCount > t && (t = r.episodesCount), 
           r.episodesTotal > n && (n = r.episodesTotal));
       }),
         (o = t > 1 ? t : n),
@@ -793,18 +796,18 @@
             `[EasyTorrent] Режим серіалу. Аналіз: Реал макс=${t}, План=${n}. Використовуємо=${o}`,
           ));
     }
-const s = (function () {
+    const s = (function () {
         const e = d,
           t = e.scoring_rules;
         return function (n) {
-          let r = 100;
+          var r = 100;
           const o = n.features,
             s = n.Seeds || n.seeds || n.Seeders || n.seeders || 0;
           
           // Визначаємо назву трекера
           const trackerName = (n.Tracker || n.tracker || "").toLowerCase();
           
-          let a = {
+          var a = {
             base: 100,
             resolution: 0,
             hdr: 0,
@@ -812,16 +815,15 @@ const s = (function () {
             availability: 0,
             audio: 0,
             audio_track: 0,
-            tracker_bonus: 0 // Нове поле для звіту
+            tracker_bonus: 0
           };
 
           // --- ДОДАНО: Бонус за Toloka ---
           if (trackerName.includes('toloka')) {
-            const tolokaBonus = 20; // Невеликий пріоритет
+            const tolokaBonus = 20;
             a.tracker_bonus = tolokaBonus;
             r += tolokaBonus;
           }
-          // ------------------------------
 
           const i = e.parameter_priority || [
               "resolution",
@@ -835,9 +837,9 @@ const s = (function () {
             d = (t.resolution[o.resolution] || 0) * l;
           ((a.resolution = d), (r += d));
           const c = (t.weights?.hdr || 100) / 100;
-          let p = (t.hdr[o.hdr_type] || 0) * c;
+          var p = (t.hdr[o.hdr_type] || 0) * c;
           ((a.hdr = p), (r += p));
-          let u = 0;
+          var u = 0;
           const m =
             (t.weights?.bitrate || 100 * t.bitrate_bonus?.weight || 55) / 100;
           if (o.bitrate > 0) {
@@ -855,7 +857,7 @@ const s = (function () {
           const g = (t.weights?.audio_track || 100) / 100,
             f = e.audio_track_priority || [],
             b = o.audio_tracks || [];
-          let h = 0;
+          var h = 0;
           for (let e = 0; e < f.length; e++) {
             const t = f[e];
             if (b.some((e) => O(e, t))) {
@@ -864,7 +866,7 @@ const s = (function () {
             }
           }
           ((a.audio_track = h), (r += h));
-          let _ = 0;
+          var _ = 0;
           const y = e.preferences?.min_seeds || t.availability?.min_seeds || 1,
             v =
               (t.weights?.availability || 100 * t.availability?.weight || 70) /
@@ -1031,7 +1033,7 @@ const s = (function () {
           }[l.hdr_type] || String(l.hdr_type).toUpperCase(),
         ),
       l.bitrate && c.push(`${l.bitrate} Mbps`));
-    let u = "neutral",
+    var u = "neutral",
       m = "";
     t._recommendIsIdeal
       ? ((u = "ideal"), (m = p("ideal_badge")))
@@ -1225,7 +1227,7 @@ const s = (function () {
                         '<p style="color: #f44336;">Помилка генерації QR-коду</p>';
                     }
                 }, 100));
-              let a = null;
+              var a = null;
               i = setInterval(async () => {
                 const t = await (async function (e) {
                   try {
@@ -1393,9 +1395,29 @@ const s = (function () {
       }),
       console.log("[EasyTorrent] Готовий до роботи!"));
   }
-  window.appready
-    ? E()
-    : Lampa.Listener.follow("app", (e) => {
+  
+  // Додаємо перевірку на завантаження Lampa для Tizen
+  if (typeof window.Lampa !== 'undefined') {
+    if (window.appready) {
+      E();
+    } else {
+      Lampa.Listener.follow("app", (e) => {
         "ready" === e.type && E();
       });
+    }
+  } else {
+    // Якщо Lampa не завантажена, чекаємо
+    var checkLampa = setInterval(function() {
+      if (typeof window.Lampa !== 'undefined') {
+        clearInterval(checkLampa);
+        if (window.appready) {
+          E();
+        } else {
+          Lampa.Listener.follow("app", (e) => {
+            "ready" === e.type && E();
+          });
+        }
+      }
+    }, 1000);
+  }
 })();
