@@ -1,800 +1,302 @@
-(function () {
+(function() {
     'use strict';
-
-    // ============================================================
-    // ===      ЗАХИСТ ВІД ПОВТОРНОГО ЗАПУСКУ ПЛАГІНА           ===
-    // ============================================================
     
-    if (window.SeasonBadgePlugin && window.SeasonBadgePlugin.__initialized) return;
-
-    // Створюємо глобальний об'єкт плагіна
-    window.SeasonBadgePlugin = window.SeasonBadgePlugin || {};
-    window.SeasonBadgePlugin.__initialized = true;
-
-    // ============================================================
-    // ===  ПОЛІФІЛИ ДЛЯ SAMSUNG TV (TIZEN)                     ===
-    // ============================================================
+    // Захист від повторного запуску
+    if (window.SeasonBadgeInstalled) return;
+    window.SeasonBadgeInstalled = true;
     
-    // --- [1] Promise для старих версій Tizen ---
-    if (typeof window.Promise === 'undefined') {
-        (function () {
-            function SimplePromise(executor) {
-                var self = this;
-                self._state = 'pending';
-                self._value = undefined;
-                self._handlers = [];
-
-                function fulfill(result) {
-                    if (self._state !== 'pending') return;
-                    self._state = 'fulfilled';
-                    self._value = result;
-                    runHandlers();
-                }
-
-                function reject(err) {
-                    if (self._state !== 'pending') return;
-                    self._state = 'rejected';
-                    self._value = err;
-                    runHandlers();
-                }
-
-                function runHandlers() {
-                    setTimeout(function () {
-                        var handlers = self._handlers.slice();
-                        self._handlers = [];
-                        for (var i = 0; i < handlers.length; i++) {
-                            handle(handlers[i]);
-                        }
-                    }, 0);
-                }
-
-                function handle(handler) {
-                    if (self._state === 'pending') {
-                        self._handlers.push(handler);
-                        return;
-                    }
-
-                    var cb = self._state === 'fulfilled' ? handler.onFulfilled : handler.onRejected;
-
-                    if (!cb) {
-                        if (self._state === 'fulfilled') {
-                            handler.resolve(self._value);
-                        } else {
-                            handler.reject(self._value);
-                        }
-                        return;
-                    }
-
-                    try {
-                        var ret = cb(self._value);
-                        handler.resolve(ret);
-                    } catch (e) {
-                        handler.reject(e);
-                    }
-                }
-
-                self.then = function (onFulfilled, onRejected) {
-                    return new SimplePromise(function (resolve, reject) {
-                        handle({
-                            onFulfilled: typeof onFulfilled === 'function' ? onFulfilled : null,
-                            onRejected: typeof onRejected === 'function' ? onRejected : null,
-                            resolve: resolve,
-                            reject: reject
-                        });
-                    });
-                };
-
-                self['catch'] = function (onRejected) {
-                    return self.then(null, onRejected);
-                };
-
-                try {
-                    executor(fulfill, reject);
-                } catch (e) {
-                    reject(e);
-                }
+    // ===== ПРОСТІ ПОЛІФІЛИ ДЛЯ SAMSUNG TV =====
+    if (!window.Promise) {
+        window.Promise = function(executor) {
+            var callbacks = [];
+            
+            function resolve(value) {
+                setTimeout(function() {
+                    callbacks.forEach(function(cb) { cb(value); });
+                }, 0);
             }
-
-            window.Promise = SimplePromise;
-        })();
-    }
-
-    // --- [2] requestAnimationFrame для Samsung TV ---
-    if (typeof window.requestAnimationFrame === 'undefined') {
-        window.requestAnimationFrame = function (cb) {
-            return setTimeout(cb, 16);
-        };
-    }
-
-    // --- [3] Element.matches / Element.closest для старих браузерів ---
-    (function () {
-        if (!Element.prototype.matches) {
-            Element.prototype.matches = 
-                Element.prototype.msMatchesSelector || 
-                Element.prototype.webkitMatchesSelector || 
-                function (selector) {
-                    var node = this;
-                    var matches = (node.document || node.ownerDocument).querySelectorAll(selector);
-                    var i = matches.length;
-                    while (i-- > 0 && matches.item(i) !== node) {}
-                    return i > -1;
-                };
-        }
-
-        if (!Element.prototype.closest) {
-            Element.prototype.closest = function (selector) {
-                var el = this;
-                while (el && el.nodeType === 1) {
-                    if (el.matches(selector)) return el;
-                    el = el.parentElement || el.parentNode;
+            
+            executor(resolve, function() {});
+            
+            return {
+                then: function(cb) {
+                    callbacks.push(cb);
+                    return this;
                 }
-                return null;
             };
-        }
-    })();
-
-    // --- [4] safeStorage для Samsung TV ---
-    var safeStorage = (function () {
-        var memoryStore = {};
-        try {
-            if (typeof window.localStorage !== 'undefined') {
-                var testKey = '__season_test__';
-                window.localStorage.setItem(testKey, '1');
-                window.localStorage.removeItem(testKey);
-                return window.localStorage;
-            }
-        } catch (e) {}
-
-        return {
-            getItem: function (k) {
-                return memoryStore.hasOwnProperty(k) ? memoryStore[k] : null;
-            },
-            setItem: function (k, v) {
-                memoryStore[k] = String(v);
-            },
-            removeItem: function (k) {
-                delete memoryStore[k];
-            }
-        };
-    })();
-
-    // --- [5] safeFetch для Samsung TV (XMLHttpRequest замість fetch) ---
-    function safeFetch(url) {
-        return new Promise(function (resolve, reject) {
-            try {
-                var xhr = new XMLHttpRequest();
-                xhr.open('GET', url, true);
-                xhr.onreadystatechange = function () {
-                    if (xhr.readyState === 4) {
-                        var status = xhr.status;
-                        var respText = xhr.responseText;
-
-                        var responseObj = {
-                            ok: status >= 200 && status < 300,
-                            status: status,
-                            json: function () {
-                                return new Promise(function (res, rej) {
-                                    try {
-                                        res(JSON.parse(respText));
-                                    } catch (err) {
-                                        rej(err);
-                                    }
-                                });
-                            },
-                            text: function () {
-                                return new Promise(function (res) {
-                                    res(respText);
-                                });
-                            }
-                        };
-
-                        if (status >= 200 && status < 300) {
-                            resolve(responseObj);
-                        } else {
-                            reject(new Error('HTTP ' + status));
-                        }
-                    }
-                };
-                xhr.onerror = function () {
-                    reject(new Error('Network error'));
-                };
-                xhr.send(null);
-            } catch (err) {
-                reject(err);
-            }
-        });
-    }
-
-    // --- [6] createObserver для Samsung TV ---
-    var NativeMutationObserver = window.MutationObserver ||
-        window.WebKitMutationObserver ||
-        window.MozMutationObserver;
-
-    function createObserver(callback) {
-        if (NativeMutationObserver) {
-            return new NativeMutationObserver(callback);
-        }
-        return {
-            observe: function () {},
-            disconnect: function () {}
         };
     }
-
-    // ============================================================
-    // ===  НАЛАШТУВАННЯ ПЛАГІНА                                ===
-    // ============================================================
     
+    if (!Element.prototype.closest) {
+        Element.prototype.closest = function(selector) {
+            var el = this;
+            while (el) {
+                if (el.matches && el.matches(selector)) return el;
+                el = el.parentElement;
+            }
+            return null;
+        };
+    }
+    
+    if (!Element.prototype.matches) {
+        Element.prototype.matches = Element.prototype.webkitMatchesSelector || 
+                                   Element.prototype.msMatchesSelector ||
+                                   function(s) {
+                                       var matches = (this.document || this.ownerDocument).querySelectorAll(s);
+                                       var i = matches.length;
+                                       while (i-- >= 0 && matches.item(i) !== this) {}
+                                       return i > -1;
+                                   };
+    }
+    
+    // ===== НАЛАШТУВАННЯ =====
     var CONFIG = {
-        tmdbApiKey: '',
-        cacheTime: 23 * 60 * 60 * 1000,
-        enabled: true,
+        apiKey: '',
+        cacheTime: 86400000, // 24 години
         language: 'uk'
     };
-
-    // ============================================================
-    // ===  ДОСТУП ДО TMDB ДЛЯ SAMSUNG TV                       ===
-    // ============================================================
     
-    function tmdbGet(tvId, resolve, reject) {
-        try {
-            if (window.Lampa && Lampa.TMDB) {
-                if (typeof Lampa.TMDB.tv === 'function') {
-                    Lampa.TMDB.tv(
-                        tvId,
-                        function (data) {
-                            resolve(data);
-                        },
-                        function (err) {
-                            reject(err || new Error('TMDB error via Lampa.TMDB.tv'));
-                        },
-                        { language: CONFIG.language }
-                    );
-                    return;
-                }
-
-                if (typeof Lampa.TMDB.get === 'function') {
-                    Lampa.TMDB.get(
-                        'tv/' + tvId,
-                        {
-                            language: CONFIG.language,
-                            api_key: CONFIG.tmdbApiKey
-                        },
-                        function (data) {
-                            resolve(data);
-                        },
-                        function (err) {
-                            reject(err || new Error('TMDB error via Lampa.TMDB.get'));
-                        }
-                    );
-                    return;
-                }
-            }
-        } catch (e) {}
-
-        var url = 'https://api.themoviedb.org/3/tv/' + tvId +
-            '?api_key=' + CONFIG.tmdbApiKey +
-            '&language=' + CONFIG.language;
-
-        safeFetch(url)
-            .then(function (response) {
-                return response.json();
-            })
-            .then(function (data) {
-                resolve(data);
-            })
-            ['catch'](function (err) {
-                reject(err);
-            });
-    }
-
-    // ============================================================
-    // ===  СТИЛІ ДЛЯ SAMSUNG TV (ВИПРАВЛЕНО)                  ===
-    // ============================================================
-    
-    var style = document.createElement('style');
-    style.textContent = 
-        /* Видаляємо чорну смугу та виправляємо позиціонування */
-        ".card--season-complete {" +
-        "    position: absolute;" +
-        "    left: 0.3em;" +  /* Зміщено вправо, щоб не було чорної смуги */
-        "    margin-left: 0;" + /* Прибрано негативний margin */
-        "    bottom: 2.5em;" +  /* Піднято вище, над рейтингом */
-        "    background-color: rgba(61, 161, 141, 0.95);" +
-        "    z-index: 15;" +    /* Збільшено z-index */
-        "    width: fit-content;" +
-        "    max-width: calc(100% - 1em);" +
-        "    border-radius: 0.3em;" +
-        "    overflow: hidden;" +
-        "    opacity: 0;" +
-        "    transition: opacity 0.22s ease-in-out;" +
-        "    pointer-events: none;" + /* Мітка не заважає клікам */
-        "}" +
-        "" +
-        ".card--season-progress {" +
-        "    position: absolute;" +
-        "    left: 0.3em;" +  /* Зміщено вправо */
-        "    margin-left: 0;" + /* Прибрано негативний margin */
-        "    bottom: 2.5em;" +  /* Піднято вище */
-        "    background-color: rgba(255, 66, 66, 0.95);" +
-        "    z-index: 15;" +
-        "    width: fit-content;" +
-        "    max-width: calc(100% - 1em);" +
-        "    border-radius: 0.3em;" +
-        "    overflow: hidden;" +
-        "    opacity: 0;" +
-        "    transition: opacity 0.22s ease-in-out;" +
-        "    pointer-events: none;" + /* Мітка не заважає клікам */
-        "}" +
-        "" +
-        ".card--season-complete div," +
-        ".card--season-progress div {" +
-        "    text-transform: uppercase;" +
-        "    font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif;" +
-        "    font-weight: 700;" +
-        "    font-size: 0.9em;" + /* Трохи зменшено */
-        "    padding: 0.25em 0.5em;" + /* Зменшено відступи */
-        "    white-space: nowrap;" +
-        "    display: block;" + /* Змінено з flex на block */
-        "    text-align: center;" +
-        "    line-height: 1.2;" +
-        "    text-shadow: 1px 1px 1px rgba(0,0,0,0.5);" +
-        "    color: #ffffff;" +
-        "    letter-spacing: 0.5px;" + /* Додано інтервал між літерами */
-        "}" +
-        "" +
-        ".card--season-complete.show," +
-        ".card--season-progress.show {" +
-        "    opacity: 1;" +
-        "}" +
-        "" +
-        /* Додатковий стиль для карток з рейтингом */
-        ".card__rate ~ .card--season-complete," +
-        ".card__rate ~ .card--season-progress," +
-        ".card--season-complete:has(+ .card__rate)," +
-        ".card--season-progress:has(+ .card__rate) {" +
-        "    bottom: 4.5em;" + /* Ще вище, якщо є рейтинг */
-        "}" +
-        "" +
-        "@media (max-width: 768px) {" +
-        "    .card--season-complete div," +
-        "    .card--season-progress div {" +
-        "        font-size: 0.85em;" +
-        "        padding: 0.2em 0.4em;" +
-        "    }" +
-        "    .card--season-complete," +
-        "    .card--season-progress {" +
-        "        bottom: 2.2em;" +
-        "    }" +
-        "}";
-    document.head.appendChild(style);
-
-    // ============================================================
-    // ===  ДОПОМІЖНІ ФУНКЦІЇ                                   ===
-    // ============================================================
-    
-    function getMediaType(cardData) {
-        if (!cardData) return 'unknown';
-        if (cardData.name || cardData.first_air_date) return 'tv';
-        if (cardData.title || cardData.release_date) return 'movie';
-        return 'unknown';
-    }
-
-    // ============================================================
-    // ===  КЕШ ДАНИХ TMDB                                      ===
-    // ============================================================
-    
-    var cacheRaw = safeStorage.getItem('seasonBadgeCache') || '{}';
-    var cache;
+    // ===== КЕШ =====
+    var cache = {};
     try {
-        cache = JSON.parse(cacheRaw) || {};
-    } catch (e) {
-        cache = {};
-    }
-
-    // ============================================================
-    // ===  ЗАВАНТАЖЕННЯ ДАНИХ СЕРІАЛУ                          ===
-    // ============================================================
+        var saved = localStorage.getItem('season_cache');
+        if (saved) cache = JSON.parse(saved) || {};
+    } catch(e) {}
     
-    function fetchSeriesData(tmdbId) {
-        return new Promise(function (resolve, reject) {
-            var now = (new Date()).getTime();
-
-            if (cache[tmdbId] && (now - cache[tmdbId].timestamp < CONFIG.cacheTime)) {
-                resolve(cache[tmdbId].data);
-                return;
-            }
-
-            if (!CONFIG.tmdbApiKey || CONFIG.tmdbApiKey === '') {
-                reject(new Error('Будь ласка, вставте коректний TMDB API ключ'));
-                return;
-            }
-
-            tmdbGet(
-                tmdbId,
-                function (data) {
-                    if (data && data.success === false) {
-                        reject(new Error(data.status_message || 'TMDB API error'));
-                        return;
-                    }
-
+    // ===== ОСНОВНІ ФУНКЦІЇ =====
+    function getSeriesInfo(tmdbId, callback) {
+        // Перевіряємо кеш
+        var now = Date.now();
+        if (cache[tmdbId] && (now - cache[tmdbId].time < CONFIG.cacheTime)) {
+            callback(cache[tmdbId].data);
+            return;
+        }
+        
+        // Запит до TMDB
+        var url = 'https://api.themoviedb.org/3/tv/' + tmdbId + 
+                  '?api_key=' + CONFIG.apiKey + 
+                  '&language=' + CONFIG.language;
+        
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    
+                    // Зберігаємо в кеш
                     cache[tmdbId] = {
                         data: data,
-                        timestamp: now
+                        time: now
                     };
                     try {
-                        safeStorage.setItem('seasonBadgeCache', JSON.stringify(cache));
-                    } catch (e) {}
-
-                    resolve(data);
-                },
-                function (err) {
-                    reject(err);
-                }
-            );
-        });
+                        localStorage.setItem('season_cache', JSON.stringify(cache));
+                    } catch(e) {}
+                    
+                    callback(data);
+                } catch(e) {}
+            }
+        };
+        xhr.send();
     }
-
-    // ============================================================
-    // ===  ОБЧИСЛЕННЯ ПРОГРЕСУ                                 ===
-    // ============================================================
     
-    function getSeasonProgress(tmdbData) {
-        if (!tmdbData || !tmdbData.seasons || !tmdbData.last_episode_to_air) return false;
-
-        var lastEpisode = tmdbData.last_episode_to_air;
-        var currentSeason = null;
-
-        for (var i = 0; i < tmdbData.seasons.length; i++) {
-            var s = tmdbData.seasons[i];
-            if (s.season_number === lastEpisode.season_number && s.season_number > 0) {
-                currentSeason = s;
+    function getSeasonText(data) {
+        if (!data || !data.last_episode_to_air || !data.seasons) return null;
+        
+        var lastEp = data.last_episode_to_air;
+        var seasonNum = lastEp.season_number;
+        var airedEp = lastEp.episode_number;
+        
+        // Знаходимо сезон
+        var season = null;
+        for (var i = 0; i < data.seasons.length; i++) {
+            if (data.seasons[i].season_number === seasonNum) {
+                season = data.seasons[i];
                 break;
             }
         }
-
-        if (!currentSeason) return false;
-
-        var totalEpisodes = currentSeason.episode_count || 0;
-        var airedEpisodes = lastEpisode.episode_number || 0;
-
-        return {
-            seasonNumber: lastEpisode.season_number,
-            airedEpisodes: airedEpisodes,
-            totalEpisodes: totalEpisodes,
-            isComplete: airedEpisodes >= totalEpisodes
-        };
+        
+        if (!season) return null;
+        
+        var totalEp = season.episode_count || 0;
+        
+        // Формуємо текст
+        if (airedEp >= totalEp) {
+            return 'S' + seasonNum; // Завершений
+        } else {
+            return 'S' + seasonNum + ' ' + airedEp + '/' + totalEp; // В процесі
+        }
     }
-
-    // ============================================================
-    // ===  СТВОРЕННЯ МІТКИ                                     ===
-    // ============================================================
     
-    function createBadge(content, isComplete, loading) {
+    // ===== СТВОРЕННЯ МІТКИ =====
+    function createBadge(text) {
         var badge = document.createElement('div');
-        var badgeClass = isComplete ? 'card--season-complete' : 'card--season-progress';
-        badge.className = badgeClass + (loading ? ' loading' : '');
-        badge.innerHTML = '<div>' + content + '</div>';
+        badge.style.cssText = 
+            'position: absolute;' +
+            'left: 5px;' +
+            'bottom: 35px;' +
+            'background-color: ' + (text.indexOf('/') > 0 ? '#ff4444' : '#3da18d') + ';' +
+            'color: white;' +
+            'padding: 4px 8px;' +
+            'border-radius: 4px;' +
+            'font-size: 12px;' +
+            'font-weight: bold;' +
+            'z-index: 100;' +
+            'text-transform: uppercase;' +
+            'box-shadow: 1px 1px 2px rgba(0,0,0,0.5);' +
+            'pointer-events: none;' +
+            'opacity: 0;' +
+            'transition: opacity 0.2s;';
+        badge.textContent = text;
         return badge;
     }
-
-    // ============================================================
-    // ===  ПОЗИЦІОНУВАННЯ МІТКИ (СПРОЩЕНО)                    ===
-    // ============================================================
     
-    function adjustBadgePosition(cardEl, badge) {
-        if (!cardEl || !badge) return;
+    // ===== ОБРОБКА КАРТКИ =====
+    function processCard(card) {
+        // Перевіряємо чи вже оброблено
+        if (card._seasonProcessed) return;
+        card._seasonProcessed = true;
         
-        // На Samsung TV використовуємо фіксовану позицію з CSS
-        // Додаткова логіка не потрібна
-    }
-
-    function updateBadgePositions(cardEl) {
-        if (!cardEl) return;
-        // На Samsung TV використовуємо CSS для позиціонування
-    }
-
-    // ============================================================
-    // ===  ДОДАВАННЯ МІТКИ ДО КАРТКИ                           ===
-    // ============================================================
-    
-    function addSeasonBadge(cardEl) {
-        if (!cardEl) return;
-        if (cardEl.hasAttribute('data-season-processed')) return;
-
-        if (!cardEl.card_data) {
-            requestAnimationFrame(function () {
-                addSeasonBadge(cardEl);
-            });
+        // Отримуємо дані картки
+        var data = card.card_data;
+        if (!data) {
+            setTimeout(function() { processCard(card); }, 500);
             return;
         }
-
-        var data = cardEl.card_data;
-
-        if (getMediaType(data) !== 'tv') return;
-
-        var view = cardEl.querySelector('.card__view');
+        
+        // Тільки для серіалів
+        if (!data.name && !data.first_air_date) return;
+        if (!data.id) return;
+        
+        // Знаходимо контейнер для мітки
+        var view = card.querySelector('.card__view');
         if (!view) return;
-
-        var oldBadgesNodeList = view.querySelectorAll('.card--season-complete, .card--season-progress');
-        var oldBadgesArr = Array.prototype.slice.call(oldBadgesNodeList, 0);
-        for (var i = 0; i < oldBadgesArr.length; i++) {
-            if (oldBadgesArr[i] && oldBadgesArr[i].parentNode) {
-                oldBadgesArr[i].parentNode.removeChild(oldBadgesArr[i]);
-            }
-        }
-
-        var badge = createBadge('...', false, true);
-        view.appendChild(badge);
-
-        cardEl.setAttribute('data-season-processed', 'loading');
-
-        fetchSeriesData(data.id)
-            .then(function (tmdbData) {
-                var progressInfo = getSeasonProgress(tmdbData);
-
-                if (progressInfo) {
-                    var isComplete = progressInfo.isComplete;
-                    var content = '';
-
-                    if (isComplete) {
-                        content = "S" + progressInfo.seasonNumber;
-                    } else {
-                        content = "S" + progressInfo.seasonNumber + " " +
-                            progressInfo.airedEpisodes + "/" +
-                            progressInfo.totalEpisodes;
-                    }
-
-                    badge.className = isComplete ? 'card--season-complete' : 'card--season-progress';
-                    badge.innerHTML = '<div>' + content + '</div>';
-
-                    setTimeout(function () {
-                        if (badge.classList) {
-                            badge.classList.add('show');
-                        } else {
-                            badge.className += ' show';
-                        }
-                    }, 50);
-
-                    cardEl.setAttribute('data-season-processed', isComplete ? 'complete' : 'in-progress');
-                } else {
-                    if (badge && badge.parentNode) {
-                        badge.parentNode.removeChild(badge);
-                    }
-                    cardEl.setAttribute('data-season-processed', 'error');
-                }
-            })
-            ['catch'](function (error) {
-                try {
-                    console.log('SeasonBadgePlugin помилка:', error && error.message ? error.message : error);
-                } catch (eLog) {}
-
-                if (badge && badge.parentNode) {
-                    badge.parentNode.removeChild(badge);
-                }
-                cardEl.setAttribute('data-season-processed', 'error');
-            });
-    }
-
-    // ============================================================
-    // ===  ГЛОБАЛЬНИЙ OBSERVER                                 ===
-    // ============================================================
-    
-    var observer = createObserver(function (mutations) {
-        for (var i = 0; i < mutations.length; i++) {
-            var mutation = mutations[i];
-
-            if (mutation.addedNodes && mutation.addedNodes.length) {
-                for (var j = 0; j < mutation.addedNodes.length; j++) {
-                    var node = mutation.addedNodes[j];
-
-                    if (!node || node.nodeType !== 1) continue;
-
-                    if (node.classList && node.classList.contains('card')) {
-                        addSeasonBadge(node);
-                    }
-
-                    if (typeof node.querySelectorAll === 'function') {
-                        var innerCardsNodeList = node.querySelectorAll('.card');
-                        var innerCardsArr = Array.prototype.slice.call(innerCardsNodeList, 0);
-
-                        for (var k = 0; k < innerCardsArr.length; k++) {
-                            addSeasonBadge(innerCardsArr[k]);
-                        }
-                    }
-                }
-            }
-        }
-    });
-
-    // ============================================================
-    // ===  INIT PLUGIN                                         ===
-    // ============================================================
-    
-    function initPlugin() {
-        if (!CONFIG.enabled) return;
-
-        var containersNodeList = document.querySelectorAll(
-            '.cards, .card-list, .content, .main, .cards-list, .preview__list'
-        );
-        var containersArr = Array.prototype.slice.call(containersNodeList, 0);
-
-        if (containersArr.length > 0) {
-            for (var i = 0; i < containersArr.length; i++) {
-                var containerEl = containersArr[i];
-                try {
-                    observer.observe(containerEl, {
-                        childList: true,
-                        subtree: true
-                    });
-                } catch (e) {
-                    try {
-                        observer.observe(document.body, {
-                            childList: true,
-                            subtree: true
-                        });
-                    } catch (e2) {}
-                }
-            }
-        } else {
-            try {
-                observer.observe(document.body, {
-                    childList: true,
-                    subtree: true
-                });
-            } catch (e3) {}
-        }
-
-        var existingCardsNodeList = document.querySelectorAll('.card:not([data-season-processed])');
-        var existingCardsArr = Array.prototype.slice.call(existingCardsNodeList, 0);
-
-        for (var idx = 0; idx < existingCardsArr.length; idx++) {
-            (function (card, delay) {
-                setTimeout(function () {
-                    addSeasonBadge(card);
-                }, delay);
-            })(existingCardsArr[idx], idx * 300);
-        }
-    }
-
-    // ============================================================
-    // ===  НАЛАШТУВАННЯ В LAMPA                                ===
-    // ============================================================
-    
-    (function(){
-        var SETTINGS_KEY = 'sbadger_settings_v1';
-        var st;
-
-        function sbToast(msg){
-            try { 
-                if (Lampa && Lampa.Noty) {
-                    Lampa.Noty(msg);
-                    return;
-                }
-            } catch(e){}
+        
+        // Видаляємо старі мітки
+        var old = view.querySelector('.season-badge');
+        if (old) old.remove();
+        
+        // Додаємо тимчасову мітку
+        var loadingBadge = createBadge('...');
+        loadingBadge.className = 'season-badge';
+        view.appendChild(loadingBadge);
+        
+        // Показуємо через невелику затримку
+        setTimeout(function() { loadingBadge.style.opacity = '1'; }, 10);
+        
+        // Отримуємо дані
+        getSeriesInfo(data.id, function(seriesData) {
+            var text = getSeasonText(seriesData);
             
-            var id = 'sbadger_toast';
-            var el = document.getElementById(id);
-            if(!el){
-                el = document.createElement('div');
-                el.id = id;
-                el.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:2rem;padding:.6rem 1rem;background:rgba(0,0,0,.85);color:#fff;border-radius:.5rem;z-index:9999;font-size:14px;transition:opacity .2s;opacity:0';
-                document.body.appendChild(el);
+            if (text) {
+                // Замінюємо на постійну мітку
+                var newBadge = createBadge(text);
+                newBadge.className = 'season-badge';
+                view.replaceChild(newBadge, loadingBadge);
+                setTimeout(function() { newBadge.style.opacity = '1'; }, 10);
+            } else {
+                // Якщо немає даних - прибираємо
+                loadingBadge.remove();
             }
-            el.textContent = msg;
-            el.style.opacity = '1';
-            setTimeout(function(){ el.style.opacity = '0'; }, 1300);
+        });
+    }
+    
+    // ===== ПОШУК НОВИХ КАРТОК =====
+    function scanForCards() {
+        var cards = document.querySelectorAll('.card:not([data-season-checked])');
+        for (var i = 0; i < cards.length; i++) {
+            var card = cards[i];
+            card.setAttribute('data-season-checked', 'true');
+            
+            // Невелика затримка для кожної картки
+            setTimeout(function(c) {
+                return function() { processCard(c); };
+            }(card), i * 200);
         }
-
-        function load(){ 
-            var s = {};
-            try {
-                if (Lampa && Lampa.Storage) {
-                    s = Lampa.Storage.get(SETTINGS_KEY) || {};
-                }
-            } catch(e){}
-            return { tmdb_key: s.tmdb_key || '' }; 
-        }
+    }
+    
+    // ===== НАЛАШТУВАННЯ =====
+    function setupSettings() {
+        if (!window.Lampa || !Lampa.SettingsApi) return;
         
-        function apply(){ 
-            if (st.tmdb_key) {
-                CONFIG.tmdbApiKey = String(st.tmdb_key).trim(); 
-            }
-        }
-        
-        function save(){ 
-            try {
-                if (Lampa && Lampa.Storage) {
-                    Lampa.Storage.set(SETTINGS_KEY, st); 
-                }
-            } catch(e){}
-            apply(); 
-            sbToast('Збережено'); 
-        }
-
-        function clearCache(){
-            try{
-                if (window.safeStorage && window.safeStorage.removeItem) {
-                    safeStorage.removeItem('seasonBadgeCache');
-                } else if (window.localStorage) {
-                    localStorage.removeItem('seasonBadgeCache');
-                }
-            } catch(e){}
-            sbToast('Кеш очищено');
-        }
-
-        Lampa.Template.add('settings_sbadger', '<div></div>');
-
-        function registerUI(){
+        try {
             Lampa.SettingsApi.addParam({
                 component: 'interface',
-                param: { type: 'button', component: 'sbadger' },
-                field: { name: 'Мітки прогресу серій/сезонів', description: 'Налаштування бейджів прогресу серій та сезонів' },
-                onChange: function(){
-                    Lampa.Settings.create('sbadger', {
-                        template: 'settings_sbadger',
-                        onBack: function(){ Lampa.Settings.create('interface'); }
+                param: { type: 'button', component: 'season_settings' },
+                field: { name: 'Мітки сезонів', description: 'Налаштування відображення міток' },
+                onChange: function() {
+                    Lampa.Settings.create('season_settings', {
+                        template: 'season_settings',
+                        onBack: function() { Lampa.Settings.create('interface'); }
                     });
                 }
             });
-
+            
+            Lampa.Template.add('season_settings', '<div></div>');
+            
             Lampa.SettingsApi.addParam({
-                component: 'sbadger',
-                param: { name: 'sbadger_tmdb_key', type: 'input', values: '', "default": (st.tmdb_key || '') },
-                field: { name: 'TMDB API ключ', description: 'Потрібен для отримання даних про сезони. Можна отримати на themoviedb.org' },
-                onRender: function(item){ 
-                    try{ 
-                        var input = item.querySelector('input');
-                        if (input) input.placeholder = 'встав ключ TMDB';
-                    } catch(e){} 
-                },
-                onChange: function(v){ 
-                    st.tmdb_key = String(v || '').trim(); 
-                    save(); 
+                component: 'season_settings',
+                param: { name: 'season_api_key', type: 'input', values: '', default: CONFIG.apiKey },
+                field: { name: 'TMDB API ключ', description: 'Введіть ваш API ключ' },
+                onChange: function(v) {
+                    CONFIG.apiKey = String(v || '').trim();
+                    try { localStorage.setItem('season_api_key', CONFIG.apiKey); } catch(e) {}
                 }
             });
-
-            Lampa.SettingsApi.addParam({
-                component: 'sbadger',
-                param: { type: 'button', component: 'sbadger_clear_cache' },
-                field: { name: 'Очистити кеш' },
-                onChange: clearCache
-            });
-        }  
-        
-        function start(){ 
-            st = load(); 
-            apply(); 
             
-            if (Lampa && Lampa.SettingsApi && Lampa.SettingsApi.addParam) {
-                setTimeout(registerUI, 0); 
-            }
+            Lampa.SettingsApi.addParam({
+                component: 'season_settings',
+                param: { type: 'button', component: 'season_clear_cache' },
+                field: { name: 'Очистити кеш' },
+                onChange: function() {
+                    cache = {};
+                    try { localStorage.removeItem('season_cache'); } catch(e) {}
+                    if (Lampa.Noty) Lampa.Noty('Кеш очищено');
+                }
+            });
+        } catch(e) {}
+    }
+    
+    // ===== ЗАВАНТАЖЕННЯ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ =====
+    function loadSettings() {
+        try {
+            var saved = localStorage.getItem('season_api_key');
+            if (saved) CONFIG.apiKey = saved;
+        } catch(e) {}
+    }
+    
+    // ===== ЗАПУСК =====
+    function start() {
+        loadSettings();
+        setupSettings();
+        
+        // Постійно скануємо нові картки
+        scanForCards();
+        setInterval(scanForCards, 2000);
+        
+        // Скануємо при прокрутці
+        var containers = document.querySelectorAll('.scroll__content, .content, .cards');
+        for (var i = 0; i < containers.length; i++) {
+            containers[i].addEventListener('scroll', function() {
+                setTimeout(scanForCards, 100);
+            });
         }
         
-        if (window.appready) {
-            start();
-        } else if (Lampa && Lampa.Listener) {
-            Lampa.Listener.follow('app', function(e){ 
-                if(e && e.type === 'ready') start(); 
-            });
-        }
-    })();
-
-    // ============================================================
-    // ===  ЗАПУСК ПЛАГІНА                                      ===
-    // ============================================================
-    
-    if (window.appready) {
-        initPlugin();
-    } else if (window.Lampa && Lampa.Listener) {
-        try {
-            Lampa.Listener.follow('app', function (e) {
-                if (e && e.type === 'ready') initPlugin();
-            });
-        } catch (e) {
-            setTimeout(initPlugin, 2000);
-        }
-    } else {
-        setTimeout(initPlugin, 2000);
+        // Скануємо при зміні контенту (простий спосіб без MutationObserver)
+        document.addEventListener('click', function() {
+            setTimeout(scanForCards, 500);
+        });
     }
-
+    
+    // Очікуємо готовності Lampa
+    if (window.appready) {
+        setTimeout(start, 1000);
+    } else if (window.Lampa && Lampa.Listener) {
+        Lampa.Listener.follow('app', function(e) {
+            if (e.type === 'ready') setTimeout(start, 1000);
+        });
+    } else {
+        setTimeout(start, 3000);
+    }
+    
 })();
