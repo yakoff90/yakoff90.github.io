@@ -288,39 +288,42 @@
     }
 
     // ============================================================
-    // ===  СТИЛІ ДЛЯ SAMSUNG TV                                ===
+    // ===  СТИЛІ ДЛЯ SAMSUNG TV (ВИПРАВЛЕНО)                  ===
     // ============================================================
     
     var style = document.createElement('style');
     style.textContent = 
+        /* Видаляємо чорну смугу та виправляємо позиціонування */
         ".card--season-complete {" +
         "    position: absolute;" +
-        "    left: 0;" +
-        "    margin-left: -0.65em;" +
-        "    bottom: 0.50em;" +
-        "    background-color: rgba(61, 161, 141, 0.9);" +
-        "    z-index: 12;" +
+        "    left: 0.3em;" +  /* Зміщено вправо, щоб не було чорної смуги */
+        "    margin-left: 0;" + /* Прибрано негативний margin */
+        "    bottom: 2.5em;" +  /* Піднято вище, над рейтингом */
+        "    background-color: rgba(61, 161, 141, 0.95);" +
+        "    z-index: 15;" +    /* Збільшено z-index */
         "    width: fit-content;" +
         "    max-width: calc(100% - 1em);" +
-        "    border-radius: 0.3em 0.3em 0.3em 0.3em;" +
+        "    border-radius: 0.3em;" +
         "    overflow: hidden;" +
         "    opacity: 0;" +
         "    transition: opacity 0.22s ease-in-out;" +
+        "    pointer-events: none;" + /* Мітка не заважає клікам */
         "}" +
         "" +
         ".card--season-progress {" +
         "    position: absolute;" +
-        "    left: 0;" +
-        "    margin-left: -0.65em;" +
-        "    bottom: 0.50em;" +
-        "    background-color: rgba(255, 66, 66, 1);" +
-        "    z-index: 12;" +
+        "    left: 0.3em;" +  /* Зміщено вправо */
+        "    margin-left: 0;" + /* Прибрано негативний margin */
+        "    bottom: 2.5em;" +  /* Піднято вище */
+        "    background-color: rgba(255, 66, 66, 0.95);" +
+        "    z-index: 15;" +
         "    width: fit-content;" +
         "    max-width: calc(100% - 1em);" +
-        "    border-radius: 0.3em 0.3em 0.3em 0.3em;" +
+        "    border-radius: 0.3em;" +
         "    overflow: hidden;" +
         "    opacity: 0;" +
         "    transition: opacity 0.22s ease-in-out;" +
+        "    pointer-events: none;" + /* Мітка не заважає клікам */
         "}" +
         "" +
         ".card--season-complete div," +
@@ -328,21 +331,15 @@
         "    text-transform: uppercase;" +
         "    font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif;" +
         "    font-weight: 700;" +
-        "    font-size: 1.0em;" +
-        "    padding: 0.39em 0.39em;" +
+        "    font-size: 0.9em;" + /* Трохи зменшено */
+        "    padding: 0.25em 0.5em;" + /* Зменшено відступи */
         "    white-space: nowrap;" +
-        "    display: flex;" +
-        "    align-items: center;" +
-        "    gap: 4px;" +
-        "    text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3);" +
-        "}" +
-        "" +
-        ".card--season-complete div {" +
+        "    display: block;" + /* Змінено з flex на block */
+        "    text-align: center;" +
+        "    line-height: 1.2;" +
+        "    text-shadow: 1px 1px 1px rgba(0,0,0,0.5);" +
         "    color: #ffffff;" +
-        "}" +
-        "" +
-        ".card--season-progress div {" +
-        "    color: #ffffff;" +
+        "    letter-spacing: 0.5px;" + /* Додано інтервал між літерами */
         "}" +
         "" +
         ".card--season-complete.show," +
@@ -350,11 +347,23 @@
         "    opacity: 1;" +
         "}" +
         "" +
+        /* Додатковий стиль для карток з рейтингом */
+        ".card__rate ~ .card--season-complete," +
+        ".card__rate ~ .card--season-progress," +
+        ".card--season-complete:has(+ .card__rate)," +
+        ".card--season-progress:has(+ .card__rate) {" +
+        "    bottom: 4.5em;" + /* Ще вище, якщо є рейтинг */
+        "}" +
+        "" +
         "@media (max-width: 768px) {" +
         "    .card--season-complete div," +
         "    .card--season-progress div {" +
-        "        font-size: 0.95em;" +
-        "        padding: 0.35em 0.40em;" +
+        "        font-size: 0.85em;" +
+        "        padding: 0.2em 0.4em;" +
+        "    }" +
+        "    .card--season-complete," +
+        "    .card--season-progress {" +
+        "        bottom: 2.2em;" +
         "    }" +
         "}";
     document.head.appendChild(style);
@@ -469,89 +478,20 @@
     }
 
     // ============================================================
-    // ===  ПОЗИЦІОНУВАННЯ МІТКИ                                ===
+    // ===  ПОЗИЦІОНУВАННЯ МІТКИ (СПРОЩЕНО)                    ===
     // ============================================================
     
     function adjustBadgePosition(cardEl, badge) {
         if (!cardEl || !badge) return;
-
-        var quality = cardEl.querySelector('.card__quality');
-
-        if (quality) {
-            var qHeight = quality.offsetHeight;
-            var qBottom = 0;
-
-            if (window.getComputedStyle) {
-                var styleVal = window.getComputedStyle(quality).bottom;
-                if (styleVal) {
-                    qBottom = parseFloat(styleVal) || 0;
-                }
-            }
-
-            badge.style.bottom = (qHeight + qBottom) + 'px';
-        } else {
-            badge.style.bottom = '0.50em';
-        }
+        
+        // На Samsung TV використовуємо фіксовану позицію з CSS
+        // Додаткова логіка не потрібна
     }
 
     function updateBadgePositions(cardEl) {
         if (!cardEl) return;
-
-        var badgesNodeList = cardEl.querySelectorAll('.card--season-complete, .card--season-progress');
-        var badgesArr = Array.prototype.slice.call(badgesNodeList, 0);
-
-        for (var i = 0; i < badgesArr.length; i++) {
-            adjustBadgePosition(cardEl, badgesArr[i]);
-        }
+        // На Samsung TV використовуємо CSS для позиціонування
     }
-
-    // ============================================================
-    // ===  СПОСТЕРЕЖЕННЯ ЗА МІТКОЮ ЯКОСТІ                      ===
-    // ============================================================
-    
-    var qualityObserver = createObserver(function (mutations) {
-        for (var i = 0; i < mutations.length; i++) {
-            var mutation = mutations[i];
-
-            if (mutation.addedNodes && mutation.addedNodes.length) {
-                for (var j = 0; j < mutation.addedNodes.length; j++) {
-                    var addedNode = mutation.addedNodes[j];
-                    if (addedNode.classList && addedNode.classList.contains('card__quality')) {
-                        var parentCardA = addedNode.closest('.card');
-                        if (parentCardA) {
-                            setTimeout(
-                                (function (cardCopyA) {
-                                    return function () {
-                                        updateBadgePositions(cardCopyA);
-                                    };
-                                })(parentCardA),
-                                100
-                            );
-                        }
-                    }
-                }
-            }
-
-            if (mutation.removedNodes && mutation.removedNodes.length) {
-                for (var k = 0; k < mutation.removedNodes.length; k++) {
-                    var removedNode = mutation.removedNodes[k];
-                    if (removedNode.classList && removedNode.classList.contains('card__quality')) {
-                        var parentCardB = removedNode.closest('.card');
-                        if (parentCardB) {
-                            setTimeout(
-                                (function (cardCopyB) {
-                                    return function () {
-                                        updateBadgePositions(cardCopyB);
-                                    };
-                                })(parentCardB),
-                                100
-                            );
-                        }
-                    }
-                }
-            }
-        }
-    });
 
     // ============================================================
     // ===  ДОДАВАННЯ МІТКИ ДО КАРТКИ                           ===
@@ -586,15 +526,6 @@
         var badge = createBadge('...', false, true);
         view.appendChild(badge);
 
-        adjustBadgePosition(cardEl, badge);
-
-        try {
-            qualityObserver.observe(view, {
-                childList: true,
-                subtree: true
-            });
-        } catch (e) {}
-
         cardEl.setAttribute('data-season-processed', 'loading');
 
         fetchSeriesData(data.id)
@@ -616,15 +547,12 @@
                     badge.className = isComplete ? 'card--season-complete' : 'card--season-progress';
                     badge.innerHTML = '<div>' + content + '</div>';
 
-                    adjustBadgePosition(cardEl, badge);
-
                     setTimeout(function () {
                         if (badge.classList) {
                             badge.classList.add('show');
                         } else {
                             badge.className += ' show';
                         }
-                        adjustBadgePosition(cardEl, badge);
                     }, 50);
 
                     cardEl.setAttribute('data-season-processed', isComplete ? 'complete' : 'in-progress');
@@ -674,23 +602,6 @@
                         }
                     }
                 }
-            }
-        }
-    });
-
-    // ============================================================
-    // ===  RESIZE ОБРОБНИК                                     ===
-    // ============================================================
-    
-    window.addEventListener('resize', function () {
-        var allBadgesNodeList = document.querySelectorAll('.card--season-complete, .card--season-progress');
-        var allBadgesArr = Array.prototype.slice.call(allBadgesNodeList, 0);
-
-        for (var i = 0; i < allBadgesArr.length; i++) {
-            var badge = allBadgesArr[i];
-            var cardEl = badge.closest('.card');
-            if (cardEl) {
-                adjustBadgePosition(cardEl, badge);
             }
         }
     });
