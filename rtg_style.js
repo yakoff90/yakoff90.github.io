@@ -1,6 +1,6 @@
 /*
 Плагін для оформлення рейтингів на картках
-Тільки зовнішній вигляд, без додаткового функціоналу
+Тільки зовнішній вигляд, без зміни позиціонування
 */
 
 (function() {
@@ -11,45 +11,65 @@
 
     // ==============================================
     // СТИЛІ ДЛЯ РЕЙТИНГУ НА КАРТЦІ
-    // (скопійовано з maxsm-ratings)
     // ==============================================
     
     var style = "<style id=\"maxsm_card_style\">" +
-        /* Базові стилі для картки */
+        /* Базові стилі для картки - зберігаємо оригінальне позиціонування */
         ".card__vote {" +
             "transition: all 0.3s ease;" +
-            "display: inline-block;" +
-            "padding: 0.2em 0.5em;" +
-            "border-radius: 0.3em;" +
-            "font-weight: bold;" +
-            "font-size: 0.9em;" +
+            "display: inline-flex !important;" +
+            "align-items: center !important;" +
+            "justify-content: center !important;" +
+            "padding: 0.2em 0.5em !important;" +
+            "border-radius: 0.3em !important;" +
+            "font-weight: bold !important;" +
+            "font-size: 0.9em !important;" +
+            "position: relative !important;" +
+            "z-index: 2 !important;" +
+            "margin: 0 !important;" +
+            "top: auto !important;" +
+            "left: auto !important;" +
+            "right: auto !important;" +
+            "bottom: auto !important;" +
+        "}" +
+        
+        /* Виправлення для батьківського контейнера */
+        ".card__view {" +
+            "position: relative !important;" +
         "}" +
         
         /* Кольорові класи для різних рейтингів */
         ".card__vote.low-rating {" +
-            "background-color: #dc3545 !important;" +  /* червоний */
+            "background-color: #dc3545 !important;" +
             "color: white !important;" +
         "}" +
         ".card__vote.medium-rating {" +
-            "background-color: #ffc107 !important;" +  /* жовтий */
+            "background-color: #ffc107 !important;" +
             "color: #212529 !important;" +
         "}" +
         ".card__vote.high-rating {" +
-            "background-color: #28a745 !important;" +  /* зелений */
+            "background-color: #28a745 !important;" +
             "color: white !important;" +
         "}" +
         
-        /* Стилі для різних типів зірочок */
-        ".card__vote.star-original {" +
-            "position: relative;" +
-        "}" +
-        ".card__vote.star-original::before {" +
+        /* Додаємо зірочку без зміни позиціонування */
+        ".card__vote::before {" +
             "content: '★';" +
             "margin-right: 0.2em;" +
+            "display: inline-block;" +
+            "font-size: inherit;" +
+            "line-height: inherit;" +
         "}" +
-        ".card__vote.star-cached::before {" +
-            "content: '✦';" +
-            "margin-right: 0.2em;" +
+        
+        /* Прибираємо оригінальний текст, залишаємо тільки число */
+        ".card__vote {" +
+            "font-size: 0 !important;" + /* Ховаємо оригінальний текст */
+        "}" +
+        ".card__vote::after {" +
+            "content: attr(data-rating);" + /* Показуємо число з data-атрибута */
+            "font-size: 0.9rem !important;" + /* Відновлюємо розмір */
+            "display: inline-block;" +
+            "line-height: normal;" +
         "}" +
     "</style>";
 
@@ -88,12 +108,11 @@
             var ratingValue = parseFloat(ratingText);
             if (isNaN(ratingValue)) continue;
             
-            // Видаляємо старі класи
-            cardVote.classList.remove('low-rating', 'medium-rating', 'high-rating', 
-                                      'star-original', 'star-cached');
+            // Зберігаємо число в data-атрибут
+            cardVote.setAttribute('data-rating', ratingValue.toFixed(1));
             
-            // Додаємо клас зірочки (завжди використовуємо оригінальну зірочку)
-            cardVote.classList.add('star-original');
+            // Видаляємо старі класи
+            cardVote.classList.remove('low-rating', 'medium-rating', 'high-rating');
             
             // Додаємо клас кольору
             if (ratingValue < 5) {
