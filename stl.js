@@ -10,7 +10,7 @@
       movie.production_companies.forEach(function(co) {
         if (co.logo_path) {
           html += '<div class="studio-logo-badge selector" data-id="' + co.id + '" data-name="' + co.name + '" style="display: inline-block; vertical-align: middle; margin-right: 6px; cursor: pointer;">' +
-                    '<img src="' + TMDB_IMAGE_URL + co.logo_path + '" title="' + co.name + '" style="filter: brightness(0) invert(1); opacity: 0.9; height: 1.4em; width: auto; display: block;">' +
+                    '<img src="' + TMDB_IMAGE_URL + co.logo_path + '" title="' + co.name + '" style="filter: brightness(0) invert(1); opacity: 0.9; height: 1.8em; width: auto; display: block;">' +
                   '</div>';
         }
       });
@@ -32,7 +32,6 @@
         }
         cont.html(getStudioLogos(e.data.movie));
         
-        // Додаємо обробник кліків на логотипи
         $('.studio-logo-badge', renderTarget).on('hover:enter', function () {
             var id = $(this).data('id');
             var name = $(this).data('name');
@@ -60,7 +59,7 @@
         align-items: center; \
     }\
     .studio-logo-badge { \
-      height: 1.4em; \
+      height: 1.8em; \
       opacity: 0; \
       transform: translateY(8px); \
       animation: studio_logo_in 0.4s ease forwards; \
