@@ -1,6 +1,6 @@
 /*
-Плагін для розфарбовування рейтингів на картках
-Взято з maxsm-ratings plugin
+Плагін для розфарбовування рейтингів на картках та переміщення року
+Взято з maxsm-ratings plugin та card_style.js
 */
 
 (function() {
@@ -14,9 +14,10 @@
     var CACHE_TIME = 3 * 24 * 60 * 60 * 1000; // 3 доби
 
     // ==============================================
-    // СТИЛІ ДЛЯ РОЗФАРБОВУВАННЯ РЕЙТИНГУ
+    // СТИЛІ ДЛЯ РОЗФАРБОВУВАННЯ РЕЙТИНГУ ТА РОКУ
     // ==============================================
     var style = "<style id=\"maxsm_card_ratings\">" +
+        /* Стилі для рейтингу */
         ".card__vote {" +
             "transition: all 0.3s ease;" +
         "}" +
@@ -31,6 +32,26 @@
         ".card__vote.high-rating {" +
             "background-color: #28a745 !important;" +  /* зелений */
             "color: white !important;" +
+        "}" +
+        /* Стилі для року (з card_style.js) */
+        ".card__view .card__age {" +
+            "right: 0;" +
+            "top: 0;" +
+            "padding: 0.2em 0.45em;" +
+            "border-radius: 0 0.75em;" +
+            "background: rgba(0, 0, 0, 0.5);" +
+            "position: absolute;" +
+            "margin-top: 0;" +
+            "font-size: 1.3em;" +
+        "}" +
+        /* Стиль для іконки типу контенту (з card_style.js) */
+        ".card__type {" +
+            "left: 0;" +
+            "top: 0;" +
+            "padding: 0.3em 0.6em;" +
+            "border-radius: 1.2em 0;" +
+            "background: rgba(0, 0, 0, 0.5);" +
+            "position: absolute;" +
         "}" +
     "</style>";
 
@@ -78,6 +99,33 @@
         
         if (C_LOGGING) console.log("MAXSM-CARD-RATINGS", "Кеш застарів для card: " + cardId);
         return null;
+    }
+
+    // ==============================================
+    // ФУНКЦІЯ ПЕРЕМІЩЕННЯ РОКУ (з card_style.js)
+    // ==============================================
+    
+    function moveAgeToTopRight(card) {
+        var age = card.querySelector('.card__age');
+        var view = card.querySelector('.card__view');
+        
+        if (age && view) {
+            // Переміщуємо елемент з роком у .card__view
+            view.appendChild(age);
+            
+            // Перевіряємо чи є .card__type і встановлюємо йому стилі
+            var type = card.querySelector('.card__type');
+            if (type) {
+                type.style.left = '0';
+                type.style.top = '0';
+                type.style.padding = '0.3em 0.6em';
+                type.style.borderRadius = '1.2em 0';
+                type.style.background = 'rgba(0, 0, 0, 0.5)';
+                type.style.position = 'absolute';
+            }
+            
+            if (C_LOGGING) console.log("MAXSM-CARD-RATINGS", "Рік переміщено у правий верхній кут");
+        }
     }
 
     // ==============================================
@@ -199,6 +247,9 @@
             if (source === 'card' && cardId) {
                 saveAverageToCache(cardId, ratingValue);
             }
+            
+            // ========== ЕТАП 4: ПЕРЕМІЩУЄМО РІК У ПРАВИЙ ВЕРХНІЙ КУТ ==========
+            moveAgeToTopRight(card);
         }
     }
 
@@ -239,7 +290,7 @@
     // ==============================================
     
     function initPlugin() {
-        if (C_LOGGING) console.log("MAXSM-CARD-RATINGS", "Плагін розфарбовування рейтингів запущено!");
+        if (C_LOGGING) console.log("MAXSM-CARD-RATINGS", "Плагін розфарбовування рейтингів та переміщення року запущено!");
         
         // Запуск спостереження за картками
         cardsObserver.observe(document.body, { childList: true, subtree: true });
