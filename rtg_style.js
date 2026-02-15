@@ -1,31 +1,35 @@
 /*
-Плагін для відображення рейтингів на картках зі зірочкою ★
-Повна копія стилю з maxsm-ratings, без зміни позиціонування
+Плагін для розфарбовування рейтингів на картках
+Взято з maxsm-ratings plugin
 */
 
 (function() {
     'use strict';
 
     // Налаштування логування
-    var C_LOGGING = true; // false щоб вимкнути логи
+    var C_LOGGING = true; // Змініть на false, щоб вимкнути логи
+
+    // Кеш для середніх рейтингів
+    var AVERAGE_CACHE = 'maxsm_card_ratings_cache';
+    var CACHE_TIME = 3 * 24 * 60 * 60 * 1000; // 3 доби
 
     // ==============================================
-    // СТИЛІ ДЛЯ РЕЙТИНГУ НА КАРТЦІ
-    // (тільки кольори, без зміни позиціонування)
+    // СТИЛІ ДЛЯ РОЗФАРБОВУВАННЯ РЕЙТИНГУ
     // ==============================================
-    
-    var style = "<style id=\"maxsm_card_star_style\">" +
-        /* Кольорові класи для різних рейтингів */
+    var style = "<style id=\"maxsm_card_ratings\">" +
+        ".card__vote {" +
+            "transition: all 0.3s ease;" +
+        "}" +
         ".card__vote.low-rating {" +
-            "background-color: #dc3545 !important;" +
+            "background-color: #dc3545 !important;" +  /* червоний */
             "color: white !important;" +
         "}" +
         ".card__vote.medium-rating {" +
-            "background-color: #ffc107 !important;" +
+            "background-color: #ffc107 !important;" +  /* жовтий */
             "color: #212529 !important;" +
         "}" +
         ".card__vote.high-rating {" +
-            "background-color: #28a745 !important;" +
+            "background-color: #28a745 !important;" +  /* зелений */
             "color: white !important;" +
         "}" +
     "</style>";
@@ -34,75 +38,179 @@
     $('head').append(style);
 
     // ==============================================
-    // ОСНОВНА ФУНКЦІЯ
+    // ФУНКЦІЇ РОБОТИ З КЕШЕМ
     // ==============================================
     
+    // Зберегти середній рейтинг в кеш
+    function saveAverageToCache(cardId, average) {
+        if (!cardId) return;
+        
+        if (C_LOGGING) console.log("MAXSM-CARD-RATINGS", "Збереження рейтингу в кеш для card: " + cardId);
+        
+        var cache = Lampa.Storage.get(AVERAGE_CACHE) || {};
+        cache[cardId] = {
+            average: average,
+            timestamp: Date.now()
+        };
+        
+        Lampa.Storage.set(AVERAGE_CACHE, cache);
+    }
+    
+    // Отримати середній рейтинг з кешу
+    function getAverageFromCache(cardId) {
+        if (!cardId) {
+            if (C_LOGGING) console.log("MAXSM-CARD-RATINGS", "Не знайдено кеш: немає cardId");
+            return null;
+        }
+        
+        var cache = Lampa.Storage.get(AVERAGE_CACHE) || {};
+        var item = cache[cardId];
+        
+        if (!item) {
+            if (C_LOGGING) console.log("MAXSM-CARD-RATINGS", "Не знайдено кеш для card: " + cardId);
+            return null;
+        }
+        
+        if (Date.now() - item.timestamp < CACHE_TIME) {
+            if (C_LOGGING) console.log("MAXSM-CARD-RATINGS", "Знайдено рейтинг в кеші для card: " + cardId + " - " + item.average);
+            return item.average;
+        }
+        
+        if (C_LOGGING) console.log("MAXSM-CARD-RATINGS", "Кеш застарів для card: " + cardId);
+        return null;
+    }
+
+    // ==============================================
+    // ФУНКЦІЯ РОЗФАРБОВУВАННЯ РЕЙТИНГУ
+    // ==============================================
+    
+    // Функція для розфарбовування рейтингу на картці
+    function colorizeCardRating(element, rating) {
+        if (!element || rating === undefined || rating === null) return;
+        
+        // Видаляємо попередні класи рейтингу
+        element.classList.remove('low-rating', 'medium-rating', 'high-rating');
+        
+        // Застосовуємо нові класи в залежності від оцінки
+        if (rating < 5) {
+            element.classList.add('low-rating');
+            if (C_LOGGING) console.log("MAXSM-CARD-RATINGS", "Застосовано клас low-rating (червоний) для рейтингу: " + rating);
+        } else if (rating >= 5 && rating < 7) {
+            element.classList.add('medium-rating');
+            if (C_LOGGING) console.log("MAXSM-CARD-RATINGS", "Застосовано клас medium-rating (жовтий) для рейтингу: " + rating);
+        } else if (rating >= 7) {
+            element.classList.add('high-rating');
+            if (C_LOGGING) console.log("MAXSM-CARD-RATINGS", "Застосовано клас high-rating (зелений) для рейтингу: " + rating);
+        }
+    }
+
+    // Основна функція обробки карток
     function processCardRatings(cards) {
         for (var i = 0; i < cards.length; i++) {
             var card = cards[i];
             var cardVote = card.querySelector('.card__vote');
             
-            if (!cardVote) continue;
-            
-            // Отримуємо текст рейтингу
-            var originalText = cardVote.textContent.trim();
-            
-            // Перевіряємо чи це вже наш формат (з зірочкою)
-            if (originalText.startsWith('★')) {
-                continue; // Пропускаємо, бо вже оброблено
+            // ========== ПЕРЕВІРКА: ЦЕ РЕЙТИНГ ЧИ КІЛЬКІСТЬ ГОЛОСІВ? ==========
+            if (cardVote) {
+                var ratingText = cardVote.textContent.trim();
+                
+                // Перевіряємо що це рейтинг, а не кількість голосів
+                // Рейтинг: "7.5", "8.1", "6.0" (одне або два числа з крапкою)
+                // Голоси: "1.5K", "2.3M", "1,234" (з літерами K/M або комами)
+                
+                var isRating = /^[\d]+\.?[\d]*$/.test(ratingText); // Тільки цифри і крапка
+                var isVotes = /[KM]/.test(ratingText) || /,/.test(ratingText); // Літери K/M або коми
+                
+                if (isVotes) {
+                    if (C_LOGGING) console.log("MAXSM-CARD-RATINGS", "Пропуск картки: в лейблі кількість голосів: " + ratingText);
+                    continue; // Пропускаємо цю картку
+                }
+                
+                if (!isRating) {
+                    if (C_LOGGING) console.log("MAXSM-CARD-RATINGS", "Пропуск картки: незрозумілий формат: " + ratingText);
+                    continue; // Пропускаємо
+                }
             }
             
-            // Перевіряємо що це рейтинг (число), а не кількість голосів
-            var isRating = /^[\d]+\.?[\d]*$/.test(originalText);
-            var isVotes = /[KM]/.test(originalText) || /,/.test(originalText);
+            // ========== ЕТАП 1: ОТРИМУЄМО РЕЙТИНГ ==========
+            var ratingValue = null;  // Число для розфарбовування
+            var ratingText = null;   // Текст для відображення (зі зірочкою)
+            var source = null;
             
-            if (isVotes) {
-                if (C_LOGGING) console.log("MAXSM-CARD", "Пропуск - це голоси: " + originalText);
+            // Варіант 1: Рейтинг з кешу (середній)
+            var cardData = card.card_data || {};
+            var cardId = cardData.id;
+            
+            if (cardId) {
+                var cachedAverage = getAverageFromCache(cardId);
+                if (cachedAverage) {
+                    ratingValue = parseFloat(cachedAverage); // Число
+                    ratingText = '✦ ' + ratingValue.toFixed(1);      // Текст із зірочкою
+                    source = 'cache';
+                }
+            }
+            
+            // Варіант 2: Рейтинг з картки (оригінальний)
+            if (!ratingValue) {
+                var cardVoteElem = card.querySelector('.card__vote');
+                if (cardVoteElem) {
+                    var ratingTextContent = cardVoteElem.textContent.trim();
+                    ratingValue = parseFloat(ratingTextContent);
+                    if (!isNaN(ratingValue)) {
+                        ratingText = '★ ' + ratingValue.toFixed(1);
+                        source = 'card';
+                    }
+                }
+            }
+            
+            // Якщо не знайшли жодного рейтингу - пропускаємо
+            if (!ratingValue) {
+                if (C_LOGGING) console.log("MAXSM-CARD-RATINGS", "Картка " + (cardId || 'unknown') + 
+                    ": немає рейтингу");
                 continue;
             }
             
-            if (!isRating) {
-                if (C_LOGGING) console.log("MAXSM-CARD", "Пропуск - не число: " + originalText);
-                continue;
+            if (C_LOGGING) console.log("MAXSM-CARD-RATINGS", "Картка " + (cardId || 'unknown') + 
+                ": рейтинг " + ratingText + " з " + source);
+            
+            // ========== ЕТАП 2: ЗМІНЮЄМО ЦИФРУ НА КАРТЦІ ==========
+            if (cardVote) {
+                // Оновлюємо існуючий
+                cardVote.textContent = ratingText;
+            } else {
+                // Створюємо новий
+                var cardView = card.querySelector('.card__view');
+                if (!cardView) {
+                    if (C_LOGGING) console.log("MAXSM-CARD-RATINGS", "Картка " + (cardId || 'unknown') + 
+                        ": немає .card__view");
+                    continue;
+                }
+                
+                cardVote = document.createElement('div');
+                cardVote.className = 'card__vote';
+                cardVote.textContent = ratingText;
+                cardView.appendChild(cardVote);
             }
             
-            // Конвертуємо в число
-            var ratingValue = parseFloat(originalText);
-            if (isNaN(ratingValue)) continue;
+            // ========== ЕТАП 3: РОЗФАРБОВУЄМО РЕЙТИНГ ==========
+            colorizeCardRating(cardVote, ratingValue);
             
-            // Форматуємо зірочку та число (як у maxsm-ratings)
-            var newText = '★ ' + ratingValue.toFixed(1);
-            
-            // Змінюємо текст (без зміни структури елемента)
-            cardVote.textContent = newText;
-            
-            // Видаляємо старі класи
-            cardVote.classList.remove('low-rating', 'medium-rating', 'high-rating');
-            
-            // Додаємо клас кольору
-            if (ratingValue < 5) {
-                cardVote.classList.add('low-rating');
-                if (C_LOGGING) console.log("MAXSM-CARD", "🔴 " + newText);
-            } else if (ratingValue >= 5 && ratingValue < 7) {
-                cardVote.classList.add('medium-rating');
-                if (C_LOGGING) console.log("MAXSM-CARD", "🟡 " + newText);
-            } else if (ratingValue >= 7) {
-                cardVote.classList.add('high-rating');
-                if (C_LOGGING) console.log("MAXSM-CARD", "🟢 " + newText);
+            // Зберігаємо в кеш, якщо це оригінальний рейтинг з картки
+            if (source === 'card' && cardId) {
+                saveAverageToCache(cardId, ratingValue);
             }
         }
     }
 
     // ==============================================
-    // СПОСТЕРІГАЧ ЗА НОВИМИ КАРТКАМИ
+    // НАСТРОЙКА СПОСТЕРІГАЧА ЗА НОВИМИ КАРТКАМИ
     // ==============================================
     
+    // Обсервер DOM для нових карток
     var cardsObserver = new MutationObserver(function(mutations) {
         var newCards = [];
-        
         for (var m = 0; m < mutations.length; m++) {
             var mutation = mutations[m];
-            
             if (mutation.addedNodes) {
                 for (var j = 0; j < mutation.addedNodes.length; j++) {
                     var node = mutation.addedNodes[j];
@@ -121,32 +229,33 @@
         }
         
         if (newCards.length) {
-            if (C_LOGGING) console.log("MAXSM-CARD", "Нових карток: " + newCards.length);
+            if (C_LOGGING) console.log("MAXSM-CARD-RATINGS", "Знайдено нових карток: " + newCards.length);
             processCardRatings(newCards);
         }
     });
 
     // ==============================================
-    // ІНІЦІАЛІЗАЦІЯ
+    // ІНІЦІАЛІЗАЦІЯ ПЛАГІНА
     // ==============================================
     
     function initPlugin() {
-        if (C_LOGGING) console.log("MAXSM-CARD", "🚀 Плагін зірочок запущено");
+        if (C_LOGGING) console.log("MAXSM-CARD-RATINGS", "Плагін розфарбовування рейтингів запущено!");
         
-        // Запускаємо спостереження
+        // Запуск спостереження за картками
         cardsObserver.observe(document.body, { childList: true, subtree: true });
+        if (C_LOGGING) console.log("MAXSM-CARD-RATINGS", "Обсервер для розфарбовування рейтингів запущено");
         
-        // Обробляємо існуючі картки
+        // Обробка вже завантажених карток
         setTimeout(function() {
             var existingCards = document.querySelectorAll('.card');
             if (existingCards.length) {
-                if (C_LOGGING) console.log("MAXSM-CARD", "📦 Існуючих карток: " + existingCards.length);
+                if (C_LOGGING) console.log("MAXSM-CARD-RATINGS", "Обробка вже завантажених карток: " + existingCards.length);
                 processCardRatings(existingCards);
             }
-        }, 1000);
+        }, 1000); // Невелика затримка, щоб дати час на завантаження
     }
 
-    // Запускаємо
+    // Запускаємо плагін
     initPlugin();
 
 })();
