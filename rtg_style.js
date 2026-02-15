@@ -1,6 +1,6 @@
 /*
-Плагін для оформлення рейтингів на картках
-Тільки зовнішній вигляд, без зміни позиціонування
+Плагін для відображення рейтингів на картках зі зірочкою ★
+Повна копія стилю з maxsm-ratings, без зміни позиціонування
 */
 
 (function() {
@@ -11,33 +11,10 @@
 
     // ==============================================
     // СТИЛІ ДЛЯ РЕЙТИНГУ НА КАРТЦІ
+    // (тільки кольори, без зміни позиціонування)
     // ==============================================
     
-    var style = "<style id=\"maxsm_card_style\">" +
-        /* Базові стилі для картки - зберігаємо оригінальне позиціонування */
-        ".card__vote {" +
-            "transition: all 0.3s ease;" +
-            "display: inline-flex !important;" +
-            "align-items: center !important;" +
-            "justify-content: center !important;" +
-            "padding: 0.2em 0.5em !important;" +
-            "border-radius: 0.3em !important;" +
-            "font-weight: bold !important;" +
-            "font-size: 0.9em !important;" +
-            "position: relative !important;" +
-            "z-index: 2 !important;" +
-            "margin: 0 !important;" +
-            "top: auto !important;" +
-            "left: auto !important;" +
-            "right: auto !important;" +
-            "bottom: auto !important;" +
-        "}" +
-        
-        /* Виправлення для батьківського контейнера */
-        ".card__view {" +
-            "position: relative !important;" +
-        "}" +
-        
+    var style = "<style id=\"maxsm_card_star_style\">" +
         /* Кольорові класи для різних рейтингів */
         ".card__vote.low-rating {" +
             "background-color: #dc3545 !important;" +
@@ -50,26 +27,6 @@
         ".card__vote.high-rating {" +
             "background-color: #28a745 !important;" +
             "color: white !important;" +
-        "}" +
-        
-        /* Додаємо зірочку без зміни позиціонування */
-        ".card__vote::before {" +
-            "content: '★';" +
-            "margin-right: 0.2em;" +
-            "display: inline-block;" +
-            "font-size: inherit;" +
-            "line-height: inherit;" +
-        "}" +
-        
-        /* Прибираємо оригінальний текст, залишаємо тільки число */
-        ".card__vote {" +
-            "font-size: 0 !important;" + /* Ховаємо оригінальний текст */
-        "}" +
-        ".card__vote::after {" +
-            "content: attr(data-rating);" + /* Показуємо число з data-атрибута */
-            "font-size: 0.9rem !important;" + /* Відновлюємо розмір */
-            "display: inline-block;" +
-            "line-height: normal;" +
         "}" +
     "</style>";
 
@@ -88,28 +45,36 @@
             if (!cardVote) continue;
             
             // Отримуємо текст рейтингу
-            var ratingText = cardVote.textContent.trim();
+            var originalText = cardVote.textContent.trim();
+            
+            // Перевіряємо чи це вже наш формат (з зірочкою)
+            if (originalText.startsWith('★')) {
+                continue; // Пропускаємо, бо вже оброблено
+            }
             
             // Перевіряємо що це рейтинг (число), а не кількість голосів
-            var isRating = /^[\d]+\.?[\d]*$/.test(ratingText);
-            var isVotes = /[KM]/.test(ratingText) || /,/.test(ratingText);
+            var isRating = /^[\d]+\.?[\d]*$/.test(originalText);
+            var isVotes = /[KM]/.test(originalText) || /,/.test(originalText);
             
             if (isVotes) {
-                if (C_LOGGING) console.log("MAXSM-CARD", "Пропуск - це голоси: " + ratingText);
+                if (C_LOGGING) console.log("MAXSM-CARD", "Пропуск - це голоси: " + originalText);
                 continue;
             }
             
             if (!isRating) {
-                if (C_LOGGING) console.log("MAXSM-CARD", "Пропуск - не число: " + ratingText);
+                if (C_LOGGING) console.log("MAXSM-CARD", "Пропуск - не число: " + originalText);
                 continue;
             }
             
             // Конвертуємо в число
-            var ratingValue = parseFloat(ratingText);
+            var ratingValue = parseFloat(originalText);
             if (isNaN(ratingValue)) continue;
             
-            // Зберігаємо число в data-атрибут
-            cardVote.setAttribute('data-rating', ratingValue.toFixed(1));
+            // Форматуємо зірочку та число (як у maxsm-ratings)
+            var newText = '★ ' + ratingValue.toFixed(1);
+            
+            // Змінюємо текст (без зміни структури елемента)
+            cardVote.textContent = newText;
             
             // Видаляємо старі класи
             cardVote.classList.remove('low-rating', 'medium-rating', 'high-rating');
@@ -117,13 +82,13 @@
             // Додаємо клас кольору
             if (ratingValue < 5) {
                 cardVote.classList.add('low-rating');
-                if (C_LOGGING) console.log("MAXSM-CARD", "🔴 " + ratingValue);
+                if (C_LOGGING) console.log("MAXSM-CARD", "🔴 " + newText);
             } else if (ratingValue >= 5 && ratingValue < 7) {
                 cardVote.classList.add('medium-rating');
-                if (C_LOGGING) console.log("MAXSM-CARD", "🟡 " + ratingValue);
+                if (C_LOGGING) console.log("MAXSM-CARD", "🟡 " + newText);
             } else if (ratingValue >= 7) {
                 cardVote.classList.add('high-rating');
-                if (C_LOGGING) console.log("MAXSM-CARD", "🟢 " + ratingValue);
+                if (C_LOGGING) console.log("MAXSM-CARD", "🟢 " + newText);
             }
         }
     }
@@ -166,7 +131,7 @@
     // ==============================================
     
     function initPlugin() {
-        if (C_LOGGING) console.log("MAXSM-CARD", "Плагін запущено");
+        if (C_LOGGING) console.log("MAXSM-CARD", "🚀 Плагін зірочок запущено");
         
         // Запускаємо спостереження
         cardsObserver.observe(document.body, { childList: true, subtree: true });
@@ -175,7 +140,7 @@
         setTimeout(function() {
             var existingCards = document.querySelectorAll('.card');
             if (existingCards.length) {
-                if (C_LOGGING) console.log("MAXSM-CARD", "Існуючих карток: " + existingCards.length);
+                if (C_LOGGING) console.log("MAXSM-CARD", "📦 Існуючих карток: " + existingCards.length);
                 processCardRatings(existingCards);
             }
         }, 1000);
