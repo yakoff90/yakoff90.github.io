@@ -1,21 +1,31 @@
 /*
-Плагін для розфарбовування рейтингів на картках
-Тільки кольори, без зміни тексту та кешування
+Плагін для оформлення рейтингів на картках
+Тільки зовнішній вигляд, без додаткового функціоналу
 */
 
 (function() {
     'use strict';
 
     // Налаштування логування
-    var C_LOGGING = true; // Змініть на false, щоб вимкнути логи
+    var C_LOGGING = true; // false щоб вимкнути логи
 
     // ==============================================
-    // СТИЛІ ДЛЯ РОЗФАРБОВУВАННЯ РЕЙТИНГУ
+    // СТИЛІ ДЛЯ РЕЙТИНГУ НА КАРТЦІ
+    // (скопійовано з maxsm-ratings)
     // ==============================================
-    var style = "<style id=\"maxsm_card_colors_only\">" +
+    
+    var style = "<style id=\"maxsm_card_style\">" +
+        /* Базові стилі для картки */
         ".card__vote {" +
             "transition: all 0.3s ease;" +
+            "display: inline-block;" +
+            "padding: 0.2em 0.5em;" +
+            "border-radius: 0.3em;" +
+            "font-weight: bold;" +
+            "font-size: 0.9em;" +
         "}" +
+        
+        /* Кольорові класи для різних рейтингів */
         ".card__vote.low-rating {" +
             "background-color: #dc3545 !important;" +  /* червоний */
             "color: white !important;" +
@@ -28,36 +38,28 @@
             "background-color: #28a745 !important;" +  /* зелений */
             "color: white !important;" +
         "}" +
+        
+        /* Стилі для різних типів зірочок */
+        ".card__vote.star-original {" +
+            "position: relative;" +
+        "}" +
+        ".card__vote.star-original::before {" +
+            "content: '★';" +
+            "margin-right: 0.2em;" +
+        "}" +
+        ".card__vote.star-cached::before {" +
+            "content: '✦';" +
+            "margin-right: 0.2em;" +
+        "}" +
     "</style>";
 
     // Додаємо стилі
     $('head').append(style);
 
     // ==============================================
-    // ФУНКЦІЯ РОЗФАРБОВУВАННЯ РЕЙТИНГУ
+    // ОСНОВНА ФУНКЦІЯ
     // ==============================================
     
-    // Функція для розфарбовування рейтингу на картці
-    function colorizeCardRating(element, rating) {
-        if (!element || rating === undefined || rating === null) return;
-        
-        // Видаляємо попередні класи рейтингу
-        element.classList.remove('low-rating', 'medium-rating', 'high-rating');
-        
-        // Застосовуємо нові класи в залежності від оцінки
-        if (rating < 5) {
-            element.classList.add('low-rating');
-            if (C_LOGGING) console.log("MAXSM-CARD-COLORS", "🔴 Червоний для рейтингу: " + rating);
-        } else if (rating >= 5 && rating < 7) {
-            element.classList.add('medium-rating');
-            if (C_LOGGING) console.log("MAXSM-CARD-COLORS", "🟡 Жовтий для рейтингу: " + rating);
-        } else if (rating >= 7) {
-            element.classList.add('high-rating');
-            if (C_LOGGING) console.log("MAXSM-CARD-COLORS", "🟢 Зелений для рейтингу: " + rating);
-        }
-    }
-
-    // Основна функція обробки карток
     function processCardRatings(cards) {
         for (var i = 0; i < cards.length; i++) {
             var card = cards[i];
@@ -69,35 +71,48 @@
             var ratingText = cardVote.textContent.trim();
             
             // Перевіряємо що це рейтинг (число), а не кількість голосів
-            // Рейтинг: "7.5", "8.1", "6.0" (тільки цифри і крапка)
-            // Голоси: "1.5K", "2.3M", "1,234" (з літерами K/M або комами)
-            
-            var isRating = /^[\d]+\.?[\d]*$/.test(ratingText); // Тільки цифри і крапка
-            var isVotes = /[KM]/.test(ratingText) || /,/.test(ratingText); // Літери K/M або коми
+            var isRating = /^[\d]+\.?[\d]*$/.test(ratingText);
+            var isVotes = /[KM]/.test(ratingText) || /,/.test(ratingText);
             
             if (isVotes) {
-                if (C_LOGGING) console.log("MAXSM-CARD-COLORS", "Пропуск: це кількість голосів: " + ratingText);
+                if (C_LOGGING) console.log("MAXSM-CARD", "Пропуск - це голоси: " + ratingText);
                 continue;
             }
             
             if (!isRating) {
-                if (C_LOGGING) console.log("MAXSM-CARD-COLORS", "Пропуск: незрозумілий формат: " + ratingText);
+                if (C_LOGGING) console.log("MAXSM-CARD", "Пропуск - не число: " + ratingText);
                 continue;
             }
             
-            // Конвертуємо в число і розфарбовуємо
+            // Конвертуємо в число
             var ratingValue = parseFloat(ratingText);
-            if (!isNaN(ratingValue)) {
-                colorizeCardRating(cardVote, ratingValue);
+            if (isNaN(ratingValue)) continue;
+            
+            // Видаляємо старі класи
+            cardVote.classList.remove('low-rating', 'medium-rating', 'high-rating', 
+                                      'star-original', 'star-cached');
+            
+            // Додаємо клас зірочки (завжди використовуємо оригінальну зірочку)
+            cardVote.classList.add('star-original');
+            
+            // Додаємо клас кольору
+            if (ratingValue < 5) {
+                cardVote.classList.add('low-rating');
+                if (C_LOGGING) console.log("MAXSM-CARD", "🔴 " + ratingValue);
+            } else if (ratingValue >= 5 && ratingValue < 7) {
+                cardVote.classList.add('medium-rating');
+                if (C_LOGGING) console.log("MAXSM-CARD", "🟡 " + ratingValue);
+            } else if (ratingValue >= 7) {
+                cardVote.classList.add('high-rating');
+                if (C_LOGGING) console.log("MAXSM-CARD", "🟢 " + ratingValue);
             }
         }
     }
 
     // ==============================================
-    // НАСТРОЙКА СПОСТЕРІГАЧА ЗА НОВИМИ КАРТКАМИ
+    // СПОСТЕРІГАЧ ЗА НОВИМИ КАРТКАМИ
     // ==============================================
     
-    // Обсервер DOM для нових карток
     var cardsObserver = new MutationObserver(function(mutations) {
         var newCards = [];
         
@@ -109,12 +124,10 @@
                     var node = mutation.addedNodes[j];
                     if (node.nodeType !== 1) continue;
                     
-                    // Якщо додана картка
                     if (node.classList && node.classList.contains('card')) {
                         newCards.push(node);
                     }
                     
-                    // Пошук карток всередині доданого елемента
                     var nestedCards = node.querySelectorAll('.card');
                     for (var k = 0; k < nestedCards.length; k++) {
                         newCards.push(nestedCards[k]);
@@ -124,33 +137,32 @@
         }
         
         if (newCards.length) {
-            if (C_LOGGING) console.log("MAXSM-CARD-COLORS", "Знайдено нових карток: " + newCards.length);
+            if (C_LOGGING) console.log("MAXSM-CARD", "Нових карток: " + newCards.length);
             processCardRatings(newCards);
         }
     });
 
     // ==============================================
-    // ІНІЦІАЛІЗАЦІЯ ПЛАГІНА
+    // ІНІЦІАЛІЗАЦІЯ
     // ==============================================
     
     function initPlugin() {
-        if (C_LOGGING) console.log("MAXSM-CARD-COLORS", "🚀 Плагін розфарбовування рейтингів запущено!");
+        if (C_LOGGING) console.log("MAXSM-CARD", "Плагін запущено");
         
-        // Запуск спостереження за картками
+        // Запускаємо спостереження
         cardsObserver.observe(document.body, { childList: true, subtree: true });
-        if (C_LOGGING) console.log("MAXSM-CARD-COLORS", "👀 Обсервер запущено");
         
-        // Обробка вже завантажених карток
+        // Обробляємо існуючі картки
         setTimeout(function() {
             var existingCards = document.querySelectorAll('.card');
             if (existingCards.length) {
-                if (C_LOGGING) console.log("MAXSM-CARD-COLORS", "📦 Обробка існуючих карток: " + existingCards.length);
+                if (C_LOGGING) console.log("MAXSM-CARD", "Існуючих карток: " + existingCards.length);
                 processCardRatings(existingCards);
             }
         }, 1000);
     }
 
-    // Запускаємо плагін
+    // Запускаємо
     initPlugin();
 
 })();
