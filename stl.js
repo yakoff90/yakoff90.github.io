@@ -9,7 +9,7 @@
     if (movie && movie.production_companies) {
       movie.production_companies.forEach(function(co) {
         if (co.logo_path) {
-          html += '<div class="studio-logo-badge selector" data-id="' + co.id + '" data-name="' + co.name + '" style="display: inline-block; vertical-align: middle; margin-right: 6px; cursor: pointer;">' +
+          html += '<div class="studio-logo-badge selector" data-id="' + co.id + '" data-name="' + co.name + '" style="display: inline-flex; vertical-align: middle; margin-right: 6px; cursor: pointer; align-items: center; justify-content: center;">' +
                     '<img src="' + TMDB_IMAGE_URL + co.logo_path + '" title="' + co.name + '" style="filter: brightness(0) invert(1); opacity: 0.9; height: 1.8em; width: auto; display: block;">' +
                   '</div>';
         }
@@ -59,16 +59,16 @@
         align-items: center; \
     }\
     .studio-logo-badge { \
-      height: 1.8em; \
       opacity: 0; \
       transform: translateY(8px); \
       animation: studio_logo_in 0.4s ease forwards; \
-      display: flex; \
+      display: inline-flex; \
       align-items: center; \
+      justify-content: center; \
       transition: all 0.2s ease; \
       border: 1px solid transparent; \
       border-radius: 6px; \
-      padding: 2px 4px; \
+      padding: 4px; \
     }\
     .studio-logo-badge.focus { \
       background: rgba(255,255,255,0.2) !important; \
@@ -82,7 +82,7 @@
       } \
     }\
     .studio-logo-badge img { \
-      height: 100%; \
+      height: 1.8em; \
       width: auto; \
       display: block; \
     }\
