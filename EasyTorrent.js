@@ -1725,45 +1725,102 @@
     });
   }
 
-  function patchParser() {
-    var parser = window.Lampa.Parser || 
-                 (window.Lampa.Component ? window.Lampa.Component.Parser : null);
-    
-    if (!parser || !parser.get) {
-      console.log("[EasyTorrent] Parser не знайдено");
-      return;
-    }
-    
-    console.log("[EasyTorrent] Патчимо Parser.get");
-    
-    var originalGet = parser.get;
-    
-    parser.get = function(requestData, successCallback, errorCallback) {
-      lastTorrentRequest = requestData;
-      
-      return originalGet.call(
-        this,
-        requestData,
-        function(results) {
-          if (results && results.Results && Array.isArray(results.Results)) {
-            // Обробляємо результати
-            processTorrentResults(results.Results, requestData);
-          }
-          
-          // Викликаємо оригінальний колбек
-          if (typeof successCallback === 'function') {
-            successCallback(results);
-          }
-          
-          // Плануємо перевпорядкування після рендерингу
-          scheduleReorder();
-        },
-        errorCallback
-      );
-    };
-    
-    console.log("[EasyTorrent] Parser.get успішно пропатчено");
+  // Знайдіть функцію patchParser() і замініть її на цю:
+
+function patchParser() {
+  var parser = window.Lampa.Parser || 
+               (window.Lampa.Component ? window.Lampa.Component.Parser : null);
+  
+  if (!parser || !parser.get) {
+    console.log("[EasyTorrent] Parser не знайдено");
+    return;
   }
+  
+  console.log("[EasyTorrent] Патчимо Parser.get для перевпорядкування");
+  
+  var originalGet = parser.get;
+  
+  parser.get = function(requestData, successCallback, errorCallback) {
+    lastTorrentRequest = requestData;
+    
+    return originalGet.call(
+      this,
+      requestData,
+      function(results) {
+        if (results && results.Results && Array.isArray(results.Results)) {
+          // Обробляємо результати (додаємо оцінки)
+          processTorrentResults(results.Results, requestData);
+          
+          // ПЕРЕВПОРЯДКОВУЄМО РЕЗУЛЬТАТИ
+          if (window.EasyTorrentSortedResults && Array.isArray(window.EasyTorrentSortedResults)) {
+            // Створюємо мапу для швидкого пошуку
+            var torrentMap = {};
+            for (var i = 0; i < results.Results.length; i++) {
+              var torrent = results.Results[i];
+              var key = (torrent.Title || torrent.title || '') + '_' + (torrent.Size || torrent.size_bytes || 0);
+              torrentMap[key] = torrent;
+            }
+            
+            // Створюємо відсортований масив
+            var sortedResults = [];
+            var usedKeys = {};
+            
+            // Спочатку додаємо відсортовані торренти
+            for (var i = 0; i < window.EasyTorrentSortedResults.length; i++) {
+              var sortedTorrent = window.EasyTorrentSortedResults[i];
+              var key = (sortedTorrent.Title || sortedTorrent.title || '') + '_' + (sortedTorrent.Size || sortedTorrent.size_bytes || 0);
+              
+              if (torrentMap[key]) {
+                sortedResults.push(torrentMap[key]);
+                usedKeys[key] = true;
+              }
+            }
+            
+            // Додаємо решту торрентів
+            for (var i = 0; i < results.Results.length; i++) {
+              var torrent = results.Results[i];
+              var key = (torrent.Title || torrent.title || '') + '_' + (torrent.Size || torrent.size_bytes || 0);
+              
+              if (!usedKeys[key]) {
+                sortedResults.push(torrent);
+              }
+            }
+            
+            // ЗАМІНЮЄМО результати на відсортовані
+            results.Results = sortedResults;
+            
+            // Оновлюємо ранги
+            for (var i = 0; i < results.Results.length; i++) {
+              var torrent = results.Results[i];
+              if (torrent._recommendScore !== undefined) {
+                torrent._recommendRank = i;
+                torrent._recommendIsIdeal = (i === 0 && torrent._recommendScore >= 150);
+                torrent._recommendIsRecommended = (i < (currentConfig.preferences?.recommendation_count || 3));
+              }
+            }
+            
+            console.log("[EasyTorrent] Торренти перевпорядковано! Перші 3:");
+            for (var i = 0; i < Math.min(3, results.Results.length); i++) {
+              var t = results.Results[i];
+              console.log("  " + (i+1) + ". Оцінка: " + (t._recommendScore || '?') + " - " + (t.Title || t.title || '').substring(0, 60));
+            }
+          }
+        }
+        
+        // Викликаємо оригінальний колбек
+        if (typeof successCallback === 'function') {
+          successCallback(results);
+        }
+        
+        // Плануємо перевпорядкування після рендерингу
+        scheduleReorder();
+      },
+      errorCallback
+    );
+  };
+  
+  console.log("[EasyTorrent] Parser.get успішно пропатчено з перевпорядкуванням!");
+}
 
   function scheduleReorder() {
     // Очищуємо старі таймери
