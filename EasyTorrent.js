@@ -460,9 +460,10 @@
       if (y(eStart)) episodeCandidates.push({ episode: eStart, episodeRange: eRange, base: 85, name: "xxXyy" });
     }
     
-    var bracketMatches = t.matchAll(/[\[\(]([^\]\)]+)[\]\)]?/g);
-    for (var matchItem = bracketMatches.next(); !matchItem.done; matchItem = bracketMatches.next()) {
-      var bracketContent = matchItem.value[1];
+    var bracketRegex = /[\[\(]([^\]\)]+)[\]\)]?/g;
+    var bracketMatch;
+    while ((bracketMatch = bracketRegex.exec(t)) !== null) {
+      var bracketContent = bracketMatch[1];
       var rangeRegex = /(\d{1,4})\s*[-]\s*(\d{1,4})/g;
       var rangeMatch;
       while ((rangeMatch = rangeRegex.exec(bracketContent)) !== null) {
@@ -867,11 +868,22 @@
       }
     }
     
-    var scoringFunction = (function() {
-      var config = d;
-      var rules = config.scoring_rules;
+    var scoredItems = [];
+    for (var i = 0; i < e.Results.length; i++) {
+      var torrent = e.Results[i];
+      var features = N(torrent, movieData, isSeries, episodesMultiplier);
       
-      return function(item) {
+      // Створюємо копію об'єкта без оператора розширення
+      var torrentCopy = {};
+      for (var prop in torrent) {
+        if (torrent.hasOwnProperty(prop)) {
+          torrentCopy[prop] = torrent[prop];
+        }
+      }
+      torrentCopy.features = features;
+      
+      // Функція оцінювання
+      var scoreResult = (function(item) {
         var score = 100;
         var features = item.features;
         var seeds = item.Seeds || item.seeds || item.Seeders || item.seeders || 0;
@@ -895,6 +907,8 @@
           score += tolokaBonus;
         }
         
+        var config = d;
+        var rules = config.scoring_rules;
         var priority = config.parameter_priority || [
           "resolution", "hdr", "bitrate", "audio_track", "availability", "audio_quality"
         ];
@@ -1003,14 +1017,7 @@
         }
         
         return { score: score, breakdown: breakdown };
-      };
-    })();
-    
-    var scoredItems = [];
-    for (var i = 0; i < e.Results.length; i++) {
-      var torrent = e.Results[i];
-      var features = N(torrent, movieData, isSeries, episodesMultiplier);
-      var scoreResult = scoringFunction({ ...torrent, features: features });
+      })(torrentCopy);
       
       scoredItems.push({
         element: torrent,
@@ -1369,41 +1376,48 @@
             
             var lastGenerated = null;
             i = setInterval(function() {
-              (async function(code) {
-                try {
-                  var apiUrl = r + "/rest/v1/tv_configs?id=eq." + encodeURIComponent(code) + "&select=data,updated_at";
-                  var response = await fetch(apiUrl, {
-                    headers: { apikey: o, Authorization: "Bearer " + o },
-                  });
-                  if (!response.ok) throw new Error("Fetch failed: " + response.status);
-                  var data = await response.json();
-                  if (data.length) {
-                    return data[0].data;
-                  }
-                  return null;
-                } catch (e) {
-                  console.error("[EasyTorrent] Fetch error:", e);
-                  return null;
-                }
-              })(code).then(function(result) {
-                if (result) {
-                  var generated = result.generated;
-                  if (generated !== lastGenerated) {
-                    lastGenerated = generated;
-                    u(result);
-                    $("#qrStatus").html("✅ Конфігурація отримана!").css("color", "#4CAF50");
-                    setTimeout(function() {
-                      if (i) {
-                        clearInterval(i);
-                        i = null;
+              var xhr = new XMLHttpRequest();
+              var apiUrl = r + "/rest/v1/tv_configs?id=eq." + encodeURIComponent(code) + "&select=data,updated_at";
+              
+              xhr.open("GET", apiUrl, true);
+              xhr.setRequestHeader("apikey", o);
+              xhr.setRequestHeader("Authorization", "Bearer " + o);
+              
+              xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                  if (xhr.status === 200) {
+                    try {
+                      var data = JSON.parse(xhr.responseText);
+                      if (data && data.length > 0) {
+                        var result = data[0].data;
+                        if (result) {
+                          var generated = result.generated;
+                          if (generated !== lastGenerated) {
+                            lastGenerated = generated;
+                            u(result);
+                            $("#qrStatus").html("✅ Конфігурація отримана!").css("color", "#4CAF50");
+                            setTimeout(function() {
+                              if (i) {
+                                clearInterval(i);
+                                i = null;
+                              }
+                              Lampa.Modal.close();
+                              Lampa.Noty.show("Конфігурація оновлена!");
+                              Lampa.Controller.toggle("settings_component");
+                            }, 2000);
+                          }
+                        }
                       }
-                      Lampa.Modal.close();
-                      Lampa.Noty.show("Конфігурація оновлена!");
-                      Lampa.Controller.toggle("settings_component");
-                    }, 2000);
+                    } catch (e) {
+                      console.error("[EasyTorrent] Помилка парсингу:", e);
+                    }
+                  } else {
+                    console.error("[EasyTorrent] Fetch failed:", xhr.status);
                   }
                 }
-              });
+              };
+              
+              xhr.send();
             }, 5000);
           })();
         });
@@ -1484,32 +1498,6 @@
             };
             
             results = filterAndSort(results);
-            
-            var patchArray = function(arr) {
-              if (!arr || arr._recommendPatched) return arr;
-              
-              var originalSort = arr.sort;
-              arr.sort = function() {
-                originalSort.apply(this, arguments);
-                var sorted = filterAndSort(this);
-                for (var i = 0; i < sorted.length; i++) {
-                  this[i] = sorted[i];
-                }
-                return this;
-              };
-              
-              var originalFilter = arr.filter;
-              arr.filter = function() {
-                var filtered = originalFilter.apply(this, arguments);
-                var result = filterAndSort(filtered);
-                return patchArray(result);
-              };
-              
-              arr._recommendPatched = true;
-              return arr;
-            };
-            
-            results = patchArray(results);
             
             try {
               Object.defineProperty(response, "Results", {
