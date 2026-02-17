@@ -332,31 +332,36 @@
     );
   }
 
+  // Виправлена функція w - видалено \p{L}\p{N} для сумісності з Samsung TV
   function w(e) {
     var t = e.toLowerCase();
     var patterns = [
-      /(?:^|[^\p{L}\p{N}])(фильм|film|movie|movies)(?=$|[^\p{L}\p{N}])/iu,
-      /(?:^|[^\p{L}\p{N}])(спецвыпуск|special|specials|sp|ova|ona|bonus|extra|экстра|спэшл|спешл|спэшал|ова|она|спэшел)(?=$|[^\p{L}\p{N}])/iu,
-      /(?:^|[^\p{L}\p{N}])(трейлер|trailer|teaser|тизер)(?=$|[^\p{L}\p{N}])/iu,
-      /(?:^|[^\p{L}\p{N}])(саундтрек|ost|soundtrack)(?=$|[^\p{L}\p{N}])/iu,
-      /(?:^|[^\p{L}\p{N}])(клип|clip|pv)(?=$|[^\p{L}\p{N}])/iu,
-      /(?:^|[^\p{L}\p{N}])(интервью|interview)(?=$|[^\p{L}\p{N}])/iu,
-      /(?:^|[^\p{L}\p{N}])(репортаж|report)(?=$|[^\p{L}\p{N}])/iu,
-      /(?:^|[^\p{L}\p{N}])(промо|promo)(?=$|[^\p{L}\p{N}])/iu,
-      /(?:^|[^\p{L}\p{N}])(отрывок|preview)(?=$|[^\p{L}\p{N}])/iu,
-      /(?:^|[^\p{L}\p{N}])(анонс|announcement)(?=$|[^\p{L}\p{N}])/iu,
-      /(?:^|[^\p{L}\p{N}])(съемки|making of|behind the scenes)(?=$|[^\p{L}\p{N}])/iu,
-      /(?:^|[^\p{L}\p{N}])(сборник|collection)(?=$|[^\p{L}\p{N}])/iu,
-      /(?:^|[^\p{L}\p{N}])(документальный|docu|documentary)(?=$|[^\p{L}\p{N}])/iu,
-      /(?:^|[^\p{L}\p{N}])(концерт|concert|live)(?=$|[^\p{L}\p{N}])/iu,
+      /(?:^|[^a-zа-яёіїєґ0-9])(фильм|film|movie|movies)(?=$|[^a-zа-яёіїєґ0-9])/i,
+      /(?:^|[^a-zа-яёіїєґ0-9])(спецвыпуск|special|specials|sp|ova|ona|bonus|extra|экстра|спэшл|спешл|спэшал|ова|она|спэшел)(?=$|[^a-zа-яёіїєґ0-9])/i,
+      /(?:^|[^a-zа-яёіїєґ0-9])(трейлер|trailer|teaser|тизер)(?=$|[^a-zа-яёіїєґ0-9])/i,
+      /(?:^|[^a-zа-яёіїєґ0-9])(саундтрек|ost|soundtrack)(?=$|[^a-zа-яёіїєґ0-9])/i,
+      /(?:^|[^a-zа-яёіїєґ0-9])(клип|clip|pv)(?=$|[^a-zа-яёіїєґ0-9])/i,
+      /(?:^|[^a-zа-яёіїєґ0-9])(интервью|interview)(?=$|[^a-zа-яёіїєґ0-9])/i,
+      /(?:^|[^a-zа-яёіїєґ0-9])(репортаж|report)(?=$|[^a-zа-яёіїєґ0-9])/i,
+      /(?:^|[^a-zа-яёіїєґ0-9])(промо|promo)(?=$|[^a-zа-яёіїєґ0-9])/i,
+      /(?:^|[^a-zа-яёіїєґ0-9])(отрывок|preview)(?=$|[^a-zа-яёіїєґ0-9])/i,
+      /(?:^|[^a-zа-яёіїєґ0-9])(анонс|announcement)(?=$|[^a-zа-яёіїєґ0-9])/i,
+      /(?:^|[^a-zа-яёіїєґ0-9])(съемки|making of|behind the scenes)(?=$|[^a-zа-яёіїєґ0-9])/i,
+      /(?:^|[^a-zа-яёіїєґ0-9])(сборник|collection)(?=$|[^a-zа-яёіїєґ0-9])/i,
+      /(?:^|[^a-zа-яёіїєґ0-9])(документальный|docu|documentary)(?=$|[^a-zа-яёіїєґ0-9])/i,
+      /(?:^|[^a-zа-яёіїєґ0-9])(концерт|concert|live)(?=$|[^a-zа-яёіїєґ0-9])/i,
       /movie\s*\d+/i,
       /film\s*\d+/i,
-      /(?:^|[^\p{L}\p{N}])(мультфильм|аниме-фильм|спецэпизод|спецсерія)(?=$|[^\p{L}\p{N}])/iu,
+      /(?:^|[^a-zа-яёіїєґ0-9])(мультфильм|аниме-фильм|спецэпизод|спецсерія)(?=$|[^a-zа-яёіїєґ0-9])/i,
       /\bepisode of\b/i,
     ];
     
     for (var i = 0; i < patterns.length; i++) {
-      if (patterns[i].test(t)) return true;
+      try {
+        if (patterns[i].test(t)) return true;
+      } catch (e) {
+        // Ігноруємо помилки регулярних виразів
+      }
     }
     return false;
   }
@@ -405,7 +410,7 @@
     t = t.replace(/\s+/g, " ").trim();
     
     var n = null;
-    var match = /(?:^|[^\p{L}\p{N}])(?:из|of)\s*(\d{1,4})(?=$|[^\p{L}\p{N}])/iu.exec(t);
+    var match = /(?:^|[^a-zа-яёіїєґ0-9])(?:из|of)\s*(\d{1,4})(?=$|[^a-zа-яёіїєґ0-9])/iu.exec(t);
     if (match) {
       var totalEp = b(match[1]);
       if (y(totalEp)) n = totalEp;
@@ -497,17 +502,17 @@
     
     var seasonPatterns = [
       {
-        re: /(?:^|[^\p{L}\p{N}])(\d{1,2})(?:\s*[-]\s*(\d{1,2}))?\s*сезон(?:а|ы|ів)?(?=$|[^\p{L}\p{N}])/iu,
+        re: /(?:^|[^a-zа-яёіїєґ0-9])(\d{1,2})(?:\s*[-]\s*(\d{1,2}))?\s*сезон(?:а|ы|ів)?(?=$|[^a-zа-яёіїєґ0-9])/iu,
         base: 75,
         name: "N сезон",
       },
       {
-        re: /(?:^|[^\p{L}\p{N}])сезон(?:а|ы|и|ів)?\s*(\d{1,2})(?:\s*[-]\s*(\d{1,2}))?(?=$|[^\p{L}\p{N}])/iu,
+        re: /(?:^|[^a-zа-яёіїєґ0-9])сезон(?:а|ы|и|ів)?\s*(\d{1,2})(?:\s*[-]\s*(\d{1,2}))?(?=$|[^a-zа-яёіїєґ0-9])/iu,
         base: 70,
         name: "Сезон N",
       },
       {
-        re: /(?:^|[^\p{L}\p{N}])сезон(?:а|ы|и|ів)?\s*:\s*(\d{1,2})(?:\s*[-]\s*(\d{1,2}))?/iu,
+        re: /(?:^|[^a-zа-яёіїєґ0-9])сезон(?:а|ы|и|ів)?\s*:\s*(\d{1,2})(?:\s*[-]\s*(\d{1,2}))?/iu,
         base: 66,
         name: "Сезон: N",
       },
@@ -546,22 +551,22 @@
     
     var episodePatterns = [
       {
-        re: /(?:^|[^\p{L}\p{N}])(?:серии|серія|серії|эпизод(?:ы)?|episodes|эп\.?)\s*[: ]?\s*(\d{1,4})(?:\s*[-]\s*(\d{1,4}))?(?=$|[^\p{L}\p{N}])/iu,
+        re: /(?:^|[^a-zа-яёіїєґ0-9])(?:серии|серія|серії|эпизод(?:ы)?|episodes|эп\.?)\s*[: ]?\s*(\d{1,4})(?:\s*[-]\s*(\d{1,4}))?(?=$|[^a-zа-яёіїєґ0-9])/iu,
         base: 60,
         name: "серии",
       },
       {
-        re: /(?:^|[^\p{L}\p{N}])(\d{1,4})(?:\s*[-]\s*(\d{1,4}))?\s*(?:серии|серія|серії|эпизод(?:ы)?|эп\.?)(?=$|[^\p{L}\p{N}])/iu,
+        re: /(?:^|[^a-zа-яёіїєґ0-9])(\d{1,4})(?:\s*[-]\s*(\d{1,4}))?\s*(?:серии|серія|серії|эпизод(?:ы)?|эп\.?)(?=$|[^a-zа-яёіїєґ0-9])/iu,
         base: 62,
         name: "1-4 серии",
       },
       {
-        re: /(?:^|[^\p{L}\p{N}])(\d{1,4})\s*[-]\s*(\d{1,4})\s*серия(?=$|[^\p{L}\p{N}])/iu,
+        re: /(?:^|[^a-zа-яёіїєґ0-9])(\d{1,4})\s*[-]\s*(\d{1,4})\s*серия(?=$|[^a-zа-яёіїєґ0-9])/iu,
         base: 62,
         name: "1-4 серия",
       },
       {
-        re: /(?:^|[^\p{L}\p{N}])(\d{1,4})\s*(?:серия|серія)(?=$|[^\p{L}\p{N}])/iu,
+        re: /(?:^|[^a-zа-яёіїєґ0-9])(\d{1,4})\s*(?:серия|серія)(?=$|[^a-zа-яёіїєґ0-9])/iu,
         base: 54,
         name: "N серия",
       },
@@ -857,9 +862,13 @@
       var maxTotal = 1;
       
       for (var idx = 0; idx < e.Results.length; idx++) {
-        var parsed = k(e.Results[idx].Title || e.Results[idx].title || "");
-        if (parsed.episodesCount > maxCount) maxCount = parsed.episodesCount;
-        if (parsed.episodesTotal > maxTotal) maxTotal = parsed.episodesTotal;
+        try {
+          var parsed = k(e.Results[idx].Title || e.Results[idx].title || "");
+          if (parsed && parsed.episodesCount > maxCount) maxCount = parsed.episodesCount;
+          if (parsed && parsed.episodesTotal > maxTotal) maxTotal = parsed.episodesTotal;
+        } catch (e) {
+          // Ігноруємо помилки парсингу
+        }
       }
       
       episodesMultiplier = maxCount > 1 ? maxCount : maxTotal;
@@ -870,162 +879,171 @@
     
     var scoredItems = [];
     for (var i = 0; i < e.Results.length; i++) {
-      var torrent = e.Results[i];
-      var features = N(torrent, movieData, isSeries, episodesMultiplier);
-      
-      // Створюємо копію об'єкта без оператора розширення
-      var torrentCopy = {};
-      for (var prop in torrent) {
-        if (torrent.hasOwnProperty(prop)) {
-          torrentCopy[prop] = torrent[prop];
+      try {
+        var torrent = e.Results[i];
+        var features = N(torrent, movieData, isSeries, episodesMultiplier);
+        
+        // Створюємо копію об'єкта без оператора розширення
+        var torrentCopy = {};
+        for (var prop in torrent) {
+          if (torrent.hasOwnProperty(prop)) {
+            torrentCopy[prop] = torrent[prop];
+          }
         }
+        torrentCopy.features = features;
+        
+        // Функція оцінювання
+        var scoreResult = (function(item) {
+          try {
+            var score = 100;
+            var features = item.features;
+            var seeds = item.Seeds || item.seeds || item.Seeders || item.seeders || 0;
+            
+            var trackerName = (item.Tracker || item.tracker || "").toLowerCase();
+            
+            var breakdown = {
+              base: 100,
+              resolution: 0,
+              hdr: 0,
+              bitrate: 0,
+              availability: 0,
+              audio: 0,
+              audio_track: 0,
+              tracker_bonus: 0
+            };
+            
+            if (trackerName.indexOf('toloka') !== -1) {
+              var tolokaBonus = 20;
+              breakdown.tracker_bonus = tolokaBonus;
+              score += tolokaBonus;
+            }
+            
+            var config = d;
+            var rules = config.scoring_rules;
+            var priority = config.parameter_priority || [
+              "resolution", "hdr", "bitrate", "audio_track", "availability", "audio_quality"
+            ];
+            
+            var resWeight = (rules.weights && rules.weights.resolution || 100) / 100;
+            var resBonus = (rules.resolution[features.resolution] || 0) * resWeight;
+            breakdown.resolution = resBonus;
+            score += resBonus;
+            
+            var hdrWeight = (rules.weights && rules.weights.hdr || 100) / 100;
+            var hdrBonus = (rules.hdr[features.hdr_type] || 0) * hdrWeight;
+            breakdown.hdr = hdrBonus;
+            score += hdrBonus;
+            
+            var bitrateBonus = 0;
+            var bitrateWeight = (rules.weights && rules.weights.bitrate || 100 * (rules.bitrate_bonus && rules.bitrate_bonus.weight || 0.55)) / 100;
+            
+            if (features.bitrate > 0) {
+              var thresholds = rules.bitrate_bonus.thresholds;
+              for (var thIdx = 0; thIdx < thresholds.length; thIdx++) {
+                var th = thresholds[thIdx];
+                if (features.bitrate >= th.min && features.bitrate < th.max) {
+                  bitrateBonus = th.bonus * bitrateWeight;
+                  break;
+                }
+              }
+            } else {
+              var bitratePos = priority.indexOf("bitrate");
+              if (bitratePos === 0) bitrateBonus = -50 * bitrateWeight;
+              else if (bitratePos === 1) bitrateBonus = -30 * bitrateWeight;
+              else bitrateBonus = -15 * bitrateWeight;
+            }
+            
+            breakdown.bitrate = bitrateBonus;
+            score += bitrateBonus;
+            
+            var audioWeight = (rules.weights && rules.weights.audio_track || 100) / 100;
+            var trackPriority = config.audio_track_priority || [];
+            var availableTracks = features.audio_tracks || [];
+            
+            var audioBonus = 0;
+            for (var tpIdx = 0; tpIdx < trackPriority.length; tpIdx++) {
+              var track = trackPriority[tpIdx];
+              var found = false;
+              for (var atIdx = 0; atIdx < availableTracks.length; atIdx++) {
+                if (O(availableTracks[atIdx], track)) {
+                  found = true;
+                  break;
+                }
+              }
+              if (found) {
+                audioBonus = 15 * (trackPriority.length - tpIdx) * audioWeight;
+                break;
+              }
+            }
+            
+            breakdown.audio_track = audioBonus;
+            score += audioBonus;
+            
+            var availBonus = 0;
+            var minSeeds = (config.preferences && config.preferences.min_seeds) || (rules.availability && rules.availability.min_seeds) || 1;
+            var availWeight = (rules.weights && rules.weights.availability || 100 * (rules.availability && rules.availability.weight || 0.7)) / 100;
+            
+            if (seeds < minSeeds) {
+              var availPos = priority.indexOf("availability");
+              if (availPos === 0) availBonus = -80 * availWeight;
+              else if (availPos === 1) availBonus = -40 * availWeight;
+              else availBonus = -20 * availWeight;
+            } else {
+              availBonus = 12 * Math.log10(seeds + 1) * availWeight;
+            }
+            
+            breakdown.availability = availBonus;
+            score += availBonus;
+            
+            if (priority[0] === "resolution" && 
+                (config.device && config.device.type || "tv_4k").indexOf("4k") !== -1) {
+              if (features.resolution === 2160 && features.bitrate > 0) {
+                breakdown.special = 80;
+                score += 80;
+              } else if (features.resolution === 2160) {
+                breakdown.special = 30;
+                score += 30;
+              } else if (features.resolution === 1080 && seeds > 50 && features.bitrate > 0) {
+                breakdown.special = 10;
+                score += 10;
+              }
+            }
+            
+            score = Math.max(0, Math.round(score));
+            
+            if (Lampa.Storage.get("easytorrent_show_scores", false)) {
+              var shortTitle = (item.Title || item.title || "").substring(0, 80);
+              console.log("[Score]", shortTitle, {
+                total: score,
+                breakdown: breakdown,
+                features: {
+                  resolution: features.resolution,
+                  hdr_type: features.hdr_type,
+                  bitrate: features.bitrate,
+                  audio_tracks: features.audio_tracks,
+                },
+                seeds: seeds,
+                paramPriority: priority.slice(0, 3),
+              });
+            }
+            
+            return { score: score, breakdown: breakdown };
+          } catch (e) {
+            console.log("[EasyTorrent] Помилка оцінювання:", e);
+            return { score: 0, breakdown: {} };
+          }
+        })(torrentCopy);
+        
+        scoredItems.push({
+          element: torrent,
+          originalIndex: i,
+          features: features,
+          score: scoreResult.score,
+          breakdown: scoreResult.breakdown,
+        });
+      } catch (e) {
+        console.log("[EasyTorrent] Помилка обробки торрента:", e);
       }
-      torrentCopy.features = features;
-      
-      // Функція оцінювання
-      var scoreResult = (function(item) {
-        var score = 100;
-        var features = item.features;
-        var seeds = item.Seeds || item.seeds || item.Seeders || item.seeders || 0;
-        
-        var trackerName = (item.Tracker || item.tracker || "").toLowerCase();
-        
-        var breakdown = {
-          base: 100,
-          resolution: 0,
-          hdr: 0,
-          bitrate: 0,
-          availability: 0,
-          audio: 0,
-          audio_track: 0,
-          tracker_bonus: 0
-        };
-        
-        if (trackerName.indexOf('toloka') !== -1) {
-          var tolokaBonus = 20;
-          breakdown.tracker_bonus = tolokaBonus;
-          score += tolokaBonus;
-        }
-        
-        var config = d;
-        var rules = config.scoring_rules;
-        var priority = config.parameter_priority || [
-          "resolution", "hdr", "bitrate", "audio_track", "availability", "audio_quality"
-        ];
-        
-        var resWeight = (rules.weights && rules.weights.resolution || 100) / 100;
-        var resBonus = (rules.resolution[features.resolution] || 0) * resWeight;
-        breakdown.resolution = resBonus;
-        score += resBonus;
-        
-        var hdrWeight = (rules.weights && rules.weights.hdr || 100) / 100;
-        var hdrBonus = (rules.hdr[features.hdr_type] || 0) * hdrWeight;
-        breakdown.hdr = hdrBonus;
-        score += hdrBonus;
-        
-        var bitrateBonus = 0;
-        var bitrateWeight = (rules.weights && rules.weights.bitrate || 100 * (rules.bitrate_bonus && rules.bitrate_bonus.weight || 0.55)) / 100;
-        
-        if (features.bitrate > 0) {
-          var thresholds = rules.bitrate_bonus.thresholds;
-          for (var thIdx = 0; thIdx < thresholds.length; thIdx++) {
-            var th = thresholds[thIdx];
-            if (features.bitrate >= th.min && features.bitrate < th.max) {
-              bitrateBonus = th.bonus * bitrateWeight;
-              break;
-            }
-          }
-        } else {
-          var bitratePos = priority.indexOf("bitrate");
-          if (bitratePos === 0) bitrateBonus = -50 * bitrateWeight;
-          else if (bitratePos === 1) bitrateBonus = -30 * bitrateWeight;
-          else bitrateBonus = -15 * bitrateWeight;
-        }
-        
-        breakdown.bitrate = bitrateBonus;
-        score += bitrateBonus;
-        
-        var audioWeight = (rules.weights && rules.weights.audio_track || 100) / 100;
-        var trackPriority = config.audio_track_priority || [];
-        var availableTracks = features.audio_tracks || [];
-        
-        var audioBonus = 0;
-        for (var tpIdx = 0; tpIdx < trackPriority.length; tpIdx++) {
-          var track = trackPriority[tpIdx];
-          var found = false;
-          for (var atIdx = 0; atIdx < availableTracks.length; atIdx++) {
-            if (O(availableTracks[atIdx], track)) {
-              found = true;
-              break;
-            }
-          }
-          if (found) {
-            audioBonus = 15 * (trackPriority.length - tpIdx) * audioWeight;
-            break;
-          }
-        }
-        
-        breakdown.audio_track = audioBonus;
-        score += audioBonus;
-        
-        var availBonus = 0;
-        var minSeeds = (config.preferences && config.preferences.min_seeds) || (rules.availability && rules.availability.min_seeds) || 1;
-        var availWeight = (rules.weights && rules.weights.availability || 100 * (rules.availability && rules.availability.weight || 0.7)) / 100;
-        
-        if (seeds < minSeeds) {
-          var availPos = priority.indexOf("availability");
-          if (availPos === 0) availBonus = -80 * availWeight;
-          else if (availPos === 1) availBonus = -40 * availWeight;
-          else availBonus = -20 * availWeight;
-        } else {
-          availBonus = 12 * Math.log10(seeds + 1) * availWeight;
-        }
-        
-        breakdown.availability = availBonus;
-        score += availBonus;
-        
-        if (priority[0] === "resolution" && 
-            (config.device && config.device.type || "tv_4k").indexOf("4k") !== -1) {
-          if (features.resolution === 2160 && features.bitrate > 0) {
-            breakdown.special = 80;
-            score += 80;
-          } else if (features.resolution === 2160) {
-            breakdown.special = 30;
-            score += 30;
-          } else if (features.resolution === 1080 && seeds > 50 && features.bitrate > 0) {
-            breakdown.special = 10;
-            score += 10;
-          }
-        }
-        
-        score = Math.max(0, Math.round(score));
-        
-        if (Lampa.Storage.get("easytorrent_show_scores", false)) {
-          var shortTitle = (item.Title || item.title || "").substring(0, 80);
-          console.log("[Score]", shortTitle, {
-            total: score,
-            breakdown: breakdown,
-            features: {
-              resolution: features.resolution,
-              hdr_type: features.hdr_type,
-              bitrate: features.bitrate,
-              audio_tracks: features.audio_tracks,
-            },
-            seeds: seeds,
-            paramPriority: priority.slice(0, 3),
-          });
-        }
-        
-        return { score: score, breakdown: breakdown };
-      })(torrentCopy);
-      
-      scoredItems.push({
-        element: torrent,
-        originalIndex: i,
-        features: features,
-        score: scoreResult.score,
-        breakdown: scoreResult.breakdown,
-      });
     }
     
     console.log("[EasyTorrent] Торренти оцінені");
@@ -1042,33 +1060,37 @@
     if (scoredItems.length > 0) {
       console.log("=== ВСІ ТОРРЕНТИ (відсортовані за score) ===");
       for (var si = 0; si < scoredItems.length; si++) {
-        var item = scoredItems[si];
-        var seeds = item.element.Seeds || item.element.seeds || item.element.Seeders || item.element.seeders || 0;
-        var breakdown = item.breakdown;
-        var title = item.element.Title.substring(0, 100);
-        
-        var parts = [];
-        if (breakdown.audio_track !== undefined && breakdown.audio_track !== 0) {
-          parts.push("A:" + (breakdown.audio_track > 0 ? "+" : "") + Math.round(breakdown.audio_track));
+        try {
+          var item = scoredItems[si];
+          var seeds = item.element.Seeds || item.element.seeds || item.element.Seeders || item.element.seeders || 0;
+          var breakdown = item.breakdown;
+          var title = item.element.Title ? item.element.Title.substring(0, 100) : "Без назви";
+          
+          var parts = [];
+          if (breakdown.audio_track !== undefined && breakdown.audio_track !== 0) {
+            parts.push("A:" + (breakdown.audio_track > 0 ? "+" : "") + Math.round(breakdown.audio_track));
+          }
+          if (breakdown.resolution !== undefined && breakdown.resolution !== 0) {
+            parts.push("R:" + (breakdown.resolution > 0 ? "+" : "") + Math.round(breakdown.resolution));
+          }
+          if (breakdown.bitrate !== undefined && breakdown.bitrate !== 0) {
+            parts.push("B:" + (breakdown.bitrate > 0 ? "+" : "") + Math.round(breakdown.bitrate));
+          }
+          if (breakdown.availability !== undefined && breakdown.availability !== 0) {
+            parts.push("S:" + (breakdown.availability > 0 ? "+" : "") + Math.round(breakdown.availability));
+          }
+          if (breakdown.hdr !== undefined && breakdown.hdr !== 0) {
+            parts.push("H:" + (breakdown.hdr > 0 ? "+" : "") + Math.round(breakdown.hdr));
+          }
+          if (breakdown.special !== undefined && breakdown.special !== 0) {
+            parts.push("SP:" + (breakdown.special > 0 ? "+" : "") + Math.round(breakdown.special));
+          }
+          
+          var breakdownStr = parts.length > 0 ? "[" + parts.join(" ") + "]" : "[no breakdown]";
+          console.log((si + 1) + ". [" + item.score + "] " + (item.features.resolution || "?") + "p " + item.features.hdr_type + " " + item.features.bitrate + "mb Seeds:" + seeds + " " + breakdownStr + " | " + title);
+        } catch (e) {
+          console.log("[EasyTorrent] Помилка виведення торрента:", e);
         }
-        if (breakdown.resolution !== undefined && breakdown.resolution !== 0) {
-          parts.push("R:" + (breakdown.resolution > 0 ? "+" : "") + Math.round(breakdown.resolution));
-        }
-        if (breakdown.bitrate !== undefined && breakdown.bitrate !== 0) {
-          parts.push("B:" + (breakdown.bitrate > 0 ? "+" : "") + Math.round(breakdown.bitrate));
-        }
-        if (breakdown.availability !== undefined && breakdown.availability !== 0) {
-          parts.push("S:" + (breakdown.availability > 0 ? "+" : "") + Math.round(breakdown.availability));
-        }
-        if (breakdown.hdr !== undefined && breakdown.hdr !== 0) {
-          parts.push("H:" + (breakdown.hdr > 0 ? "+" : "") + Math.round(breakdown.hdr));
-        }
-        if (breakdown.special !== undefined && breakdown.special !== 0) {
-          parts.push("SP:" + (breakdown.special > 0 ? "+" : "") + Math.round(breakdown.special));
-        }
-        
-        var breakdownStr = parts.length > 0 ? "[" + parts.join(" ") + "]" : "[no breakdown]";
-        console.log((si + 1) + ". [" + item.score + "] " + (item.features.resolution || "?") + "p " + item.features.hdr_type + " " + item.features.bitrate + "mb Seeds:" + seeds + " " + breakdownStr + " | " + title);
       }
       console.log("=== ВСЬОГО: " + scoredItems.length + " торрентів ===");
     }
@@ -1098,10 +1120,14 @@
     }
     
     for (var mi = 0; mi < scoredItems.length; mi++) {
-      var scored = scoredItems[mi];
-      scored.element._recommendScore = scored.score;
-      scored.element._recommendBreakdown = scored.breakdown;
-      scored.element._recommendFeatures = scored.features;
+      try {
+        var scored = scoredItems[mi];
+        scored.element._recommendScore = scored.score;
+        scored.element._recommendBreakdown = scored.breakdown;
+        scored.element._recommendFeatures = scored.features;
+      } catch (e) {
+        // Ігноруємо помилки
+      }
     }
     
     console.log("[EasyTorrent] Всі торренти промарковані балами");
@@ -1115,100 +1141,104 @@
     var item = e.item;
     var showScores = Lampa.Storage.get("easytorrent_show_scores", true);
     
-    if (element._recommendRank === undefined) return;
+    if (!element || element._recommendRank === undefined) return;
     
-    item.find(".torrent-recommend-badge").remove();
-    item.find(".torrent-recommend-panel").remove();
-    
-    var rank = element._recommendRank;
-    var score = element._recommendScore;
-    var breakdown = element._recommendBreakdown || {};
-    var recCount = d.preferences.recommendation_count || 3;
-    
-    if (!(element._recommendIsIdeal || rank < recCount || showScores)) return;
-    
-    var features = element._recommendFeatures || {};
-    var metaParts = [];
-    if (features.resolution) metaParts.push(features.resolution + "p");
-    if (features.hdr_type) {
-      var hdrLabel = {
-        dolby_vision: "DV",
-        hdr10plus: "HDR10+",
-        hdr10: "HDR10",
-        sdr: "SDR",
-      }[features.hdr_type] || String(features.hdr_type).toUpperCase();
-      metaParts.push(hdrLabel);
-    }
-    if (features.bitrate) metaParts.push(features.bitrate + " Mbps");
-    
-    var panelType = "neutral";
-    var panelLabel = "";
-    
-    if (element._recommendIsIdeal) {
-      panelType = "ideal";
-      panelLabel = p("ideal_badge");
-    } else if (rank < recCount) {
-      panelType = "recommended";
-      panelLabel = p("recommended_badge") + " • #" + (rank + 1);
-    } else {
-      panelType = "neutral";
-      panelLabel = "Оцінка";
-    }
-    
-    var panel = $('<div class="torrent-recommend-panel torrent-recommend-panel--' + panelType + '"></div>');
-    var leftDiv = $('<div class="torrent-recommend-panel__left"></div>');
-    
-    leftDiv.append('<div class="torrent-recommend-panel__label">' + panelLabel + '</div>');
-    if (metaParts.length) {
-      leftDiv.append('<div class="torrent-recommend-panel__meta">' + metaParts.join(" • ") + '</div>');
-    }
-    
-    var rightDiv = $('<div class="torrent-recommend-panel__right"></div>');
-    if (showScores && score !== undefined) {
-      rightDiv.append('<div class="torrent-recommend-panel__score">' + score + '</div>');
-    }
-    
-    panel.append(leftDiv);
-    
-    if (showScores) {
-      var chips = (function(breakdown) {
-        if (!breakdown || Object.keys(breakdown).length === 0) return "";
-        var chipsDiv = $('<div class="torrent-recommend-panel__chips"></div>');
-        
-        var chipItems = [
-          { key: "audio_track", name: "Озвучка" },
-          { key: "resolution", name: "Розд." },
-          { key: "bitrate", name: "Бітрейт" },
-          { key: "availability", name: "Сіди" },
-          { key: "hdr", name: "HDR" },
-          { key: "special", name: "Бонус" },
-        ];
-        
-        for (var i = 0; i < chipItems.length; i++) {
-          var chip = chipItems[i];
-          if (breakdown[chip.key] === undefined || breakdown[chip.key] === 0) continue;
-          
-          var val = Math.round(breakdown[chip.key]);
-          var sign = val > 0 ? "+" : "";
-          var chipClass = val >= 0 ? "tr-chip--pos" : "tr-chip--neg";
-          
-          var chipHtml = '<div class="tr-chip ' + chipClass + '">' +
-            '<span class="tr-chip__name">' + chip.name + '</span>' +
-            '<span class="tr-chip__val">' + sign + val + '</span>' +
-            '</div>';
-          chipsDiv.append(chipHtml);
-        }
-        
-        return chipsDiv;
-      })(breakdown);
+    try {
+      item.find(".torrent-recommend-badge").remove();
+      item.find(".torrent-recommend-panel").remove();
       
-      if (chips && chips.length) {
-        panel.append(chips);
+      var rank = element._recommendRank;
+      var score = element._recommendScore;
+      var breakdown = element._recommendBreakdown || {};
+      var recCount = d.preferences.recommendation_count || 3;
+      
+      if (!(element._recommendIsIdeal || rank < recCount || showScores)) return;
+      
+      var features = element._recommendFeatures || {};
+      var metaParts = [];
+      if (features.resolution) metaParts.push(features.resolution + "p");
+      if (features.hdr_type) {
+        var hdrLabel = {
+          dolby_vision: "DV",
+          hdr10plus: "HDR10+",
+          hdr10: "HDR10",
+          sdr: "SDR",
+        }[features.hdr_type] || String(features.hdr_type).toUpperCase();
+        metaParts.push(hdrLabel);
       }
+      if (features.bitrate) metaParts.push(features.bitrate + " Mbps");
+      
+      var panelType = "neutral";
+      var panelLabel = "";
+      
+      if (element._recommendIsIdeal) {
+        panelType = "ideal";
+        panelLabel = p("ideal_badge");
+      } else if (rank < recCount) {
+        panelType = "recommended";
+        panelLabel = p("recommended_badge") + " • #" + (rank + 1);
+      } else {
+        panelType = "neutral";
+        panelLabel = "Оцінка";
+      }
+      
+      var panel = $('<div class="torrent-recommend-panel torrent-recommend-panel--' + panelType + '"></div>');
+      var leftDiv = $('<div class="torrent-recommend-panel__left"></div>');
+      
+      leftDiv.append('<div class="torrent-recommend-panel__label">' + panelLabel + '</div>');
+      if (metaParts.length) {
+        leftDiv.append('<div class="torrent-recommend-panel__meta">' + metaParts.join(" • ") + '</div>');
+      }
+      
+      var rightDiv = $('<div class="torrent-recommend-panel__right"></div>');
+      if (showScores && score !== undefined) {
+        rightDiv.append('<div class="torrent-recommend-panel__score">' + score + '</div>');
+      }
+      
+      panel.append(leftDiv);
+      
+      if (showScores) {
+        var chips = (function(breakdown) {
+          if (!breakdown || Object.keys(breakdown).length === 0) return "";
+          var chipsDiv = $('<div class="torrent-recommend-panel__chips"></div>');
+          
+          var chipItems = [
+            { key: "audio_track", name: "Озвучка" },
+            { key: "resolution", name: "Розд." },
+            { key: "bitrate", name: "Бітрейт" },
+            { key: "availability", name: "Сіди" },
+            { key: "hdr", name: "HDR" },
+            { key: "special", name: "Бонус" },
+          ];
+          
+          for (var i = 0; i < chipItems.length; i++) {
+            var chip = chipItems[i];
+            if (breakdown[chip.key] === undefined || breakdown[chip.key] === 0) continue;
+            
+            var val = Math.round(breakdown[chip.key]);
+            var sign = val > 0 ? "+" : "";
+            var chipClass = val >= 0 ? "tr-chip--pos" : "tr-chip--neg";
+            
+            var chipHtml = '<div class="tr-chip ' + chipClass + '">' +
+              '<span class="tr-chip__name">' + chip.name + '</span>' +
+              '<span class="tr-chip__val">' + sign + val + '</span>' +
+              '</div>';
+            chipsDiv.append(chipHtml);
+          }
+          
+          return chipsDiv;
+        })(breakdown);
+        
+        if (chips && chips.length) {
+          panel.append(chips);
+        }
+      }
+      
+      panel.append(rightDiv);
+      item.append(panel);
+    } catch (e) {
+      console.log("[EasyTorrent] Помилка рендерингу:", e);
     }
-    
-    panel.append(rightDiv);
-    item.append(panel);
   }
 
   function V() {
@@ -1441,75 +1471,84 @@
         this,
         params,
         function(response) {
-          if (response && response.Results && Array.isArray(response.Results)) {
-            if (typeof R === "function") {
-              R(response, params);
+          try {
+            if (response && response.Results && Array.isArray(response.Results)) {
+              if (typeof R === "function") {
+                R(response, params);
+              }
+              
+              var results = response.Results;
+              
+              var filterAndSort = function(arr) {
+                if (!Array.isArray(arr) || arr.length === 0) return arr;
+                
+                try {
+                  var count = d.preferences.recommendation_count || 3;
+                  var minSeeds = d.preferences.min_seeds || 0;
+                  
+                  var filtered = [];
+                  for (var i = 0; i < arr.length; i++) {
+                    var item = arr[i];
+                    var seeds = item.Seeds || item.seeds || item.Seeders || item.seeders || 0;
+                    if ((item._recommendScore || 0) > 0 && seeds >= minSeeds) {
+                      filtered.push(item);
+                    }
+                  }
+                  
+                  filtered.sort(function(e1, e2) {
+                    return (e2._recommendScore || 0) - (e1._recommendScore || 0);
+                  });
+                  
+                  var top = filtered.slice(0, count);
+                  
+                  if (top.length === 0) {
+                    for (var j = 0; j < arr.length; j++) {
+                      arr[j]._recommendRank = 999;
+                    }
+                    return arr;
+                  }
+                  
+                  var others = [];
+                  for (var k = 0; k < arr.length; k++) {
+                    if (top.indexOf(arr[k]) === -1) {
+                      others.push(arr[k]);
+                    }
+                  }
+                  
+                  var sorted = top.concat(others);
+                  
+                  for (var m = 0; m < sorted.length; m++) {
+                    sorted[m]._recommendRank = m;
+                    sorted[m]._recommendIsIdeal = (m === 0 && (sorted[m]._recommendScore || 0) >= 150);
+                  }
+                  
+                  for (var n = 0; n < others.length; n++) {
+                    others[n]._recommendRank = 999;
+                  }
+                  
+                  return sorted;
+                } catch (e) {
+                  console.log("[EasyTorrent] Помилка фільтрації:", e);
+                  return arr;
+                }
+              };
+              
+              results = filterAndSort(results);
+              
+              try {
+                Object.defineProperty(response, "Results", {
+                  get: function() { return results; },
+                  set: function(newResults) { results = filterAndSort(newResults); },
+                  configurable: true,
+                  enumerable: true,
+                });
+                console.log("[EasyTorrent] Контекстна фільтрація активована");
+              } catch (e) {
+                console.log("[EasyTorrent] Помилка при фіксації топів:", e);
+              }
             }
-            
-            var results = response.Results;
-            
-            var filterAndSort = function(arr) {
-              if (!Array.isArray(arr) || arr.length === 0) return arr;
-              
-              var count = d.preferences.recommendation_count || 3;
-              var minSeeds = d.preferences.min_seeds || 0;
-              
-              var filtered = [];
-              for (var i = 0; i < arr.length; i++) {
-                var item = arr[i];
-                var seeds = item.Seeds || item.seeds || item.Seeders || item.seeders || 0;
-                if ((item._recommendScore || 0) > 0 && seeds >= minSeeds) {
-                  filtered.push(item);
-                }
-              }
-              
-              filtered.sort(function(e1, e2) {
-                return (e2._recommendScore || 0) - (e1._recommendScore || 0);
-              });
-              
-              var top = filtered.slice(0, count);
-              
-              if (top.length === 0) {
-                for (var j = 0; j < arr.length; j++) {
-                  arr[j]._recommendRank = 999;
-                }
-                return arr;
-              }
-              
-              var others = [];
-              for (var k = 0; k < arr.length; k++) {
-                if (top.indexOf(arr[k]) === -1) {
-                  others.push(arr[k]);
-                }
-              }
-              
-              var sorted = top.concat(others);
-              
-              for (var m = 0; m < sorted.length; m++) {
-                sorted[m]._recommendRank = m;
-                sorted[m]._recommendIsIdeal = (m === 0 && (sorted[m]._recommendScore || 0) >= 150);
-              }
-              
-              for (var n = 0; n < others.length; n++) {
-                others[n]._recommendRank = 999;
-              }
-              
-              return sorted;
-            };
-            
-            results = filterAndSort(results);
-            
-            try {
-              Object.defineProperty(response, "Results", {
-                get: function() { return results; },
-                set: function(newResults) { results = filterAndSort(newResults); },
-                configurable: true,
-                enumerable: true,
-              });
-              console.log("[EasyTorrent] Контекстна фільтрація активована");
-            } catch (e) {
-              console.log("[EasyTorrent] Помилка при фіксації топів:", e);
-            }
+          } catch (e) {
+            console.log("[EasyTorrent] Помилка в Parser.get:", e);
           }
           
           if (typeof callback === "function") {
@@ -1557,7 +1596,11 @@
     
     Lampa.Listener.follow("torrent", function(e) {
       if ("render" === e.type && typeof C === "function") {
-        C(e);
+        try {
+          C(e);
+        } catch (err) {
+          console.log("[EasyTorrent] Помилка в обробнику torrent:", err);
+        }
       }
     });
     
