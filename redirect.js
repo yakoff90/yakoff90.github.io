@@ -73,8 +73,9 @@
                 type: 'select',
                 values: {
                     '-': Lampa.Lang.translate('location_redirect_current'),
-                    'lampaua.mooo.com': 'lampaua.mooo.com', // Мій сервер
-                    'lampa.mx': 'lampa.mx'                  // Офіційний
+                    'lampaua.mooo.com': 'lampaua.mooo.com',
+                    'golampaua.mooo.com': 'golampaua.mooo.com', // Новий сервер
+                    'lampa.mx': 'lampa.mx'
                 },
                 default: '-'
             },
