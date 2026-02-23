@@ -9,7 +9,7 @@
 
     // === НАСТРОЙКИ ПЛАГИНА ===
     var CONFIG = {
-        tmdbApiKey: '27489d4d8c9dbd0f2b3e89f68821de34',
+        tmdbApiKey: '96b971de61c81e42187407e7da28d97f',
         cacheTime: 12 * 60 * 60 * 1000,
         enabled: true,
         language: 'uk',
