@@ -3,6 +3,7 @@
 //Працює при увімкненому парсері
 //Логіка UA — як у UA-Finder+Mod: відрізаємо SUB та рахуємо ukr-доріжки
 //Показуємо ЯКІСТЬ/АУДІО тільки для релізів з UA-доріжкою, іконка UA — в кінці
+//Оновлено: використовує стиль відображення з torqUAcardify.js
 
 (function () {
   'use strict';
@@ -21,16 +22,17 @@
     'FULL HD': pluginPath + 'FULL%20HD.svg',
     'HD': pluginPath + 'HD.svg',
     'HDR': pluginPath + 'HDR.svg',
-    'Dolby Vision': pluginPath + 'DolbyV.png',
+    'Dolby Vision': 'https://upload.wikimedia.org/wikipedia/commons/0/03/Dolby_Vision_2021_logo.svg',
     '7.1': pluginPath + '7.1.svg',
     '5.1': pluginPath + '5.1.svg',
     '4.0': pluginPath + '4.0.svg',
     '2.0': pluginPath + '2.0.svg',
-    'UKR': pluginPath + 'UA.png'
+    'UKR': 'https://yarikrazor-star.github.io/lmp/ua.svg'
   };
 
   // bump key to avoid broken user settings cache after changes
-  var SETTINGS_KEY = 'svgq_user_settings_v6';
+  var SETTINGS_KEY = 'svgq_user_settings_v7';
+  var DISPLAY_STYLE_KEY = 'svgq_display_style';
 
   // SVGQ cache
   var CACHE_KEY = 'svgq_parser_cache_v2';
@@ -40,7 +42,8 @@
   var st = {
     placement: 'rate',        // "rate" | "under_rate" | "after_details"
     force_new_line: false,    // перенос у rate-line (актуально лише для "rate")
-    badge_size: 2.0           // em
+    badge_size: 2.0,          // em
+    display_style: 'modern'   // "classic" або "modern" (як у torq)
   };
 
   var memCache = null;
@@ -81,6 +84,7 @@
       : 'rate';
 
     st.force_new_line = (typeof s.force_new_line === 'boolean') ? s.force_new_line : false;
+    st.display_style = (s.display_style === 'classic' || s.display_style === 'modern') ? s.display_style : 'modern';
 
     if (typeof s.badge_size !== 'undefined') {
       var n = parseFloat(String(s.badge_size).replace(',', '.'));
@@ -337,16 +341,56 @@
   }
 
   // =====================================================================
-  // Rendering
+  // Rendering - Оновлено в стилі torqUAcardify.js
   // =====================================================================
 
   function createBadgeImg(type, index) {
     var iconPath = svgIcons[type];
     if (!iconPath) return '';
     var delay = (index * 0.08) + 's';
+    
+    // Для Dolby Vision додаємо спеціальний клас
+    var extraClass = (type === 'Dolby Vision') ? 'qb-dv' : (type === 'HDR') ? 'qb-hdr' : '';
+    var typeClass = type.toLowerCase().replace(/\s+/g, '-');
+    
+    return (
+      '<div class="quality-badge ' + extraClass + ' qb-type-' + typeClass + '" style="animation-delay:' + delay + '">' +
+        '<img src="' + iconPath + '" class="qb-prefix-icon" draggable="false" oncontextmenu="return false;">' +
+        (type !== 'Dolby Vision' && type !== 'HDR' && type !== 'UKR' ? '<span class="qb-text">' + type + '</span>' : '') +
+      '</div>'
+    );
+  }
+
+  // Альтернативний рендеринг в стилі torq (з текстом всередині)
+  function createTorqStyleBadge(type, value, index) {
+    var iconPath = svgIcons[type];
+    if (!iconPath) return '';
+    var delay = (index * 0.08) + 's';
+    
+    // Для UKR використовуємо спеціальний текстовий значок як в torq
+    if (type === 'UKR') {
+      return (
+        '<div class="quality-badge" style="animation-delay:' + delay + '">' +
+          '<span class="qb-text-icon">UA</span>' +
+        '</div>'
+      );
+    }
+    
+    // Для Dolby Vision та HDR без тексту
+    if (type === 'Dolby Vision' || type === 'HDR') {
+      var filterStyle = (type === 'Dolby Vision') ? 'filter: brightness(0) invert(1);' : 'filter: grayscale(1);';
+      return (
+        '<div class="quality-badge" style="animation-delay:' + delay + '">' +
+          '<img src="' + iconPath + '" class="qb-prefix-icon" style="' + filterStyle + '" draggable="false" oncontextmenu="return false;">' +
+        '</div>'
+      );
+    }
+    
+    // Для інших - іконка + текст
     return (
       '<div class="quality-badge" style="animation-delay:' + delay + '">' +
-        '<img src="' + iconPath + '" draggable="false" oncontextmenu="return false;">' +
+        '<img src="' + iconPath + '" class="qb-prefix-icon" draggable="false" oncontextmenu="return false;">' +
+        '<span class="qb-text">' + value + '</span>' +
       '</div>'
     );
   }
@@ -356,14 +400,42 @@
 
     var badges = [];
 
-    // ✅ якість/аудіо — тільки серед релізів з UA
-    if (best.resolution) badges.push(createBadgeImg(best.resolution, badges.length));
-    if (best.hdr) badges.push(createBadgeImg('HDR', badges.length));
-    if (best.dolbyVision) badges.push(createBadgeImg('Dolby Vision', badges.length));
-    if (best.audio) badges.push(createBadgeImg(best.audio, badges.length));
-
-    // ✅ UA іконка в кінці
-    badges.push(createBadgeImg('UKR', badges.length));
+    if (st.display_style === 'modern') {
+      // Сучасний стиль (як у torqUAcardify.js)
+      
+      // Якість
+      if (best.resolution) {
+        badges.push(createTorqStyleBadge(best.resolution, best.resolution, badges.length));
+      }
+      
+      // HDR/DV
+      if (best.hdr) {
+        badges.push(createTorqStyleBadge('HDR', '', badges.length));
+      }
+      if (best.dolbyVision) {
+        badges.push(createTorqStyleBadge('Dolby Vision', '', badges.length));
+      }
+      
+      // Аудіо
+      if (best.audio) {
+        badges.push(createTorqStyleBadge(best.audio, best.audio, badges.length));
+      }
+      
+      // UKR в кінці (текстовий значок)
+      badges.push(createTorqStyleBadge('UKR', '', badges.length));
+      
+    } else {
+      // Класичний стиль (оригінальний SVG)
+      
+      // якість/аудіо — тільки серед релізів з UA
+      if (best.resolution) badges.push(createBadgeImg(best.resolution, badges.length));
+      if (best.hdr) badges.push(createBadgeImg('HDR', badges.length));
+      if (best.dolbyVision) badges.push(createBadgeImg('Dolby Vision', badges.length));
+      if (best.audio) badges.push(createBadgeImg(best.audio, badges.length));
+      
+      // UA іконка в кінці
+      badges.push(createBadgeImg('UKR', badges.length));
+    }
 
     return badges.join('');
   }
@@ -379,8 +451,6 @@
         st.placement === 'after_details' ? 'svgq-place-after' :
         'svgq-place-rate'
       );
-
-
 
     var rateLine = $('.full-start-new__rate-line, .full-start__rate-line', renderRoot).first();
     var details = $('.full-start-new__details, .full-start__details', renderRoot).first();
@@ -441,7 +511,7 @@
   }
 
   // =====================================================================
-  // Styles
+  // Styles - Оновлено з додаванням стилів з torqUAcardify.js
   // =====================================================================
 
   var style = '<style id="svgq_styles">\
@@ -563,6 +633,60 @@
       filter:drop-shadow(0 1px 2px rgba(0,0,0,0.85));\
     }\
     \
+    /* ========== СТИЛІ З torqUAcardify.js ========== */\
+    .qb-unified-block { \
+        display: flex; \
+        flex-wrap: nowrap; \
+        align-items: center; \
+        gap: 0.45em; \
+    }\
+    .quality-badge { \
+      display: inline-flex; \
+      align-items: center; \
+      gap: 0.35em; \
+      color: #fff; \
+      white-space: nowrap; \
+      flex-shrink: 0; \
+      height: var(--svgq-badge-size); \
+    }\
+    .qb-text { \
+      font-weight: bold; \
+      line-height: 1.1em; \
+      height: 1.1em; \
+      display: flex; \
+      align-items: center; \
+      font-size: 0.85em; \
+    }\
+    .qb-prefix-icon { \
+        height: var(--svgq-badge-size) !important; \
+        width: auto; \
+        display: block; \
+        object-fit: contain; \
+        margin: 0; \
+    }\
+    .qb-text-icon { \
+        height: var(--svgq-badge-size) !important; \
+        line-height: var(--svgq-badge-size) !important; \
+        font-size: 0.85em !important; \
+        font-weight: 900; \
+        display: inline-flex; \
+        align-items: center; \
+        justify-content: center; \
+        background: #fff; \
+        color: #000; \
+        padding: 0 0.25em; \
+        border-radius: 2px; \
+        box-sizing: border-box; \
+        vertical-align: top; \
+    }\
+    .qb-dv img, .qb-type-dolby-vision img { \
+        filter: brightness(0) invert(1) !important; \
+    }\
+    .qb-hdr img, .qb-type-hdr img { \
+        filter: grayscale(1) !important; \
+    }\
+    .qb-not-found { opacity: 0.6; }\
+    \
     @media (max-width:768px){\
       .quality-badges-container{\
         column-gap:0.26em;\
@@ -593,7 +717,7 @@
   }
 
   // =====================================================================
-  // Settings UI (NO crash) + Clear cache
+  // Settings UI (NO crash) + Clear cache + Display style option
   // =====================================================================
 
   function registerSettingsUIOnce() {
@@ -633,6 +757,31 @@
       },
       field: { name: 'Розміщення міток' },
       onChange: function (v) { st.placement = String(v); saveSettings(); }
+    });
+
+    // Стиль відображення (НОВИЙ ПУНКТ)
+    Lampa.SettingsApi.addParam({
+      component: 'svgq',
+      param: {
+        name: 'svgq_display_style',
+        type: 'select',
+        values: {
+          modern: 'Сучасний (як у torqUAcardify)',
+          classic: 'Класичний (оригінальний SVG)'
+        },
+        default: st.display_style
+      },
+      field: { name: 'Стиль відображення', description: 'Виберіть стиль значків' },
+      onChange: function (v) { 
+        st.display_style = String(v); 
+        saveSettings(); 
+        // Перезавантажити поточну картку для застосування стилю
+        setTimeout(function() {
+          if (Lampa && Lampa.Activity && Lampa.Activity.current()) {
+            Lampa.Activity.current().reload();
+          }
+        }, 100);
+      }
     });
 
     // Переносити мітки на новий рядок (актуально для "в рядку рейтингів")
@@ -710,6 +859,6 @@
     }
   });
 
-  console.log('[SVGQ] loaded');
+  console.log('[SVGQ] loaded with torq style');
 
 })();
