@@ -76,55 +76,54 @@
         safeFetch(url).then(function (r) { return r.json(); }).then(resolve).catch(reject);
     }
 
-    // --- СТИЛІ (ЯК У SEASONSINFO: ЗЕЛЕНИЙ ТА ЧЕРВОНИЙ) ---
+    // --- СТИЛІ (РОЗМІР ЯК У SEASONS, КОЛЬОРИ ЯК У SEASONSINFO) ---
     var style = document.createElement('style');
     style.textContent =
         "/* Стиль для ЗАВЕРШЕНИХ сезонів (зелена мітка) */\n" +
         ".card--season-complete {\n" +
         "    position: absolute;\n" +
         "    left: 0;\n" +
-        "    margin-left: -0.65em;\n" +
-        "    bottom: 0.50em;\n" +
-        "    background-color: rgba(61, 161, 141, 0.9);\n" +
+        "    margin-left: -0.4em;\n" +  /* ← ВІДСТУП ЯК У SEASONS */
         "    z-index: 12;\n" +
         "    width: fit-content;\n" +
         "    max-width: calc(100% - 1em);\n" +
-        "    border-radius: 0.3em 0.3em 0.3em 0.3em;\n" +
+        "    background-color: rgba(61, 161, 141, 0.9);\n" +  /* ← КОЛІР З SEASONSINFO */
+        "    border-radius: 0.5em 0.5em 0.5em 0;\n" +  /* ← ФОРМА ЯК У SEASONS */
         "    overflow: hidden;\n" +
         "    opacity: 0;\n" +
-        "    transition: opacity 0.22s ease-in-out;\n" +
+        "    transition: opacity 0.22s, bottom 0.3s;\n" +
+        "    pointer-events: none;\n" +
         "}\n" +
         "\n" +
         "/* Стиль для НЕЗАВЕРШЕНИХ сезонів (червона мітка) */\n" +
         ".card--season-progress {\n" +
         "    position: absolute;\n" +
         "    left: 0;\n" +
-        "    margin-left: -0.65em;\n" +
-        "    bottom: 0.50em;\n" +
-        "    background-color: rgba(255, 66, 66, 1);\n" +
+        "    margin-left: -0.4em;\n" +  /* ← ВІДСТУП ЯК У SEASONS */
         "    z-index: 12;\n" +
         "    width: fit-content;\n" +
         "    max-width: calc(100% - 1em);\n" +
-        "    border-radius: 0.3em 0.3em 0.3em 0.3em;\n" +
+        "    background-color: rgba(255, 66, 66, 1);\n" +  /* ← КОЛІР З SEASONSINFO */
+        "    border-radius: 0.5em 0.5em 0.5em 0;\n" +  /* ← ФОРМА ЯК У SEASONS */
         "    overflow: hidden;\n" +
         "    opacity: 0;\n" +
-        "    transition: opacity 0.22s ease-in-out;\n" +
+        "    transition: opacity 0.22s, bottom 0.3s;\n" +
+        "    pointer-events: none;\n" +
         "}\n" +
         "\n" +
         "/* Спільні стилі тексту для обох типів міток */\n" +
         ".card--season-complete div,\n" +
         ".card--season-progress div {\n" +
         "    text-transform: uppercase;\n" +
-        "    font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif;\n" +
+        "    font-family: Roboto, Arial, sans-serif;\n" +  /* ← ШРИФТ ЯК У SEASONS */
         "    font-weight: 700;\n" +
-        "    font-size: 1.0em;\n" +
-        "    padding: 0.39em 0.39em;\n" +
+        "    font-size: 0.9em;\n" +  /* ← РОЗМІР ШРИФТУ ЯК У SEASONS */
+        "    padding: 0.25em 0.5em 0.25em 0.7em;\n" +  /* ← ВІДСТУПИ ЯК У SEASONS */
         "    white-space: nowrap;\n" +
         "    display: flex;\n" +
         "    align-items: center;\n" +
-        "    gap: 4px;\n" +
-        "    text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3);\n" +
-        "    color: #ffffff;\n" +
+        "    text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.8);\n" +
+        "    color: #ffffff;\n" +  /* ← БІЛИЙ ТЕКСТ */
         "}\n" +
         "\n" +
         "/* Клас .show робить мітку видимою */\n" +
@@ -137,8 +136,7 @@
         "@media (max-width: 768px) {\n" +
         "    .card--season-complete div,\n" +
         "    .card--season-progress div {\n" +
-        "        font-size: 0.95em;\n" +
-        "        padding: 0.35em 0.40em;\n" +
+        "        font-size: 0.75em;\n" +  /* ← РОЗМІР НА МОБІЛЬНИХ ЯК У SEASONS */
         "    }\n" +
         "}";
     document.head.appendChild(style);
@@ -201,7 +199,7 @@
         }
 
         var badge = document.createElement('div');
-        badge.className = 'card--season-progress'; // Тимчасово використовуємо progress
+        badge.className = 'card--season-progress';
         badge.innerHTML = '<div>...</div>';
         view.appendChild(badge);
         cardEl.setAttribute('data-season-processed', 'loading');
@@ -218,7 +216,6 @@
                 var isComplete = last.episode_number >= currentSeason.episode_count;
                 var text = isComplete ? "S" + last.season_number : "S" + last.season_number + " " + last.episode_number + "/" + currentSeason.episode_count;
                 
-                // Змінюємо клас в залежності від статусу
                 badge.className = isComplete ? 'card--season-complete' : 'card--season-progress';
                 badge.innerHTML = '<div>' + text + '</div>';
                 
