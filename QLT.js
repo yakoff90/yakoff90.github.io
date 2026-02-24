@@ -3,6 +3,7 @@
 //Працює при увімкненому парсері
 //Логіка UA — як у UA-Finder+Mod: відрізаємо SUB та рахуємо ukr-доріжки
 //Показуємо ЯКІСТЬ/АУДІО тільки для релізів з UA-доріжкою, іконка UA — в кінці
+//MODIFIED: Використовує той самий контейнер, що й torqUAcardify
 
 (function () {
   'use strict';
@@ -368,46 +369,42 @@
     return badges.join('');
   }
 
+  // MODIFIED: Використовуємо той самий контейнер, що й torqUAcardify
   function ensureContainer(renderRoot) {
-    $('.quality-badges-container, .quality-badges-under-rate, .quality-badges-after-details', renderRoot).remove();
-
-    // маркер режиму розміщення (для умовного CSS)
-    renderRoot
-      .removeClass('svgq-place-rate svgq-place-under svgq-place-after')
-      .addClass(
-        st.placement === 'under_rate' ? 'svgq-place-under' :
-        st.placement === 'after_details' ? 'svgq-place-after' :
-        'svgq-place-rate'
-      );
-
-
-
-    var rateLine = $('.full-start-new__rate-line, .full-start__rate-line', renderRoot).first();
-    var details = $('.full-start-new__details, .full-start__details', renderRoot).first();
-
-    if (st.placement === 'rate') {
-      if (!rateLine.length) return null;
-      var cls = 'quality-badges-container' + (st.force_new_line ? ' svgq-force-new-row' : '');
-      var el = $('<div class="' + cls + '"></div>');
-      rateLine.append(el);
-      return el;
+    // Видаляємо тільки старі контейнери QLT, але залишаємо основний quality-badges-container від torqUAcardify
+    $('.quality-badges-under-rate, .quality-badges-after-details', renderRoot).remove();
+    
+    // Перевіряємо, чи вже існує контейнер від torqUAcardify
+    var container = $('.quality-badges-container', renderRoot).first();
+    
+    // Якщо контейнера немає, створюємо його в тому ж місці, де створює torqUAcardify
+    if (!container.length) {
+      var isPortrait = window.innerHeight > window.innerWidth;
+      
+      if (isPortrait) {
+        var title = $('.full-start-new__title, .full-start__title', renderRoot);
+        if (title.length) {
+          container = $('<div class="quality-badges-container"></div>');
+          title.after(container);
+        }
+      }
+      
+      if (!container.length) {
+        var rateLine = $('.full-start-new__rate-line, .full-start__rate-line', renderRoot);
+        if (rateLine.length) {
+          container = $('<div class="quality-badges-container"></div>');
+          rateLine.append(container);
+        } else {
+          var info = $('.full-start__info', renderRoot);
+          if (info.length) {
+            container = $('<div class="quality-badges-container"></div>');
+            info.append(container);
+          }
+        }
+      }
     }
-
-    if (st.placement === 'under_rate') {
-      if (!rateLine.length) return null;
-      var elU = $('<div class="quality-badges-under-rate"></div>');
-      rateLine.after(elU);
-      return elU;
-    }
-
-    if (st.placement === 'after_details') {
-      if (!details.length) return null;
-      var elA = $('<div class="quality-badges-after-details"></div>');
-      details.after(elA);
-      return elA;
-    }
-
-    return null;
+    
+    return container;
   }
 
   function applyBadgesToFullCard(movie, renderRoot) {
@@ -416,15 +413,17 @@
     if (!Lampa || !Lampa.Storage || !Lampa.Storage.field || !Lampa.Storage.field('parser_use')) return;
 
     var container = ensureContainer(renderRoot);
-    if (!container) return;
+    if (!container || !container.length) return;
 
     var cached = cacheGet(movie);
     if (cached && typeof cached === 'string') {
-      container.html(cached);
+      // Очищаємо контейнер перед додаванням нових міток
+      container.empty();
+      container.append(cached);
       return;
     }
 
-    container.html('');
+    container.empty();
 
     Lampa.Parser.get(
       { search: movie.title || movie.name, movie: movie, page: 1 },
@@ -435,7 +434,7 @@
         var html = buildBadgesHtml(best);
 
         cacheSet(movie, html || '');
-        container.html(html);
+        container.append(html);
       }
     );
   }
@@ -451,95 +450,29 @@
     /* CSS var: розмір міток (міняється з меню) */\
     :root{ --svgq-badge-size: 2.0em; }\
     \
-    /* 1) В рядку рейтингів (rate-line) */\
-    .quality-badges-container{\
-      display:inline-flex;\
-      flex-wrap:wrap;\
-      align-items:center;\
-      column-gap:0.32em;\
-      row-gap:0.24em;\
-      margin:0.20em 0 0 0.48em;\
-      min-height:1.2em;\
-      pointer-events:none;\
-      vertical-align:middle;\
-      max-width:100%;\
-    }\
-    .svgq-place-rate .full-start-new__rate-line,\
-    .svgq-place-rate .full-start__rate-line{\
-      display:flex;\
-      align-items:center;\
+    /* MODIFIED: Стилі для контейнера quality-badges-container (як у torqUAcardify) */\
+    .quality-badges-container { \
+        display: flex; \
+        align-items: center; \
+        margin: 0.20em 0 0 0.48em; \
+        max-width: 100%; \
     }\
     \
-    /* наш контейнер в рядку рейтингів — як .full-start__rate .source--name */\
-    .svgq-place-rate .quality-badges-container{\
-      display:inline-flex;\
-      align-items:center;\
-      justify-content:flex-start;\
-      line-height:1;\
-      vertical-align:middle;\
-    }\
-    \
-    /* кожен бейдж — теж inline-flex, як award/source wrappers */\
-    .svgq-place-rate .quality-badge{\
+    .quality-badges-container .quality-badge{\
       display:inline-flex;\
       align-items:center;\
       justify-content:center;\
       line-height:1;\
       flex-shrink:0;\
+      margin-right: 0.32em;\
     }\
     \
     /* img */\
-    .svgq-place-rate .quality-badge img{\
+    .quality-badge img{\
       object-fit:contain;\
     }\
     \
-    .quality-badges-container.svgq-force-new-row{\
-      flex-basis:100%;\
-      width:100%;\
-      display:flex;\
-      margin-left:0;\
-      margin-top:0.28em;\
-    }\
-    .svgq-place-under .full-start-new__rate-line,\
-    .svgq-place-under .full-start__rate-line{\
-      margin-bottom:0.50em !important;\
-    }\
-    \
-    /* 2) Під рядком рейтингів (FIX накладання з details у деяких темах) */\
-    .quality-badges-under-rate{\
-      display:flex;\
-      flex-wrap:wrap;\
-      align-items:center;\
-      column-gap:0.32em;\
-      row-gap:0.24em;\
-      width:100%;\
-      margin:0.40em 0 1.8em 0; /* ✅ TOP | LEFT/RIGHT | BOTTOM */\
-      min-height:1.2em;\
-      pointer-events:none;\
-      max-width:100%;\
-      position:relative;\
-      z-index:2;\
-    }\
-    /* ✅ ключовий фікс: якщо details має негативний margin-top у темі — прибираємо його ТІЛЬКИ після нашого рядка */\
-    .quality-badges-under-rate + .full-start-new__details,\
-    .quality-badges-under-rate + .full-start__details{\
-      margin-top:0 !important;\
-    }\
-    \
-    /* 3) Після додаткової інформації (details) */\
-    .quality-badges-after-details{\
-      display:flex;\
-      flex-wrap:wrap;\
-      align-items:center;\
-      column-gap:0.32em;\
-      row-gap:0.24em;\
-      margin:0.03em 0 1.9em 0;\
-      min-height:1.2em;\
-      pointer-events:none;\
-      max-width:100%;\
-    }\
-    \
-    /* 4) Badge shell — БЕЗ рамок, БЕЗ фону */\
+    /* Badge shell — БЕЗ рамок, БЕЗ фону */\
     .quality-badge{\
       height:var(--svgq-badge-size);\
       display:inline-flex;\
@@ -563,25 +496,22 @@
       filter:drop-shadow(0 1px 2px rgba(0,0,0,0.85));\
     }\
     \
+    @media screen and (orientation: portrait) { \
+        .quality-badges-container { \
+            width: 100%; \
+            justify-content: center; \
+            display: block !important; \
+            margin: 10px 0; \
+            clear: both; \
+        } \
+        .quality-badges-container .quality-badge { \
+            margin-right: 0.26em; \
+        } \
+    }\
+    \
     @media (max-width:768px){\
-      .quality-badges-container{\
-        column-gap:0.26em;\
-        row-gap:0.18em;\
-        margin-left:0.38em;\
-        margin-top:0.18em;\
-      }\
-      .quality-badges-container.svgq-force-new-row{\
-        margin-top:0.24em;\
-      }\
-      .quality-badges-under-rate{\
-        column-gap:0.26em;\
-        row-gap:0.18em;\
-        margin:0.24em 0 0.95em 0;\
-      }\
-      .quality-badges-after-details{\
-        column-gap:0.26em;\
-        row-gap:0.18em;\
-        margin:0.34em 0 0.78em 0;\
+      .quality-badges-container .quality-badge{\
+        margin-right:0.26em;\
       }\
     }\
   </style>';
@@ -618,24 +548,24 @@
       }
     });
 
-    // Розміщення міток
+    // Розміщення міток - тепер це налаштування нічого не робить, але залишаємо для сумісності
     Lampa.SettingsApi.addParam({
       component: 'svgq',
       param: {
         name: 'svgq_placement',
         type: 'select',
         values: {
-          rate: 'Показувати в рядку рейтингів',
-          under_rate: 'Показувати під рядком рейтингів',
-          after_details: 'Показувати після додаткової інформації'
+          rate: 'Показувати в рядку рейтингів (разом з torqUAcardify)',
+          under_rate: 'Показувати під рядком рейтингів (разом з torqUAcardify)',
+          after_details: 'Показувати після додаткової інформації (разом з torqUAcardify)'
         },
         default: st.placement
       },
-      field: { name: 'Розміщення міток' },
+      field: { name: 'Розміщення міток (синхронізовано з torqUAcardify)' },
       onChange: function (v) { st.placement = String(v); saveSettings(); }
     });
 
-    // Переносити мітки на новий рядок (актуально для "в рядку рейтингів")
+    // Переносити мітки на новий рядок - тепер це налаштування нічого не робить, але залишаємо для сумісності
     Lampa.SettingsApi.addParam({
       component: 'svgq',
       param: {
@@ -644,7 +574,7 @@
         values: { 'false': 'Ні', 'true': 'Так' },
         default: String(!!st.force_new_line)
       },
-      field: { name: 'Переносити мітки на новий рядок в рядку рейтингів' },
+      field: { name: 'Переносити мітки на новий рядок (синхронізовано з torqUAcardify)' },
       onChange: function (v) { st.force_new_line = (String(v) === 'true'); saveSettings(); }
     });
 
@@ -710,6 +640,6 @@
     }
   });
 
-  console.log('[SVGQ] loaded');
+  console.log('[SVGQ] loaded (compatible with torqUAcardify)');
 
 })();
