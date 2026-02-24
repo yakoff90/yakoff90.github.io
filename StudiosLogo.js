@@ -22,13 +22,15 @@
     if (e.type !== 'complite') return;
     
     var renderTarget = e.object.activity.render();
-    var rateLine = $('.full-start-new__rate-line', renderTarget);
     
-    if (rateLine.length) {
+    // Шукаємо контейнер quality-badges-container, який використовує torqUAcardify
+    var badgesContainer = $('.quality-badges-container', renderTarget);
+    
+    if (badgesContainer.length) {
         var cont = $('.studio-logos-container', renderTarget);
         if (!cont.length) { 
             cont = $('<div class="studio-logos-container"></div>'); 
-            rateLine.append(cont); 
+            badgesContainer.append(cont); 
         }
         cont.html(getStudioLogos(e.data.movie));
         
