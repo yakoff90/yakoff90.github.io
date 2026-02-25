@@ -80,21 +80,37 @@
 
         // Якість/аудіо — тільки серед релізів з UA
         if (best.resolution) {
+            // Використовуємо ті самі ключі, що й у svgIcons
             var resMap = {
                 '4K': '4K',
                 '2K': '2K',
-                'FHD': 'FULL HD',
+                'FHD': 'FULL HD',  // FHD -> FULL HD
                 'HD': 'HD'
             };
             var resBadge = resMap[best.resolution];
-            if (resBadge) badges.push(createSvgBadge(resBadge, badges.length));
+            if (resBadge) {
+                console.log('[SVG] Додаємо бейдж resolution:', resBadge);
+                badges.push(createSvgBadge(resBadge, badges.length));
+            }
         }
         
-        if (best.hdr) badges.push(createSvgBadge('HDR', badges.length));
-        if (best.dolbyVision) badges.push(createSvgBadge('Dolby Vision', badges.length));
-        if (best.audio) badges.push(createSvgBadge(best.audio, badges.length));
+        if (best.hdr) {
+            console.log('[SVG] Додаємо бейдж HDR');
+            badges.push(createSvgBadge('HDR', badges.length));
+        }
+        
+        if (best.dolbyVision) {
+            console.log('[SVG] Додаємо бейдж Dolby Vision');
+            badges.push(createSvgBadge('Dolby Vision', badges.length));
+        }
+        
+        if (best.audio) {
+            console.log('[SVG] Додаємо бейдж audio:', best.audio);
+            badges.push(createSvgBadge(best.audio, badges.length));
+        }
 
         // UA іконка в кінці
+        console.log('[SVG] Додаємо бейдж UKR');
         badges.push(createSvgBadge('UKR', badges.length));
 
         return badges.join('');
@@ -108,7 +124,8 @@
         .jacred-info-marks-v2 {\
             display: flex;\
             flex-direction: row;\
-            gap: 0.5em;\
+            flex-wrap: wrap;\
+            gap: 0.3em;\
             margin-right: 1em;\
             align-items: center;\
         }\
@@ -156,11 +173,20 @@
 
     // Функція для додавання SVG-міток у повну картку (замінює стару)
     function injectFullCardSvgMarks(movie, renderEl) {
-        if (!movie || !movie.id || !renderEl) return;
+        if (!movie || !movie.id || !renderEl) {
+            console.log('[SVG] Немає movie або renderEl');
+            return;
+        }
         
         var $render = $(renderEl);
-        var rateLine = $render.find('.full-start-new__rate-line').first();
-        if (!rateLine.length) return;
+        var rateLine = $render.find('.full-start-new__rate-line, .full-start__rate-line').first();
+        
+        if (!rateLine.length) {
+            console.log('[SVG] Не знайдено rateLine');
+            return;
+        }
+        
+        console.log('[SVG] Знайдено rateLine, movie:', movie.title || movie.name);
         
         // Видаляємо старий контейнер, якщо він є
         rateLine.find('.jacred-info-marks-v2').remove();
@@ -170,6 +196,8 @@
         
         // Використовуємо існуючу функцію getBestJacred для отримання даних
         getBestJacred(movie, function (data) {
+            console.log('[SVG] Отримано дані з JacRed:', data);
+            
             if (data && !data.empty) {
                 // Конвертуємо дані у формат, який розуміє buildSvgBadgesHtml
                 var bestForSvg = {
@@ -180,10 +208,18 @@
                     audio: data.audio || null
                 };
                 
+                console.log('[SVG] Дані для SVG:', bestForSvg);
+                
                 var html = buildSvgBadgesHtml(bestForSvg);
+                console.log('[SVG] Згенерований HTML:', html);
+                
                 if (html) {
                     marksContainer.html(html);
+                } else {
+                    console.log('[SVG] HTML порожній, можливо немає UKR');
                 }
+            } else {
+                console.log('[SVG] Немає даних або data.empty = true');
             }
         });
     }
@@ -250,6 +286,7 @@
             var cacheKey = 'jacred_v3_' + card.id;
 
             if (_jacredCache[cacheKey]) {
+                console.log('[JacRed] З кешу:', _jacredCache[cacheKey]);
                 callback(_jacredCache[cacheKey]);
                 return;
             }
@@ -258,6 +295,7 @@
                 var raw = Lampa.Storage.get(cacheKey, '');
                 if (raw && typeof raw === 'object' && raw._ts && (Date.now() - raw._ts < 48 * 60 * 60 * 1000)) {
                     _jacredCache[cacheKey] = raw;
+                    console.log('[JacRed] З Storage:', raw);
                     callback(raw);
                     return;
                 }
@@ -278,9 +316,11 @@
             }
 
             var apiUrl = 'https://jr.maxvol.pro/api/v1.0/torrents?search=' + encodeURIComponent(title) + '&year=' + year;
+            console.log('[JacRed] Запит до API:', apiUrl);
 
             fetchWithProxy(apiUrl, function (err, data) {
                 if (err || !data) {
+                    console.log('[JacRed] Помилка запиту:', err);
                     callback(null);
                     return;
                 }
@@ -288,7 +328,9 @@
                 try {
                     var parsed;
                     try { parsed = JSON.parse(data); } catch (e) {
-                        callback(null); return;
+                        console.log('[JacRed] Помилка парсингу JSON:', e);
+                        callback(null); 
+                        return;
                     }
 
                     if (parsed.contents) {
@@ -296,6 +338,7 @@
                     }
 
                     var results = Array.isArray(parsed) ? parsed : (parsed.Results || []);
+                    console.log('[JacRed] Отримано results:', results.length);
 
                     if (!results.length) {
                         var emptyData = { empty: true, _ts: Date.now() };
@@ -343,9 +386,13 @@
                     best._ts = Date.now();
                     _jacredCache[cacheKey] = best;
                     try { Lampa.Storage.set(cacheKey, best); } catch (e) { }
+                    console.log('[JacRed] Best result:', best);
                     callback(best);
 
-                } catch (e) { callback(null); }
+                } catch (e) { 
+                    console.log('[JacRed] Помилка обробки:', e);
+                    callback(null); 
+                }
             });
         }
 
