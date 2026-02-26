@@ -56,17 +56,18 @@
         'EN': pluginPath + 'EN.png'
     };
 
-    // Стилі для іконок у повній картці
+    // Стилі для іконок у повній картці (ЗМЕНШЕНО РОЗМІР)
     var iconStyles = '<style id="likhtar_fullcard_icons">\
         .jacred-info-marks-v2 {\
             display: flex;\
             flex-direction: row;\
-            gap: 0.5em;\
-            margin-right: 1em;\
+            gap: 0.25em;\
+            margin-right: 0.5em;\
             align-items: center;\
+            margin-top: 0;\
         }\
         .full-card-icon {\
-            height: 2.2em;\
+            height: 1.6em;\
             width: auto;\
             display: inline-block;\
         }\
@@ -74,10 +75,14 @@
             height: 100%;\
             width: auto;\
             display: block;\
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));\
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));\
         }\
         @media (max-width:768px) {\
-            .full-card-icon { height: 1.8em; }\
+            .full-card-icon { height: 1.4em; }\
+        }\
+        /* Зменшуємо відступ між рядками */\
+        .full-start-new__rate-line, .full-start__rate-line {\
+            margin-bottom: 0.1em !important;\
         }\
     </style>';
 
@@ -241,10 +246,10 @@
         function createFullCardIcon(iconKey) {
             var iconPath = icons[iconKey];
             if (!iconPath) return '';
-            return '<div class="full-card-icon"><img src="' + iconPath + '" draggable="false" oncontextmenu="return false;"></div>';
+            return '<div class="full-card-icon"><img src="' + iconPath + '" draggable="false" oncontextmenu="return false;" onerror="this.style.display=\'none\'"></div>';
         }
 
-        // Функція для додавання іконок у повну картку (ЗАМІНЮЄ текстові)
+        // Функція для додавання іконок у повну картку
         function injectFullCardIcons(movie, renderEl) {
             if (!movie || !movie.id || !renderEl) return;
             
@@ -310,7 +315,7 @@
             return badge;
         }
 
-        // Функція для додавання міток на постери (БЕЗ ЗМІН - текстові)
+        // Функція для додавання міток на постери (текстові)
         function addMarksToContainer(element, movie, viewSelector) {
             var containerParent = viewSelector ? element.find(viewSelector) : element;
             if (!containerParent.length) containerParent = element;
@@ -344,7 +349,7 @@
             });
         }
 
-        // Рендер текстових міток на постерах (БЕЗ ЗМІН)
+        // Рендер текстових міток на постерах (ОРИГІНАЛЬНІ СТИЛІ)
         function renderPosterBadges(container, data, movie) {
             container.empty();
             
@@ -360,11 +365,12 @@
             }
             if (data.hdr && Lampa.Storage.get('likhtar_badge_hdr', true)) container.append(createBadge('hdr', 'HDR'));
             
+            // Рейтинг - оригінальний розмір
             if (movie) {
                 var rating = parseFloat(movie.imdb_rating || movie.kp_rating || movie.vote_average || 0);
                 if (rating > 0) {
                     var rBadge = document.createElement('div');
-                    rBadge.classList.add('card__mark--rating');
+                    rBadge.classList.add('card__mark', 'card__mark--rating');
                     rBadge.innerHTML = '<span class="mark-star">★</span>' + rating.toFixed(1);
                     container.append(rBadge);
                 }
@@ -436,7 +442,7 @@
                 var movie = e.data && e.data.movie;
                 var renderEl = e.object && e.object.activity && e.object.activity.render && e.object.activity.render();
                 
-                // ВИКОРИСТОВУЄМО ІКОНКИ в повній картці
+                // Використовуємо іконки в повній картці
                 injectFullCardIcons(movie, renderEl);
             });
 
@@ -451,7 +457,7 @@
             }, 300);
         }
 
-        // Оригінальні стилі для текстових міток на постерах
+        // ОРИГІНАЛЬНІ стилі для текстових міток на постерах (нічого не міняємо)
         var posterStyles = document.createElement('style');
         posterStyles.innerHTML = `
             .card .card__type { left: -0.2em !important; }
