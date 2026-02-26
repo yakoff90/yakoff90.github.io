@@ -13,7 +13,7 @@
         'http://cors.bwa.workers.dev/'
     ];
 
-    // Стили для отображения качества - ЖЕЛТАЯ подложка, СИНИЙ текст
+    // Стили для отображения качества - СИНЯЯ подложка, ЖЕЛТЫЙ текст
     var style = "<style id=\"maxsm_ratings_quality\">" +
         ".card__view {position: relative !important;}" +
         ".card__quality { " +
@@ -28,8 +28,8 @@
         ".card__quality div { " +
         "   text-transform: none !important; " +
         "   border: 1px solid #FFFFFF !important; " +
-        "   background-color: rgba(255, 255, 0, 0.7) !important; " + // Желтая полупрозрачная подложка
-        "   color: #0000FF !important; " + // Синий текст
+        "   background-color: rgba(0, 0, 255, 0.7) !important; " + // Синяя полупрозрачная подложка
+        "   color: #FFFF00 !important; " + // Желтый текст
         "   font-weight: bold !important; " + // Жирный шрифт
         "   font-style: normal !important; " + // Не курсив
         "   font-size: 1.2em !important; " +
